@@ -1,0 +1,208 @@
+/* =====================================================================
+   Aussehen: Indigo wie das Tuch der Tuareg, Messing wie ihre Beschläge.
+   Alles aus Papier (Einführung, Menü, Statistik) ist Pergament.
+   ===================================================================== */
+
+:root {
+  --nacht:     #161b36;   /* Seitenhintergrund */
+  --tuch:      #232b56;   /* Kästen */
+  --tuch-hell: #2c3566;   /* hervorgehobene Zeilen */
+  --naht:      rgba(200,160,74,.32);   /* feine Messingrahmen */
+  --messing:   #c8a04a;
+  --messing-hell: #ecd08a;
+  --sand:      #eee0c0;   /* Schrift auf Indigo */
+  --gedaempft: #a7aacb;   /* Nebentext auf Indigo */
+  --linie:     rgba(238,224,192,.12);
+  --henna:     #ff9b84;   /* Warnungen auf Indigo (gut lesbar) */
+  --gruen:     #a9d98f;
+  --pergament: #f2e4c4;
+  --tinte:     #2a2238;
+  --akzent:    var(--messing);
+  --schrift-titel: "Amiri", Georgia, serif;
+  --schrift-text:  "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--nacht); color: var(--sand);
+  font-family: var(--schrift-text); font-size: 16px; line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+b, strong { font-weight: 700; color: #fff4dc; }
+
+/* ---------- Kopfleiste ---------- */
+header {
+  position: relative;
+  display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center;
+  padding: 10px 16px 16px; background: #10142b;
+}
+/* Das Tuareg-Band: eine Reihe Messingdreiecke unter der Kopfleiste */
+header::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+  background:
+    conic-gradient(from 135deg at 50% 0, var(--messing) 90deg, transparent 0) 0 0 / 14px 7px repeat-x;
+  opacity: .8;
+}
+header h1 {
+  font-family: var(--schrift-titel); font-weight: 700; font-size: 1.7rem; line-height: 1;
+  margin: 0 6px 0 0; color: var(--messing-hell); letter-spacing: .01em;
+}
+header .anzeige { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; font-size: .95rem; }
+header .anzeige > span { white-space: nowrap; }
+header .wert { font-weight: 700; color: #fff4dc; font-variant-numeric: tabular-nums; }
+header .minus { color: var(--henna); }
+header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+
+/* ---------- Aufteilung ---------- */
+#haupt { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px; align-items: flex-start; }
+/* Linke Spalte: Karte und Ereignisse bleiben stehen, während rechts gescrollt wird */
+#links {
+  flex: 2 1 560px; min-width: 280px; position: sticky; top: 12px;
+  max-height: calc(100vh - 24px); display: flex; flex-direction: column; gap: 10px;
+}
+#kartenRahmen { flex: none; position: relative; }
+.zoomKnoepfe { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; align-items: center; }
+.zoomKnoepfe button { width: 32px; height: 32px; padding: 0; font-size: 1.1rem; line-height: 1;
+                      background: rgba(16,20,43,.82); border-color: var(--messing); }
+#zoomStufe { color: var(--messing-hell); font-size: .85rem; font-weight: 700; margin-right: 4px;
+             text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+#logKasten { flex: 1 1 auto; min-height: 140px; display: flex; flex-direction: column; }
+#kartenRahmen { padding: 5px; background: #10142b; border: 1px solid var(--messing); border-radius: 6px; }
+#logKasten h2 { font-size: 1.15rem; margin-bottom: 4px; }
+canvas { width: 100%; height: auto; display: block; border-radius: 3px; touch-action: manipulation; cursor: pointer; }
+#seite { flex: 1 1 340px; display: flex; flex-direction: column; gap: 10px; min-width: 280px; }
+
+/* ---------- Kästen in der Seitenleiste ---------- */
+.box { background: var(--tuch); border: 1px solid var(--naht); border-radius: 6px; padding: 12px 14px; }
+#panelOase { border-top: 3px solid var(--messing); }   /* der wichtigste Kasten */
+.box h2, #panelOase h2 {
+  font-family: var(--schrift-titel); font-weight: 700; font-size: 1.35rem; line-height: 1.15;
+  margin: 0 0 8px; color: var(--messing-hell);
+}
+.info { font-size: .95rem; margin-bottom: 5px; }
+.hinweis { font-size: .88rem; font-style: italic; color: var(--gedaempft); }
+.warnung { color: var(--henna); font-weight: 700; font-size: .93rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: .93rem; margin-top: 6px; font-variant-numeric: tabular-nums; }
+th { font-weight: 500; color: var(--gedaempft); font-size: .82rem; }
+th, td { padding: 4px 5px; text-align: right; border-bottom: 1px solid var(--linie); }
+th:first-child, td:first-child { text-align: left; white-space: nowrap; }
+tbody tr:hover td, table tr:hover td { background: rgba(255,255,255,.025); }
+
+/* ---------- Knöpfe ---------- */
+button {
+  font: inherit; font-size: .88rem; font-weight: 500; cursor: pointer;
+  color: var(--sand); background: rgba(200,160,74,.08);
+  border: 1px solid rgba(200,160,74,.55); border-radius: 4px; padding: 4px 10px;
+  transition: background .12s, border-color .12s;
+}
+button:hover:not(:disabled) { background: rgba(200,160,74,.22); border-color: var(--messing); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .35; cursor: default; }
+button.an { background: var(--messing); border-color: var(--messing); color: #161b36; font-weight: 700; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--messing-hell); outline-offset: 2px; }
+header button { background: transparent; }
+
+.karawanenZeile { display: block; width: 100%; text-align: left; margin-bottom: 5px; padding: 6px 10px; }
+
+.bar { height: 7px; background: rgba(255,255,255,.08); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.bar > div { height: 100%; border-radius: 4px; }
+
+/* ---------- Aufklappbare Bereiche ---------- */
+details { border-top: 1px solid var(--linie); padding: 5px 0; }
+summary {
+  cursor: pointer; font-weight: 700; padding: 5px 0; list-style: none;
+  display: flex; align-items: center; gap: 6px; color: #fff4dc;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: ''; width: 0; height: 0; flex: none;
+  border-left: 6px solid var(--messing); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent;
+  transition: transform .15s;
+}
+details[open] > summary::before { transform: rotate(90deg); }
+
+.station { border: 1px solid var(--linie); border-radius: 5px; padding: 6px 8px; margin: 5px 0; font-size: .9rem; }
+.station.aktuell { border-color: var(--messing); background: rgba(200,160,74,.08); }
+.station button { margin: 2px 0; }
+
+.punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+/* ---------- Ereignisse ---------- */
+#log { flex: 1 1 0; min-height: 0; overflow-y: auto; font-size: .9rem; }
+#log div { padding: 3px 0; border-bottom: 1px solid var(--linie); }
+#log .schlecht { color: var(--henna); }
+#log .gut { color: var(--gruen); }
+
+/* ---------- Pergament: Einführung, Menü, Statistik ---------- */
+.tipp, #menue .fenster, #statistik .fenster {
+  background: var(--pergament); color: var(--tinte);
+  background-image: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.35), transparent 70%);
+  box-shadow: inset 0 0 40px rgba(140,100,40,.18);
+}
+.tipp b, #menue b, #statistik b { color: inherit; }
+.tipp .hinweis, #menue .hinweis, #statistik .hinweis { color: #6b5a48; }
+.tipp button, #menue button, #statistik button { color: var(--tinte); background: transparent; border-color: rgba(42,34,56,.45); }
+.tipp button:hover:not(:disabled), #menue button:hover:not(:disabled), #statistik button:hover:not(:disabled) { background: rgba(40,52,99,.1); border-color: #283463; }
+.tipp button.an, #menue button.an, #menue button.gross { background: #283463; border-color: #283463; color: var(--sand); }
+#menue summary, #statistik summary, .tipp summary { color: var(--tinte); }
+#menue summary::before, #statistik summary::before { border-left-color: #8a6a2a; }
+#menue th, #statistik th { color: #6b5a48; }
+#menue th, #menue td, #statistik th, #statistik td { border-bottom-color: rgba(42,34,56,.14); }
+
+.tipp { border: 1px solid var(--messing); border-radius: 6px; padding: 12px 14px; font-size: .95rem; }
+.tipp-kopf { font-family: var(--schrift-titel); font-weight: 700; font-size: 1.15rem; margin-bottom: 4px; color: #6e4d16; }
+#panelTipp:empty { display: none; }
+
+#menue { position: fixed; inset: 0; background: rgba(12,14,30,.8); display: none; z-index: 20; overflow-y: auto; padding: 24px 16px; }
+#menue.offen { display: block; }
+#menue .fenster { max-width: 580px; margin: 0 auto; border-radius: 6px; padding: 22px 24px; border: 1px solid var(--messing); }
+#menue h2 { font-family: var(--schrift-titel); font-size: 2.1rem; line-height: 1.1; margin: 0 0 4px; color: #3a2a12; }
+.sprachwahl { display: flex; justify-content: flex-end; gap: 6px; margin: -6px 0 6px; }
+.sprachwahl button { font-size: .85rem; padding: 3px 12px; }
+#menue h3 { font-family: var(--schrift-titel); font-size: 1.25rem; margin: 18px 0 6px; color: #3a2a12; }
+.slot { border: 1px solid rgba(42,34,56,.2); border-radius: 5px; padding: 8px 10px; margin: 5px 0; font-size: .95rem; }
+.slot.aktuell { border-color: #283463; background: rgba(40,52,99,.06); }
+button.gross { display: block; width: 100%; font-family: var(--schrift-titel); font-size: 1.2rem; font-weight: 700; padding: 9px; margin: 8px 0; }
+#menue button.gross:hover:not(:disabled) { background: #33407a; }
+.tipp button.an:hover:not(:disabled), #menue button.an:hover:not(:disabled) { background: #33407a; color: var(--sand); }
+
+#statistik { position: fixed; inset: 0; background: rgba(12,14,30,.7); display: none; z-index: 10; overflow-y: auto; padding: 24px 16px; }
+#statistik.offen { display: block; }
+#statistik .fenster { max-width: 780px; margin: 0 auto; border-radius: 6px; padding: 18px 22px; border: 1px solid var(--messing); }
+#statistik h2 { font-family: var(--schrift-titel); font-size: 1.7rem; color: #3a2a12; }
+#statistik h3 { font-family: var(--schrift-titel); font-size: 1.2rem; margin: 18px 0 4px; color: #3a2a12; }
+.diagramm { position: relative; }
+.legende { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .9rem; margin: 4px 0; }
+.tooltip { position: absolute; display: none; pointer-events: none; background: #fffaf0; color: var(--tinte); border: 1px solid #d8c8a8;
+           border-radius: 5px; padding: 6px 8px; font-size: .85rem; box-shadow: 0 2px 8px rgba(0,0,0,.15); white-space: nowrap; }
+
+/* ---------- Handy ---------- */
+@media (max-width: 600px) {
+  header { padding: 8px 10px 14px; gap: 6px 12px; }
+  header h1 { font-size: 1.35rem; }
+  header .knoepfe { margin-left: 0; }
+  #haupt { padding: 8px; gap: 8px; }
+  /* Auf dem Handy: Karte oben, Seitenleiste in der Mitte, Ereignisse ganz unten */
+  #links { display: contents; }
+  #kartenRahmen, #seite, #logKasten { flex: 1 1 100%; }
+  #kartenRahmen { order: 0; }
+  #seite { order: 1; }
+  #logKasten { order: 2; min-height: 0; }
+  #kartenRahmen { padding: 3px; }
+  .zoomKnoepfe { right: 8px; bottom: 8px; }
+  .zoomKnoepfe button { width: 28px; height: 28px; font-size: 1rem; }
+  #log { flex: none; max-height: 130px; }
+  .box { padding: 10px 12px; }
+  .box table, #statistik table { display: block; overflow-x: auto; white-space: nowrap; }
+  .markt-schmal { display: table !important; white-space: normal !important; }
+  .markt-schmal tr:not(.knopfzeile) td { border-bottom: none; }
+  .knopfzeile td { text-align: right !important; padding-bottom: 8px; }
+  td button, .station button { padding: 5px 9px; }
+  #statistik, #menue { padding: 8px; }
+  #menue .fenster { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
