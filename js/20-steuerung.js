@@ -7,15 +7,23 @@ function statischeTexte() {
   const setze = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   document.title = T('Karawane – Handel in der Wüste', 'Caravan – Trading in the Desert');
   document.querySelector('header h1').textContent = T('Karawane', 'Caravan');
-  setze('btnStatistik', T('📊 Statistik', '📊 Statistics'));
-  setze('btnPause', T('⏸ Pause', '⏸ Pause'));
-  setze('btnMenue', T('☰ Menü', '☰ Menu'));
+  // Symbol + Wort; auf dem Handy wird das Wort (class "txt") ausgeblendet
+  const mitWort = (id, icon, wort) => { document.getElementById(id).innerHTML = `${icon}<span class="txt"> ${wort}</span>`; };
+  mitWort('btnStatistik', '📊', T('Statistik', 'Statistics'));
+  mitWort('btnPause', '⏸', T('Pause', 'Pause'));
+  mitWort('btnMenue', '☰', T('Menü', 'Menu'));
   setze('logTitel', T('Ereignisse', 'Events'));
   document.querySelectorAll('[data-tempo]').forEach(b => { b.textContent = zahlText(+b.dataset.tempo) + '×'; });
   const titel = { btnTon: T('Ton an/aus', 'Sound on/off'), btnZoomRein: T('Hineinzoomen', 'Zoom in'),
                   btnZoomRaus: T('Herauszoomen', 'Zoom out'), btnZoomGanz: T('Ganze Karte zeigen', 'Show whole map') };
   for (const id in titel) { const el = document.getElementById(id); el.title = titel[id]; el.setAttribute('aria-label', titel[id]); }
 }
+
+document.getElementById('reiter').addEventListener('click', e => {
+  const b = e.target.closest('[data-reiter]');
+  if (b) reiterWaehlen(b.dataset.reiter);
+});
+document.getElementById('ticker').addEventListener('click', () => reiterWaehlen('ereignisse'));
 
 document.getElementById('btnStatistik').addEventListener('click', () => statistikUmschalten(!statistikOffen));
 document.getElementById('statistik').addEventListener('click', e => {

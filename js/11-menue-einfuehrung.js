@@ -228,8 +228,8 @@ const EINFUEHRUNG = [
       no salt is made there, so they pay more. You only know distant prices once you have been there or sent a messenger.
       Zoom the map with two fingers, the mouse wheel or the <b>+ / −</b> buttons.`,
     fertig: () => S.ziel != null },
-  { text: 'Unter „Deine Karawanen“ siehst du Reisedauer und Wasserbedarf. Reicht dein Wasser? Dann tippe auf <b>Aufbrechen</b>.',
-    textEn: 'Under "Your caravans" you see the travel time and the water needed. Enough water? Then tap <b>Set out</b>.',
+  { text: 'Im Reiter <b>🐪 Karawanen</b> siehst du Reisedauer und Wasserbedarf. Reicht dein Wasser? Dann tippe auf <b>Aufbrechen</b>.',
+    textEn: 'The <b>🐪 Caravans</b> tab shows the travel time and the water needed. Enough water? Then tap <b>Set out</b>.',
     fertig: k => k.nach != null },
   { text: `Deine Karawane ist unterwegs – die Zeit läuft jetzt! Mit <b>0,5× / 1× / 1,5×</b> oben änderst du das Tempo,
       <b>Pause</b> (oder die Leertaste) hält sie an. Meide Sandstürme 🌪️ und rote Räubergebiete ⚔️.`,
@@ -241,10 +241,10 @@ const EINFUEHRUNG = [
     fertig: k => WAREN.every(w => w.id === 'wasser' || k.ladung[w.id] < 1) },
   { weiter: true, text: `Geschafft – dein erstes Geschäft! Wie es weitergeht: Nimm <b>Aufträge</b> der Scheichs an (📜),
       heuere <b>Wachen</b> gegen Räuber an und kaufe weitere Tiere. Später helfen <b>Lagerhäuser</b> und automatische
-      <b>Handelsrouten</b>. Unter <b>🎯 Ziele</b> siehst du, was sich als Nächstes lohnt. Viel Erfolg!`,
+      <b>Handelsrouten</b>. Im Reiter <b>🎯 Ziele</b> siehst du, was sich als Nächstes lohnt. Viel Erfolg!`,
     textEn: `Done – your first deal! What next: accept the sheikhs' <b>contracts</b> (📜),
       hire <b>guards</b> against robbers and buy more animals. Later, <b>warehouses</b> and automatic
-      <b>trade routes</b> help. Under <b>🎯 Goals</b> you see what is worth doing next. Good luck!` },
+      <b>trade routes</b> help. The <b>🎯 Goals</b> tab shows what is worth doing next. Good luck!` },
 ];
 
 function einfuehrungPruefen() {
@@ -269,9 +269,14 @@ function einfuehrungWeiter() {
 
 function einfuehrungBeenden() { S.tutorial.schritt = -1; zeichnePanel(); }
 
+// Welcher Reiter zu welchem Schritt der Einführung gehört
+const EINFUEHRUNG_REITER = ['oase', 'oase', 'oase', 'oase', 'karawanen', 'karawanen', 'oase', 'ziele'];
+let letzterTippSchritt = null;
+
 function htmlTipp() {
   const t = S.tutorial;
   if (!t || t.schritt < 0 || t.schritt >= EINFUEHRUNG.length) return '';
+  if (letzterTippSchritt !== t.schritt) { letzterTippSchritt = t.schritt; aktiverReiter = EINFUEHRUNG_REITER[t.schritt] || aktiverReiter; }
   const schritt = EINFUEHRUNG[t.schritt];
   return `<div class="tipp">
     <div class="tipp-kopf">💡 ${T('Einführung', 'Tutorial')} · ${T('Schritt', 'Step')} ${t.schritt + 1} ${T('von', 'of')} ${EINFUEHRUNG.length}</div>

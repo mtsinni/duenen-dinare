@@ -911,7 +911,7 @@ function zeichne() {
     }
     ctx.globalCompositeOperation = 'source-over';
   }
-  anzeigeUhr.textContent = `${istNacht() ? '🌙' : '☀️'} ` + T(`${stunde()} Uhr`, `${String(stunde()).padStart(2, '0')}:00`);
+  anzeigeUhr.textContent = `${istNacht() ? '🌙' : '☀️'} ` + `${String(stunde()).padStart(2, '0')}:00`;
 
   // Ab hier ohne Zoom: Schriftzüge sollen immer gleich groß und mittig sein
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);

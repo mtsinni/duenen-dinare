@@ -49,6 +49,17 @@ header h1 {
 }
 header .anzeige { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; font-size: .95rem; }
 header .anzeige > span { white-space: nowrap; }
+/* Feste Kästchen: die Breite ändert sich nicht, wenn eine Zahl eine Stelle mehr bekommt */
+header .kasten {
+  display: inline-block; text-align: center; padding: 2px 8px;
+  border: 1px solid var(--naht); border-radius: 5px; background: rgba(255,255,255,.04);
+  font-variant-numeric: tabular-nums;
+}
+header .k-tag  { width: 6.4em; }
+header .k-uhr  { width: 5.4em; }
+header .k-jahr { width: 12.2em; }
+header .k-gold { width: 10.2em; }
+header .k-rang { min-width: 10em; }
 header .wert { font-weight: 700; color: #fff4dc; font-variant-numeric: tabular-nums; }
 header .minus { color: var(--henna); }
 header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
@@ -66,7 +77,31 @@ header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
                       background: rgba(16,20,43,.82); border-color: var(--messing); }
 #zoomStufe { color: var(--messing-hell); font-size: .85rem; font-weight: 700; margin-right: 4px;
              text-shadow: 0 1px 2px rgba(0,0,0,.8); }
-#logKasten { flex: 1 1 auto; min-height: 140px; display: flex; flex-direction: column; }
+#logKasten { display: flex; flex-direction: column; }
+/* Eine Zeile unter der Karte: die neueste Meldung. Antippen öffnet den Ereignis-Reiter. */
+#ticker {
+  display: block; width: 100%; text-align: left; padding: 6px 10px; min-height: 2.2em;
+  background: var(--tuch); border: 1px solid var(--naht); border-radius: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .92rem;
+}
+#ticker:empty { display: none; }
+
+/* ---------- Reiter ---------- */
+#reiter {
+  display: flex; gap: 4px; position: sticky; top: 0; z-index: 5;
+  padding: 5px; background: #10142b; border: 1px solid var(--naht); border-radius: 6px;
+}
+#reiter button {
+  flex: 1 1 0; min-width: 0; position: relative; padding: 5px 2px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1;
+}
+#reiter .r-icon { font-size: 1.3rem; }
+#reiter small { font-size: .72rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#reiter .punkt {
+  position: absolute; top: 2px; right: 4px; min-width: 17px; padding: 2px 4px; border-radius: 9px;
+  background: var(--henna); color: #161b36; font-size: .66rem; font-weight: 700;
+}
+.versteckt { display: none !important; }
 #kartenRahmen { padding: 5px; background: #10142b; border: 1px solid var(--messing); border-radius: 6px; }
 #logKasten h2 { font-size: 1.15rem; margin-bottom: 4px; }
 canvas { width: 100%; height: auto; display: block; border-radius: 3px; touch-action: manipulation; cursor: pointer; }
@@ -100,6 +135,7 @@ button:hover:not(:disabled) { background: rgba(200,160,74,.22); border-color: va
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .35; cursor: default; }
 button.an { background: var(--messing); border-color: var(--messing); color: #161b36; font-weight: 700; }
+button.an:hover:not(:disabled) { background: var(--messing-hell); border-color: var(--messing-hell); color: #161b36; }
 button:focus-visible, summary:focus-visible { outline: 2px solid var(--messing-hell); outline-offset: 2px; }
 header button { background: transparent; }
 
@@ -129,10 +165,10 @@ details[open] > summary::before { transform: rotate(90deg); }
 .punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
 /* ---------- Ereignisse ---------- */
-#log { flex: 1 1 0; min-height: 0; overflow-y: auto; font-size: .9rem; }
+#log { font-size: .9rem; }
 #log div { padding: 3px 0; border-bottom: 1px solid var(--linie); }
-#log .schlecht { color: var(--henna); }
-#log .gut { color: var(--gruen); }
+#log .schlecht, #ticker .schlecht { color: var(--henna); }
+#log .gut, #ticker .gut { color: var(--gruen); }
 
 /* ---------- Pergament: Einführung, Menü, Statistik ---------- */
 .tipp, #menue .fenster, #statistik .fenster {
@@ -185,14 +221,23 @@ button.gross { display: block; width: 100%; font-family: var(--schrift-titel); f
   #haupt { padding: 8px; gap: 8px; }
   /* Auf dem Handy: Karte oben, Seitenleiste in der Mitte, Ereignisse ganz unten */
   #links { display: contents; }
-  #kartenRahmen, #seite, #logKasten { flex: 1 1 100%; }
-  #kartenRahmen { order: 0; }
-  #seite { order: 1; }
-  #logKasten { order: 2; min-height: 0; }
+  #kartenRahmen, #ticker, #seite { flex: 1 1 100%; }
+  /* Kopfleiste kompakt: Titel weg, Knöpfe nur als Symbol, alles in einer Zeile */
+  header h1 { display: none; }
+  header .anzeige { gap: 4px; font-size: .84rem; }
+  header .kasten { padding: 2px 4px; }
+  header .k-tag { width: 5.6em; } header .k-uhr { width: 4.9em; } header .k-gold { width: 9.4em; }
+  header .k-jahr { width: auto; min-width: 9em; } header .k-rang { min-width: 0; }
+  header .knoepfe { width: 100%; gap: 4px; flex-wrap: nowrap; }
+  header .knoepfe button { flex: 1 1 auto; padding: 5px 4px; }
+  header .txt { display: none; }
+  #reiter { gap: 3px; padding: 4px; }
+  #reiter button { flex: 1 1 auto; padding: 4px 2px 3px; }
+  #reiter .r-icon { font-size: 1.15rem; }
+  #reiter small { font-size: .64rem; }
   #kartenRahmen { padding: 3px; }
   .zoomKnoepfe { right: 8px; bottom: 8px; }
   .zoomKnoepfe button { width: 28px; height: 28px; font-size: 1rem; }
-  #log { flex: none; max-height: 130px; }
   .box { padding: 10px 12px; }
   .box table, #statistik table { display: block; overflow-x: auto; white-space: nowrap; }
   .markt-schmal { display: table !important; white-space: normal !important; }

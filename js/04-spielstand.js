@@ -197,5 +197,6 @@ function aufruesten() {
 function log(text, art = 'info') {
   tonZuMeldung(text, art);
   S.log.unshift({ tag: S.tag, text, art });
+  if (typeof aktiverReiter !== 'undefined' && aktiverReiter !== 'ereignisse') ungeleseneMeldungen++;
   S.log = S.log.slice(0, 60);
 }

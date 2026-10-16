@@ -31,13 +31,18 @@ und dem Ordner `js`) ins Repository laden.
 | `js/14-bewegung.js` | Bewegung der Karawanen in jedem Bild (flüssige Animation) |
 | `js/15-aktionen.js` | Was die Knöpfe tun: kaufen, verkaufen, losziehen … |
 | `js/16-gebaeude-routen.js` | Preisgedächtnis, Lagerhaus, Betriebe, automatische Handelsrouten, Ansehen |
-| `js/17-seitenleiste.js` | Die Seitenleiste als HTML – und welcher Knopf welche Funktion aufruft |
+| `js/17-seitenleiste.js` | Die Seitenleiste als HTML, die Reiter (🌴 🐪 📜 🎯 🤝 📰) – und welcher Knopf welche Funktion aufruft |
 | `js/18-karte.js` | Die gezeichnete Karte: Dünen, Gebirge, Meer, Oasen mit Palmen und Häusern, laufende Tiere, Sandstürme, Nacht mit Laternen |
 | `js/19-abenteuer.js` | Karawansereien, unerforschte Gebiete mit Fundorten, Pilger und Reisende |
 | `js/20-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien
 benutzen, was frühere anlegen – und `20-steuerung.js` startet das Spiel, darum kommt sie zuletzt.
+
+## Spieltempo
+
+Wie lange ein Spieltag dauert, steht ganz oben in `js/01-grunddaten.js`:
+`const SEK_PRO_TAG = 3;` – also 3 echte Sekunden pro Tag bei Tempo 1×. Größere Zahl = langsameres Spiel.
 
 ## Sprache (Deutsch / English)
 

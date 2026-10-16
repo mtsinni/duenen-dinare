@@ -28,6 +28,45 @@ function zeichnePanel() {
   document.getElementById('panelHaeuser').innerHTML = htmlHaeuser();
   document.getElementById('log').innerHTML =
     S.log.map(e => `<div class="${e.art}">${T('Tag', 'Day')} ${e.tag}: ${e.text}</div>`).join('');
+  const neueste = S.log[0];
+  document.getElementById('ticker').innerHTML = neueste
+    ? `<span class="${neueste.art}">${T('Tag', 'Day')} ${neueste.tag}: ${neueste.text}</span>` : '';
+  zeichneReiter();
+}
+
+// --- Reiter: immer nur ein Bereich der Seitenleiste ist sichtbar ---
+const REITER = [
+  { id: 'oase',       icon: '🌴', de: 'Oase',       en: 'Oasis',     panel: 'panelOase' },
+  { id: 'karawanen',  icon: '🐪', de: 'Karawanen',  en: 'Caravans',  panel: 'panelKarawanen' },
+  { id: 'auftraege',  icon: '📜', de: 'Aufträge',   en: 'Contracts', panel: 'panelAuftraege' },
+  { id: 'ziele',      icon: '🎯', de: 'Ziele',      en: 'Goals',     panel: 'panelZiele' },
+  { id: 'haeuser',    icon: '🤝', de: 'Häuser',     en: 'Houses',    panel: 'panelHaeuser' },
+  { id: 'ereignisse', icon: '📰', de: 'Ereignisse', en: 'Events',    panel: 'logKasten' },
+];
+let aktiverReiter = (() => {
+  try { const r = localStorage.getItem('karawane-reiter'); if (REITER.some(x => x.id === r)) return r; } catch (e) {}
+  return 'oase';
+})();
+let ungeleseneMeldungen = 0;
+
+function reiterWaehlen(id) {
+  aktiverReiter = id;
+  try { localStorage.setItem('karawane-reiter', id); } catch (e) {}
+  zeichneReiter();
+  // Auf dem Handy: Reiterleiste nach oben holen, damit man den Inhalt sieht
+  const leiste = document.getElementById('reiter');
+  if (leiste.getBoundingClientRect && leiste.getBoundingClientRect().top < 0) leiste.scrollIntoView({ block: 'start' });
+}
+
+function zeichneReiter() {
+  if (aktiverReiter === 'ereignisse') ungeleseneMeldungen = 0;
+  document.getElementById('reiter').innerHTML = REITER.map(r => {
+    const zahl = r.id === 'ereignisse' && ungeleseneMeldungen > 0
+      ? `<span class="punkt">${ungeleseneMeldungen > 9 ? '9+' : ungeleseneMeldungen}</span>` : '';
+    return `<button data-reiter="${r.id}" class="${r.id === aktiverReiter ? 'an' : ''}" title="${T(r.de, r.en)}">
+              <span class="r-icon">${r.icon}</span><small>${T(r.de, r.en)}</small>${zahl}</button>`;
+  }).join('');
+  for (const r of REITER) document.getElementById(r.panel).classList.toggle('versteckt', r.id !== aktiverReiter);
 }
 
 // Aufklappbare Abschnitte. Welche offen sind, merken wir uns hier –

@@ -167,6 +167,8 @@ function waehleOase(id) {
   // Steht die gewählte Karawane woanders, wird die angetippte Oase zum Reiseziel
   if (k && k.ort != null && k.ort !== id) S.ziel = id;
   else if (k && k.ort === id) S.ziel = null;
+  // Neues Reiseziel → Karawanen-Reiter (dort ist „Aufbrechen“), sonst der Markt der Oase
+  aktiverReiter = S.ziel === id ? 'karawanen' : 'oase';
   zeichnePanel();
 }
 
@@ -174,5 +176,6 @@ function waehleKarawane(id) {
   S.gewKarawane = id; S.ziel = null;
   const k = karawane(id);
   if (k && k.ort != null) S.gewOase = k.ort;
+  aktiverReiter = 'karawanen';
   zeichnePanel();
 }
