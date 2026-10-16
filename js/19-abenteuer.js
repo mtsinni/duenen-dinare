@@ -280,7 +280,7 @@ function htmlReisende(o, handel) {
   }
   s += `<div class="hinweis">${T('Jeder Reisende braucht 2 Lastplätze und trinkt unterwegs mit. Wer zu spät ankommt, zahlt nur die Hälfte.',
                                  'Each traveller needs 2 load spaces and drinks on the way. Late arrivals pay only half.')}</div>`;
-  return bereich('reisende', `🧕 ${T('Reisende suchen eine Karawane', 'Travellers looking for a caravan')} (${liste.length})`, s);
+  return s;
 }
 
 function htmlPassagiere(k) {

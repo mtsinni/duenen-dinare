@@ -268,7 +268,7 @@ function htmlDienste(o, handel) {
          ? `<button data-a="heilen" ${S.gold < preis ? 'disabled' : ''}>${T(`Tiere von ${k.name} heilen`, `Heal the animals of ${k.name}`)} (${preis} D)</button>`
          : T('Deine Tiere sind gesund.', 'Your animals are healthy.')) + '</div>';
   }
-  return bereich('dienste', T('🏗️ Dienste', '🏗️ Services'), s);
+  return s;
 }
 
 function htmlKarawanenZustand(k) {

@@ -77,6 +77,15 @@ function bereich(id, titel, inhalt) {
             <summary>${titel}</summary>${inhalt}</details>`;
 }
 
+// --- Die Oase: oben Name und Wasser, darunter eigene Reiter für Markt, Gebäude usw. ---
+let aktiverOasenReiter = (() => { try { return localStorage.getItem('karawane-oasenreiter') || 'markt'; } catch (e) { return 'markt'; } })();
+
+function oasenReiterWaehlen(id) {
+  aktiverOasenReiter = id;
+  try { localStorage.setItem('karawane-oasenreiter', id); } catch (e) {}
+  zeichnePanel();
+}
+
 function htmlOase() {
   if (S.bankrott) {
     return `<h2>💀 ${T('Bankrott', 'Bankrupt')}</h2>
@@ -85,22 +94,32 @@ function htmlOase() {
   }
   const o = oase(S.gewOase);
   if (!o) return `<h2>${T('Oase', 'Oasis')}</h2><p class="hinweis">${T('Tippe auf eine Oase auf der Karte.', 'Tap an oasis on the map.')}</p>`;
-  let h = `<h2>🌴 ${o.name}</h2>`;
   if (!o.aktiv) {
-    h += `<p>${T('Diese Oase ist versiegt. Nur Ruinen und Sand sind geblieben – vielleicht bringt Regen sie zurück.', 'This oasis has dried up. Only ruins and sand remain – perhaps rain will bring it back.')}</p>`;
-    if (S.gebaeude[o.id]) h += bereich('gebaeude', T('🏛️ Deine Gebäude', '🏛️ Your buildings'), htmlGebaeude(o));
+    let h = `<h2>🌴 ${o.name}</h2>
+      <p>${T('Diese Oase ist versiegt. Nur Ruinen und Sand sind geblieben – vielleicht bringt Regen sie zurück.', 'This oasis has dried up. Only ruins and sand remain – perhaps rain will bring it back.')}</p>`;
+    if (S.gebaeude[o.id]) h += `<h3>🏛️ ${T('Deine Gebäude', 'Your buildings')}</h3>` + htmlGebaeude(o);
     return h;
   }
 
   const handel = kannHandeln();
-  h += `<div class="info">👥 ${Math.round(o.bev)} ${T('Einwohner', 'people')} · ${T('erzeugt', 'produces')} ${o.produziert.map(id => ware(id).icon + ' ' + ware(id).name).join(', ')}</div>`;
-  h += `<div class="info">🏅 ${T('Ansehen', 'Reputation')}: ${ansehenTitel(ansehen(o))} (${Math.round(ansehen(o))}/100)` +
-       (ansehenVorteil(o) >= 0.005 ? ` · ${Math.round(ansehenVorteil(o) * 100)} % ${T('bessere Preise', 'better prices')}` : '') + '</div>';
-  h += `<div class="info">${T('Wasserstand', 'Water level')} ${Math.round(o.wasser)} %</div>
-        <div class="bar"><div style="width:${Math.max(0, o.wasser)}%;background:${wasserFarbe(o.wasser)}"></div></div>`;
-  h += htmlOasenExtras(o);
+  // Kopf: Name und Wasserstand – bleibt in jedem Reiter sichtbar
+  let h = `<div class="oasen-kopf"><h2>🌴 ${o.name}</h2>
+             <span class="wasser-pille" title="${T('Wasserstand', 'Water level')}">💧 ${Math.round(o.wasser)} %</span></div>
+           <div class="bar"><div style="width:${Math.max(0, o.wasser)}%;background:${wasserFarbe(o.wasser)}"></div></div>`;
 
-  h += bereich('markt', T('📊 Markt', '📊 Market'), htmlMarkt(o, handel));
+  // Alle Abschnitte sammeln. Abschnitte ohne Inhalt bekommen keinen Reiter.
+  const abschnitte = [];
+  const dazu = (id, icon, de, en, inhalt, zahl = 0) => { if (inhalt) abschnitte.push({ id, icon, name: T(de, en), inhalt, zahl }); };
+
+  dazu('markt', '📊', 'Markt', 'Market', htmlMarkt(o, handel) + htmlOasenExtras(o));
+
+  // Übersicht: Einwohner, Waren, Ansehen
+  dazu('info', 'ℹ️', 'Oase', 'Oasis',
+    `<div class="info">👥 ${Math.round(o.bev)} ${T('Einwohner', 'people')}</div>
+     <div class="info">🏭 ${T('erzeugt', 'produces')} ${o.produziert.map(id => ware(id).icon + ' ' + ware(id).name).join(', ')}</div>
+     <div class="info">🏅 ${T('Ansehen', 'Reputation')}: ${ansehenTitel(ansehen(o))} (${Math.round(ansehen(o))}/100)` +
+       (ansehenVorteil(o) >= 0.005 ? ` · ${Math.round(ansehenVorteil(o) * 100)} % ${T('bessere Preise', 'better prices')}` : '') + `</div>
+     <div class="info">💧 ${T('Wasserstand', 'Water level')} ${Math.round(o.wasser)} %</div>`);
 
   // Der Scheich: Angebote annehmen und eigene Aufträge hier abliefern
   const angebote = S.angebote.filter(a => a.oase === o.id);
@@ -119,21 +138,25 @@ function htmlOase() {
       s += `<div class="info">${T('Dein Auftrag', 'Your contract')}: <b>${a.menge} ${w.icon} ${w.name}</b> · ${a.lohn} D · ${T(`noch ${a.bisTag - S.tag} Tage`, `${a.bisTag - S.tag} days left`)}
             <button data-a="erfuellen" data-v="${a.id}" ${kannLiefern ? '' : 'disabled'}>${T('Abliefern', 'Deliver')}</button></div>`;
     }
-    h += bereich('scheich', `📜 ${T(`Der Scheich von ${o.name}`, `The sheikh of ${o.name}`)} (${angebote.length + auftraege.length})`, s);
+    dazu('scheich', '📜', 'Scheich', 'Sheikh', `<h3>${T(`Der Scheich von ${o.name}`, `The sheikh of ${o.name}`)}</h3>` + s, angebote.length + auftraege.length);
   }
 
-  h += htmlReisende(o, handel);
+  const reisende = S.reisende.filter(r => r.von === o.id).length;
+  dazu('reisende', '🧕', 'Reisende', 'Travellers',
+       reisende ? `<h3>${T('Reisende suchen eine Karawane', 'Travellers looking for a caravan')}</h3>` + htmlReisende(o, handel) : '', reisende);
+
   if (augenVorOrt(o)) {
-    h += `<div class="info" style="margin:6px 0"><button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} D)</button>
-          <span class="hinweis">${T('kartieren unbekannte Wüste in der Nähe – vielleicht finden sie etwas.', 'they map unknown desert nearby – maybe they find something.')}</span></div>`;
+    dazu('kundschafter', '🔭', 'Kundschafter', 'Scouts',
+      `<div class="info">${T('Kundschafter kartieren unbekannte Wüste in der Nähe – vielleicht finden sie etwas.', 'Scouts map unknown desert nearby – maybe they find something.')}</div>
+       <button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} D)</button>`);
   }
-  h += bereich('gebaeude', T('🏛️ Deine Gebäude', '🏛️ Your buildings'), htmlGebaeude(o));
-  h += htmlDienste(o, handel);
+  dazu('gebaeude', '🏛️', 'Gebäude', 'Buildings', htmlGebaeude(o));
+  dazu('dienste', '🏗️', 'Dienste', 'Services', htmlDienste(o, handel));
 
   // Geldverleiher (nur in größeren Oasen)
   if (o.bev >= VERLEIHER_AB_BEV) {
     const rest = KREDIT_RAHMEN - S.schulden;
-    h += bereich('verleiher', T('💰 Geldverleiher', '💰 Moneylender'), `
+    dazu('verleiher', '💰', 'Geldverleiher', 'Moneylender', `
           <div class="info">${T('Deine Schulden', 'Your debt')}: <b>${Math.round(S.schulden)} D</b> · ${T('Zinsen', 'interest')} ${zahlText(zinsSatz() * 100)} % ${T('pro Tag', 'per day')}
             (≈ ${Math.round(S.schulden * zinsSatz())} D ${T('täglich', 'daily')})</div>
           <div class="info">
@@ -158,12 +181,24 @@ function htmlOase() {
               ? `<button data-a="tier" data-v="${typ}" ${S.gold < tier.preis ? 'disabled' : ''}>${tier.preis} D</button>`
               : `<small>${T('nur in Städten', 'cities only')}</small>`}</td></tr>`;
   }
-  h += bereich('tiere', T('🐾 Tiermarkt', '🐾 Animal market'), t + '</table>');
+  dazu('tiere', '🐾', 'Tiermarkt', 'Animals', t + '</table>');
+
+  // Gewählten Reiter zeigen – gibt es ihn in dieser Oase nicht, dann den Markt
+  const aktiv = abschnitte.find(a => a.id === aktiverOasenReiter) || abschnitte[0];
+  h += '<div class="oasen-reiter">' + abschnitte.map(a =>
+    `<button data-a="oasenreiter" data-v="${a.id}" class="${a === aktiv ? 'an' : ''}">${a.icon} ${a.name}` +
+    (a.zahl ? ` <span class="zahl">${a.zahl}</span>` : '') + '</button>').join('') + '</div>';
+  h += `<div class="oasen-inhalt">${aktiv.inhalt}</div>`;
   return h;
 }
 
 // Der Markt – live, wenn eigene Leute vor Ort sind, sonst aus dem Gedächtnis
-function schmal() { return window.innerWidth < 600; }
+// Ist die Seitenleiste zu schmal für eine Zeile pro Ware, kommen die Knöpfe in eine eigene Zeile
+function schmal() {
+  const seite = document.getElementById('seite');
+  const breite = seite && seite.clientWidth ? seite.clientWidth : window.innerWidth;
+  return breite < 600;
+}
 
 function htmlMarkt(o, handel) {
   const live = augenVorOrt(o);
@@ -447,6 +482,7 @@ const AKTIONEN = {
   serei:      () => karawansereiBauen(),
   reisende:   v => reisendeMitnehmen(+v),
   kundschafter: () => kundschafterAussenden(),
+  oasenreiter: v => oasenReiterWaehlen(v),
 };
 
 // Ein einziger Klick-Empfänger für alle Knöpfe der Seitenleiste ("Event Delegation")

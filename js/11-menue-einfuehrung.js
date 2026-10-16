@@ -276,7 +276,8 @@ let letzterTippSchritt = null;
 function htmlTipp() {
   const t = S.tutorial;
   if (!t || t.schritt < 0 || t.schritt >= EINFUEHRUNG.length) return '';
-  if (letzterTippSchritt !== t.schritt) { letzterTippSchritt = t.schritt; aktiverReiter = EINFUEHRUNG_REITER[t.schritt] || aktiverReiter; }
+  if (letzterTippSchritt !== t.schritt) { letzterTippSchritt = t.schritt; aktiverReiter = EINFUEHRUNG_REITER[t.schritt] || aktiverReiter;
+    if (aktiverReiter === 'oase') aktiverOasenReiter = 'markt'; }
   const schritt = EINFUEHRUNG[t.schritt];
   return `<div class="tipp">
     <div class="tipp-kopf">💡 ${T('Einführung', 'Tutorial')} · ${T('Schritt', 'Step')} ${t.schritt + 1} ${T('von', 'of')} ${EINFUEHRUNG.length}</div>

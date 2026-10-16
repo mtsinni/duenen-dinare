@@ -102,6 +102,27 @@ header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
   background: var(--henna); color: #161b36; font-size: .66rem; font-weight: 700;
 }
 .versteckt { display: none !important; }
+
+/* Markt in schmaler Seitenleiste: Knöpfe in einer eigenen Zeile unter jeder Ware */
+.markt-schmal { display: table !important; white-space: normal !important; width: 100%; }
+.markt-schmal tr:not(.knopfzeile) td { border-bottom: none; }
+.knopfzeile td { text-align: right !important; padding-bottom: 8px; }
+
+/* ---------- Reiter innerhalb der Oase ---------- */
+.oasen-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.oasen-kopf h2 { margin-bottom: 4px !important; }
+.wasser-pille { font-size: .85rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+                background: rgba(255,255,255,.06); border: 1px solid var(--naht); white-space: nowrap; }
+.oasen-reiter { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 10px; padding-bottom: 10px;
+                border-bottom: 1px solid var(--linie); }
+.oasen-reiter button { padding: 5px 10px; border-radius: 16px; font-size: .9rem; }
+.oasen-reiter .zahl { display: inline-block; min-width: 18px; padding: 1px 5px; margin-left: 2px; border-radius: 9px;
+                      background: var(--henna); color: #161b36; font-size: .72rem; font-weight: 700; text-align: center; }
+.oasen-inhalt h3 { font-size: 1rem; margin: 0 0 6px; color: var(--messing-hell); }
+@media (max-width: 600px) {
+  .oasen-reiter { gap: 4px; }
+  .oasen-reiter button { padding: 5px 8px; font-size: .82rem; }
+}
 #kartenRahmen { padding: 5px; background: #10142b; border: 1px solid var(--messing); border-radius: 6px; }
 #logKasten h2 { font-size: 1.15rem; margin-bottom: 4px; }
 canvas { width: 100%; height: auto; display: block; border-radius: 3px; touch-action: manipulation; cursor: pointer; }
@@ -240,9 +261,6 @@ button.gross { display: block; width: 100%; font-family: var(--schrift-titel); f
   .zoomKnoepfe button { width: 28px; height: 28px; font-size: 1rem; }
   .box { padding: 10px 12px; }
   .box table, #statistik table { display: block; overflow-x: auto; white-space: nowrap; }
-  .markt-schmal { display: table !important; white-space: normal !important; }
-  .markt-schmal tr:not(.knopfzeile) td { border-bottom: none; }
-  .knopfzeile td { text-align: right !important; padding-bottom: 8px; }
   td button, .station button { padding: 5px 9px; }
   #statistik, #menue { padding: 8px; }
   #menue .fenster { padding: 16px; }
