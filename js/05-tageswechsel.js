@@ -74,6 +74,7 @@ function tagesWechsel() {
   if (S.bankrott) { speichern(); zeichnePanel(); return; }
 
   raeuberTag();
+  soeldnerTag();
   hafenTag();
   edelsteinTag();
   geruechtTag();

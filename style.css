@@ -60,6 +60,12 @@ header .k-uhr  { width: 5.4em; }
 header .k-jahr { width: 12.2em; }
 header .k-gold { width: 7.6em; }
 header .k-rang { min-width: 10em; }
+/* Rang-Kästchen: Fortschritt bis zum nächsten Rang als Messing-Füllung im Hintergrund */
+header .k-rang {
+  --fortschritt: 0%;
+  background: linear-gradient(to right, rgba(200,160,74,.38) 0 var(--fortschritt), rgba(255,255,255,.04) var(--fortschritt) 100%);
+  transition: background .6s;
+}
 header .wert { font-weight: 700; color: #fff4dc; font-variant-numeric: tabular-nums; }
 header .minus { color: var(--henna); }
 header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
@@ -110,7 +116,18 @@ header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 
 #menue .untertitel { margin: 0 0 12px; font-style: italic; opacity: .75; }
 
+.produktion { margin: 0 0 8px; font-size: .92rem; }
+.prod-ware { display: inline-block; margin: 2px 2px 0 0; padding: 1px 8px; border-radius: 10px;
+             background: rgba(169,217,143,.12); border: 1px solid rgba(169,217,143,.35); white-space: nowrap; }
+tr.hergestellt > td:first-child { color: var(--gruen); }
+.prod-marke { font-size: .85em; }
 .waehrung { font-size: .8em; margin-left: 2px; }
+
+/* Söldner-Angebote im Räuberlager-Fenster */
+.truppe { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+          padding: 9px 0; border-bottom: 1px solid rgba(42,34,56,.14); }
+.truppe.gesperrt { opacity: .55; }
+.truppe > div:last-child { white-space: nowrap; }
 
 /* Schieber für eine frei gewählte Menge */
 .schieberzeile td { background: var(--tuch-hell); border-radius: 6px; padding: 8px 10px !important; }

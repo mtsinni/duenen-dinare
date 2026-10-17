@@ -53,8 +53,10 @@ function neuesRaeuberGebiet() {
   let g;
   for (let versuch = 0; versuch < 30; versuch++) {
     g = { x: zufall(150, KARTE_B - 220), y: zufall(120, KARTE_H - 120), r: zufall(80, 110), ruhtBis: 0 };
+    g.staerke = g.r < 90 ? 1 : g.r < 102 ? 2 : 3;   // kleine, mittlere oder große Bande
     if (S.oasen.every(o => entfernung(o, g) > g.r * 0.6 + 40)) break;
   }
+  g.id = S.naechsteId++;
   return g;
 }
 
@@ -190,7 +192,17 @@ function aufruesten() {
     if (r.beziehung == null) r.beziehung = 0;
     if (r.buendnis == null) r.buendnis = false;
   }
-  for (const g of S.raeuber) if (g.ruhtBis == null) g.ruhtBis = 0;
+  for (const g of S.raeuber) {
+    if (g.ruhtBis == null) g.ruhtBis = 0;
+    if (g.id == null) g.id = S.naechsteId++;
+  }
+  if (!S.soeldner) S.soeldner = [];   // angeheuerte Truppen gegen Räuberlager
+  // Rang-System: bestes Vermögen, Umsatz der letzten 30 Tage, Zähler für den Sultan
+  if (S.rekordVermoegen == null) S.rekordVermoegen = Math.max(RAENGE[S.rang || 0].ab, S.karawanen.length ? vermoegen() : S.gold);
+  if (!S.umsatzVerlauf) S.umsatzVerlauf = [];
+  if (S.rangSeitTag == null) S.rangSeitTag = S.tag;
+  if (S.schwacheTage == null) S.schwacheTage = 0;
+  if (S.schuldenTage == null) S.schuldenTage = 0;
   for (const k of S.karawanen) karawaneAufruesten(k);
 }
 

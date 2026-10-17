@@ -136,12 +136,99 @@ function pruefeAufgaben() {
     buche('Belohnungen', a.lohn);
     log(T(`🎯 Aufgabe erfüllt: „${a.titel}“! Belohnung: ${a.lohn} Dinar.`, `🎯 Quest complete: "${a.titel}"! Reward: ${a.lohn} dinars.`), 'gut');
   }
-  // Aufstieg im Rang (man fällt nie zurück – ein Titel bleibt)
-  const rang = rangVon(vermoegen());
-  if (rang > S.rang) {
+  // Aufstieg im Rang: zählt das beste je erreichte Vermögen. Einkäufe, Bauten oder
+  // Schulden nehmen dir den Fortschritt also nicht weg – nur der Sultan kann dich herabstufen.
+  S.rekordVermoegen = Math.max(S.rekordVermoegen || 0, vermoegen());
+  const rang = rangVon(S.rekordVermoegen);
+  if (rang > S.rang && S.tag >= (S.rangSperreBis || 0)) {
     S.rang = rang;
+    S.rangSeitTag = S.tag; S.schwacheTage = 0;
     log(T(`🏅 Dein Ruf eilt dir voraus: Man nennt dich jetzt „${RAENGE[rang].name}“!`, `🏅 Your reputation precedes you: they now call you "${RAENGE[rang].name}"!`), 'gut');
   }
+}
+
+// Wie weit ist es bis zum nächsten Rang? (0 … 1)
+function rangFortschritt() {
+  const naechster = RAENGE[S.rang + 1];
+  if (!naechster) return 1;
+  return Math.max(0, Math.min(1, ((S.rekordVermoegen || 0) - RAENGE[S.rang].ab) / (naechster.ab - RAENGE[S.rang].ab)));
+}
+
+// --- Die Gunst des Sultans ---
+// Wer einen Rang trägt, muss ihm auch gerecht werden: genug Handel treiben und
+// nicht ewig in der Kreide stehen. Sonst setzt der Sultan den Rang herab – nach einer Warnung.
+const SULTAN = {
+  tage: 30,             // Umsatz wird über die letzten 30 Tage gezählt
+  umsatzAnteil: 0.2,    // nötiger Umsatz = 20 % der Schwelle des Rangs (Händler: 2.400 🪙 in 30 Tagen)
+  schwachBis: 30,       // so viele Tage in Folge zu wenig Umsatz → Herabstufung
+  schuldenWarnung: 25,  // nach so vielen Tagen mit Schulden: Warnung
+  schuldenBis: 40,      // … und hier die Herabstufung
+  sperre: 30,           // nach einer Herabstufung: so lange kein neuer Aufstieg
+};
+function umsatzNoetig() { return Math.round(RAENGE[S.rang].ab * SULTAN.umsatzAnteil); }
+function umsatzZuletzt() { return Math.round((S.umsatzVerlauf || []).reduce((a, b) => a + b, 0)); }
+function umsatzWirdGeprueft() { return S.rang > 0 && S.tag - (S.rangSeitTag || 0) >= SULTAN.tage && (S.umsatzVerlauf || []).length >= SULTAN.tage; }
+
+function sultanTag() {
+  // Umsatz des Tages festhalten (nur die letzten 30 Tage)
+  S.umsatzVerlauf.push(Math.round(S.umsatzHeute || 0));
+  if (S.umsatzVerlauf.length > SULTAN.tage) S.umsatzVerlauf.shift();
+  S.umsatzHeute = 0;
+  S.schuldenTage = S.schulden > 0 ? (S.schuldenTage || 0) + 1 : 0;
+  if (S.rang === 0) { S.schwacheTage = 0; return; }
+
+  // 1. Zu wenig Handel?
+  if (umsatzWirdGeprueft() && umsatzZuletzt() < umsatzNoetig()) {
+    S.schwacheTage = (S.schwacheTage || 0) + 1;
+    if (S.schwacheTage === 1) {
+      log(T(`👑 Am Hof des Sultans wundert man sich: Für einen „${RAENGE[S.rang].name}“ treibst du erstaunlich wenig Handel (${zahlText(umsatzZuletzt())} von ${zahlText(umsatzNoetig())} 🪙 in 30 Tagen).`,
+            `👑 The Sultan's court is surprised: for a "${RAENGE[S.rang].name}" you trade remarkably little (${zahlText(umsatzZuletzt())} of ${zahlText(umsatzNoetig())} 🪙 in 30 days).`), 'schlecht');
+    } else if (S.schwacheTage === Math.round(SULTAN.schwachBis * 2 / 3)) {
+      log(T(`👑 Letzte Warnung vom Hof: Belebe deinen Handel, sonst verlierst du deinen Titel!`,
+            `👑 Final warning from the court: revive your trade or you will lose your title!`), 'schlecht');
+    } else if (S.schwacheTage >= SULTAN.schwachBis) {
+      rangHerabsetzen(T('weil du kaum noch Handel treibst', 'because you hardly trade any more'));
+      return;
+    }
+  } else {
+    S.schwacheTage = 0;
+  }
+
+  // 2. Zu lange verschuldet?
+  if (S.schuldenTage === SULTAN.schuldenWarnung) {
+    log(T(`👑 Der Sultan hört, dass du seit ${S.schuldenTage} Tagen bei den Geldverleihern in der Kreide stehst. Begleiche deine Schulden!`,
+          `👑 The Sultan hears that you have owed the moneylenders for ${S.schuldenTage} days. Settle your debts!`), 'schlecht');
+  } else if (S.schuldenTage >= SULTAN.schuldenBis) {
+    rangHerabsetzen(T('weil deine Schulden schon viel zu lange offen sind', 'because your debts have been open far too long'));
+  }
+}
+
+function rangHerabsetzen(grund) {
+  const alt = RAENGE[S.rang].name;
+  S.rang--;
+  // Der Fortschritt beginnt im niedrigeren Rang dort, wo dein Vermögen heute steht
+  const neu = RAENGE[S.rang], naechster = RAENGE[S.rang + 1];
+  S.rekordVermoegen = Math.max(neu.ab, Math.min(vermoegen(), naechster.ab - 1));
+  S.rangSperreBis = S.tag + SULTAN.sperre;
+  S.rangSeitTag = S.tag; S.schwacheTage = 0; S.schuldenTage = 0;
+  ton('schlecht');
+  log(T(`👑 Der Sultan ist verärgert: Er nimmt dir den Titel „${alt}“, ${grund}. Man nennt dich nur noch „${neu.name}“ – frühestens in ${SULTAN.sperre} Tagen kannst du wieder aufsteigen.`,
+        `👑 The Sultan is displeased: he strips you of the title "${alt}" ${grund}. You are now only a "${neu.name}" – you can rise again in ${SULTAN.sperre} days at the earliest.`), 'schlecht');
+}
+
+// Für die Ziele: wie steht es um die Gunst des Sultans?
+function htmlSultan() {
+  if (S.rang === 0) return '';
+  let h = `<div class="info" style="margin-top:8px">👑 <b>${T('Gunst des Sultans', "The Sultan's favour")}</b></div>`;
+  const u = umsatzZuletzt(), n = umsatzNoetig();
+  h += `<div class="hinweis">${u >= n ? '✅' : '⚠️'} ${T('Handel der letzten 30 Tage', 'Trade over the last 30 days')}: ${zahlText(u)} / ${zahlText(n)} 🪙` +
+       (!umsatzWirdGeprueft() ? T(' (wird ab 30 Tagen im Rang geprüft)', ' (checked after 30 days at this rank)')
+        : S.schwacheTage ? T(` – seit ${S.schwacheTage} Tagen zu wenig, nach ${SULTAN.schwachBis} wird herabgestuft`, ` – too little for ${S.schwacheTage} days, demotion after ${SULTAN.schwachBis}`) : '') + '</div>';
+  h += `<div class="hinweis">${S.schuldenTage ? '⚠️' : '✅'} ${S.schuldenTage
+        ? T(`Schulden seit ${S.schuldenTage} Tagen – nach ${SULTAN.schuldenBis} Tagen wird herabgestuft`, `In debt for ${S.schuldenTage} days – demotion after ${SULTAN.schuldenBis} days`)
+        : T('Keine Schulden', 'No debts')}</div>`;
+  if (S.tag < (S.rangSperreBis || 0)) h += `<div class="hinweis">⏳ ${T(`Der Sultan ist verstimmt – Aufstieg frühestens an Tag ${S.rangSperreBis}.`, `The Sultan is displeased – no promotion before day ${S.rangSperreBis}.`)}</div>`;
+  return h;
 }
 
 // Läuft jeden Tag: Statistik aufzeichnen, Aufgaben prüfen
@@ -152,20 +239,21 @@ function zieleTag() {
     // Sehr lange Spiele: jeden zweiten alten Punkt weglassen, damit der Speicher klein bleibt
     if (v.length > 400) S.statistik.verlauf = v.filter((e, i) => i % 2 === 0 || i > v.length - 50);
   }
+  sultanTag();
   pruefeAufgaben();
   if (statistikOffen) zeichneStatistik();
 }
 
 function htmlZiele() {
-  const wert = vermoegen();
   const naechster = RAENGE[S.rang + 1];
   let h = `<h2>🎯 ${T('Ziele', 'Goals')}</h2>
-           <div class="info">🏅 ${T('Rang', 'Rank')}: <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} ${zahlText(wert)} 🪙</div>`;
+           <div class="info">🏅 ${T('Rang', 'Rank')}: <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} ${zahlText(vermoegen())} 🪙</div>`;
   if (naechster) {
-    const anteil = Math.max(0, Math.min(100, (wert - RAENGE[S.rang].ab) / (naechster.ab - RAENGE[S.rang].ab) * 100));
-    h += `<div class="hinweis">${T(`Nächster Rang „${naechster.name}“ ab ${zahlText(naechster.ab)} 🪙`, `Next rank "${naechster.name}" from ${zahlText(naechster.ab)} 🪙`)}</div>
-          <div class="bar"><div style="width:${anteil}%;background:var(--akzent)"></div></div>`;
+    h += `<div class="hinweis">${T(`Nächster Rang „${naechster.name}“ ab ${zahlText(naechster.ab)} 🪙 – dein bester Stand: ${zahlText(S.rekordVermoegen || 0)} 🪙`,
+                                   `Next rank "${naechster.name}" from ${zahlText(naechster.ab)} 🪙 – your best so far: ${zahlText(S.rekordVermoegen || 0)} 🪙`)}</div>
+          <div class="bar"><div style="width:${rangFortschritt() * 100}%;background:var(--akzent)"></div></div>`;
   }
+  h += htmlSultan();
   const offen = AUFGABEN.filter(a => !S.erledigt.includes(a.id) && !aufgabeVerpasst(a));
   let liste = '';
   for (const a of offen.slice(0, 3)) {
@@ -182,8 +270,10 @@ function htmlZiele() {
 // --- Statistik-Fenster ---
 
 let statistikOffen = false, pauseVorStatistik = false;
+let fensterArt = 'statistik';   // dasselbe Fenster zeigt die Statistik oder ein Räuberlager
 
 function statistikUmschalten(offen) {
+  if (offen && statistikOffen) { zeichneStatistik(); return; }
   statistikOffen = offen;
   document.getElementById('statistik').classList.toggle('offen', offen);
   if (offen) { pauseVorStatistik = S.pause; S.pause = true; zeichneStatistik(); }
@@ -195,13 +285,14 @@ function zahl(n) { return zahlText(Math.round(n)); }
 
 // Die Buchungsarten sind auf Deutsch gespeichert – für die Anzeige übersetzen
 const BUCHUNGSARTEN_EN = {
-  'Aufträge': 'Contracts', 'Bauten': 'Construction', 'Belohnungen': 'Rewards', 'Beute': 'Loot', 'Boten': 'Messengers',
+  'Aufträge': 'Contracts', 'Bauten': 'Construction', 'Belohnungen': 'Rewards', 'Beute': 'Loot', 'Söldner': 'Mercenaries', 'Boten': 'Messengers',
   'Diplomatie': 'Diplomacy', 'Funde': 'Finds', 'Gebäude': 'Buildings', 'Handel': 'Trade', 'Heiler': 'Healer',
   'Kundschafter': 'Scouts', 'Reisende': 'Passengers', 'Strafen': 'Penalties', 'Unterhalt': 'Upkeep', 'Zinsen': 'Interest',
 };
 function buchungsart(a) { return T(a, BUCHUNGSARTEN_EN[a] || a); }
 
 function zeichneStatistik() {
+  if (fensterArt === 'lager') { document.getElementById('statistik').innerHTML = htmlLagerFenster(); return; }
   const ich = vermoegen();
   const rangliste = [{ name: T('Du', 'You'), du: true, wert: ich, farbe: '#b5651d' },
                      ...S.rivalen.map(r => ({ name: r.name, wert: rivalenVermoegen(r), farbe: r.farbe }))]

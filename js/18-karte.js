@@ -713,6 +713,7 @@ function zeichne() {
   }
 
   zeichneNebel();
+  for (const g of aktiveRaeuber()) zeichneSoeldnerMarke(g);   // über dem Nebel: dort kämpfen deine Leute
 
   // Spuren: hinter jeder reisenden Karawane Fußabdrücke, vor ihr eine dünne Linie zum Ziel
   for (const k of S.karawanen) {
@@ -1044,6 +1045,9 @@ canvas.addEventListener('click', e => {
     infoKarte.bis = performance.now() + 7000;
   } else {
     infoKarte.oase = null;   // Tippen ins Leere schließt das Infoschild
+    // Ein Räuberlager angetippt? Dann das Fenster mit den Söldnern öffnen
+    const lager = aktiveRaeuber().find(g => Math.hypot(g.x - x, g.y - y) < g.r);
+    if (lager) lagerFensterOeffnen(lager.id);
   }
 });
 

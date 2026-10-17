@@ -11,6 +11,14 @@ function zeichnePanel() {
   document.getElementById('btnTon').textContent = tonAn ? '🔊' : '🔇';
   document.getElementById('anzeigeTag').textContent = T('Tag ', 'Day ') + S.tag;
   document.getElementById('anzeigeRang').textContent = RAENGE[S.rang].name;
+  // Fortschrittsbalken im Rang-Kästchen: wie weit ist es noch bis zum nächsten Rang?
+  const rk = document.getElementById('rangKasten'), naechster = RAENGE[S.rang + 1];
+  const anteil = rangFortschritt();
+  rk.style.setProperty('--fortschritt', (anteil * 100).toFixed(1) + '%');
+  rk.title = naechster
+    ? T(`Noch ${zahlText(Math.max(0, Math.ceil(naechster.ab - S.rekordVermoegen)))} 🪙 Vermögen bis „${naechster.name}“ (${Math.floor(anteil * 100)} %)`,
+        `${zahlText(Math.max(0, Math.ceil(naechster.ab - S.rekordVermoegen)))} 🪙 more fortune until "${naechster.name}" (${Math.floor(anteil * 100)}%)`)
+    : T('Höchster Rang erreicht!', 'Highest rank reached!');
   const gold = document.getElementById('anzeigeGold');
   gold.textContent = zahlText(Math.floor(S.gold));
   gold.classList.toggle('minus', S.gold < 0);
@@ -306,9 +314,12 @@ function htmlMarkt(o, handel) {
   if (live) merkePreise(o);
   const p = S.wissen[o.id];
   const bote = `<button data-a="bote" ${S.gold < BOTE_PREIS ? 'disabled' : ''}>🏃 ${T('Boten schicken', 'Send a messenger')} (${BOTE_PREIS} 🪙)</button>`;
-  if (!p) return `<p class="hinweis">${T('Die Preise hier kennst du noch nicht – du warst noch nie hier.', 'You do not know the prices here yet – you have never been here.')}</p>${bote}`;
+  // Was stellt die Oase selbst her? Diese Waren sind hier meist günstig.
+  const prodZeile = `<div class="produktion">🏭 ${T('Hier hergestellt', 'Made here')}: ` +
+    o.produziert.map(id => `<span class="prod-ware">${ware(id).icon} ${ware(id).name}</span>`).join(' ') + '</div>';
+  if (!p) return prodZeile + `<p class="hinweis">${T('Die Preise hier kennst du noch nicht – du warst noch nie hier.', 'You do not know the prices here yet – you have never been here.')}</p>${bote}`;
 
-  let h = '';
+  let h = prodZeile;
   if (!live) {
     const alter = S.tag - p.tag;
     h += `<div class="hinweis">${T(`Preise von Tag ${p.tag} (${alter === 0 ? 'heute' : 'vor ' + alter + ' Tagen'}) – können sich geändert haben.`,
@@ -319,7 +330,8 @@ function htmlMarkt(o, handel) {
   for (const w of WAREN) {
     if (!wareZeigen(w, p.lager[w.id], o)) continue;   // seltene Waren nur, wenn es sie gibt
     const fest = festFaktor(o, w) > 1 ? ' 🎉' : '';
-    h += `<tr><td>${w.icon} ${w.name}${w.verderb ? ' ⏳' : ''}${fest}</td><td>${p.lager[w.id]}</td>
+    const hier = o.produziert.includes(w.id);
+    h += `<tr class="${hier ? 'hergestellt' : ''}"><td>${w.icon} ${w.name}${hier ? ' <span class="prod-marke" title="' + T('wird hier hergestellt', 'made here') + '">🏭</span>' : ''}${w.verderb ? ' ⏳' : ''}${fest}</td><td>${p.lager[w.id]}</td>
           <td>${p.kauf[w.id]}${DINAR}</td><td>${p.verk[w.id]}${DINAR}</td>`;
     if (handel) {
       const dabei = Math.floor(handel.k.ladung[w.id]);
@@ -337,7 +349,7 @@ function htmlMarkt(o, handel) {
     h += '</tr>';
   }
   h += '</table>';
-  if (WAREN.some(w => w.verderb)) h += `<div class="hinweis">${T('⏳ = verdirbt mit der Zeit (3 % pro Tag)', '⏳ = spoils over time (3% per day)')}</div>`;
+  h += `<div class="hinweis">${T('🏭 = wird hier hergestellt, meist günstig', '🏭 = made here, usually cheap')} · ${T('⏳ = verdirbt mit der Zeit (3 % pro Tag)', '⏳ = spoils over time (3% per day)')}</div>`;
   if (!handel) h += `<p class="hinweis">${T('Zum Handeln muss die ausgewählte Karawane hier stehen.', 'To trade, the selected caravan must be here.')}</p>`;
   return h;
 }
@@ -549,6 +561,7 @@ function htmlAuftraege() {
           <span class="${rest <= 3 ? 'warnung' : ''}">${T(`noch ${rest} Tage`, `${rest} days left`)}</span></div>`;
   }
   if (S.angebote.length) h += `<div class="hinweis">${T(`${S.angebote.length} Angebot(e) warten auf Händler.`, `${S.angebote.length} offer(s) waiting for a merchant.`)}</div>`;
+  h += `<h3 style="margin-top:12px">⚔️ ${T('Söldner', 'Mercenaries')}</h3>` + htmlSoeldnerAuftraege();
   return h;
 }
 
@@ -583,6 +596,7 @@ const AKTIONEN = {
   heilen:     () => heilen(),
   nacht:      () => nachtmarschUmschalten(),
   angriff:    () => lagerAngreifen(),
+  soeldner:   v => soeldnerBeauftragen(v),
   haus:       (v, n) => hausAktion(v, +n),
   ausbau:     () => gebaeudeAusbauen(),
   werkstatt:  v => werkstattBauen(v),

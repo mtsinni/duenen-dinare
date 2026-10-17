@@ -36,15 +36,23 @@ und dem Ordner `js`) ins Repository laden.
 | `js/17-seitenleiste.js` | Die Seitenleiste als HTML, die Reiter (🌴 🐪 📜 🎯 🤝 📰) und die Oasen-Reiter (Markt, Gebäude …) – und welcher Knopf welche Funktion aufruft |
 | `js/18-karte.js` | Die gezeichnete Karte: Dünen, Gebirge, Meer, Oasen mit Palmen und Häusern, laufende Tiere, Sandstürme, Nacht mit Laternen |
 | `js/19-abenteuer.js` | Karawansereien, unerforschte Gebiete mit Fundorten, Pilger und Reisende |
-| `js/20-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
+| `js/20-soeldner.js` | Söldner gegen Räuberlager anheuern (ab Rang „Händler“, Lager auf der Karte antippen) |
+| `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien
-benutzen, was frühere anlegen – und `20-steuerung.js` startet das Spiel, darum kommt sie zuletzt.
+benutzen, was frühere anlegen – und `21-steuerung.js` startet das Spiel, darum kommt sie zuletzt.
 
 ## Spieltempo
 
 Wie lange ein Spieltag dauert, steht ganz oben in `js/01-grunddaten.js`:
 `const SEK_PRO_TAG = 60;` – also 60 echte Sekunden (1 Minute) pro Tag bei Tempo 1×. Größere Zahl = langsameres Spiel.
+
+## Ränge und die Gunst des Sultans
+
+Der Rang richtet sich nach dem **besten Vermögen**, das du je erreicht hast – Einkäufe, Bauten oder Schulden
+nehmen dir den Fortschritt nicht weg. Herabstufen kann dich nur der Sultan: wenn du zu lange zu wenig Handel
+treibst oder zu lange Schulden hast (vorher gibt es Warnungen). Die Grenzen stehen in `js/10-ziele-statistik.js`
+im Abschnitt `const SULTAN = { … }`.
 
 ## Sprache (Deutsch / English)
 

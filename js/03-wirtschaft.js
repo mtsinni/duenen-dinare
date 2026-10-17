@@ -48,4 +48,5 @@ function verkaufPreis(o, w) { return Math.max(1, Math.floor(grundVerkaufPreis(o,
 function buche(art, betrag) {
   const topf = betrag >= 0 ? S.statistik.einnahmen : S.statistik.ausgaben;
   topf[art] = (topf[art] || 0) + Math.abs(betrag);
+  if (art === 'Handel') S.umsatzHeute = (S.umsatzHeute || 0) + Math.abs(betrag);   // für die Gunst des Sultans
 }

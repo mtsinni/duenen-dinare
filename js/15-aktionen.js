@@ -158,6 +158,10 @@ function losziehen() {
   reiseStarten(k, ziel);
   log(T(`${hauptTier(k).icon} ${k.name} bricht nach ${ziel.name} auf.`, `${hauptTier(k).icon} ${k.name} sets out for ${ziel.name}.`));
   S.ziel = null;
+  // Wartet keine andere Karawane mehr auf Befehle (z. B. weil es nur diese eine gibt),
+  // läuft die Zeit nach dem Aufbruch von selbst weiter – im zuletzt gewählten Tempo.
+  const wartendeAndere = S.karawanen.some(x => x !== k && x.ort != null && !x.route.aktiv && tierAnzahl(x) > 0);
+  if (!wartendeAndere) S.pause = false;
   zeichnePanel();
 }
 
