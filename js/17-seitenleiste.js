@@ -36,7 +36,9 @@ function zeichnePanel() {
   });
 
   if (!schieber.zieht) document.getElementById('panelOase').innerHTML = symbole(htmlOase());
-  document.getElementById('panelKarawanen').innerHTML = symbole(htmlKarawanen());
+  // Ist gerade eine Auswahlliste geöffnet, die Karawanen nicht neu zeichnen (sonst klappt sie zu)
+  const offeneListe = typeof document.activeElement !== 'undefined' && document.activeElement && document.activeElement.tagName === 'SELECT';
+  if (!offeneListe) document.getElementById('panelKarawanen').innerHTML = symbole(htmlKarawanen());
   document.getElementById('panelAuftraege').innerHTML = symbole(htmlAuftraege());
   document.getElementById('panelZiele').innerHTML = symbole(htmlZiele());
   document.getElementById('panelHaeuser').innerHTML = symbole(htmlHaeuser());
@@ -525,19 +527,53 @@ function htmlRoute(k) {
           From 2 stops on, the caravan runs the round by itself – including water for every leg.`)}</p>`;
   }
   r.stationen.forEach((st, i) => {
+    stationAufruesten(st);
     const o = oase(st.oase);
     const aktuell = r.aktiv && i === r.index;
-    const w = st.kaufWare ? ware(st.kaufWare) : null;
     const hatLager = !!S.gebaeude[st.oase];
     const knopf = (feld, text, an) =>
       `<button data-a="rs" data-v="${i}" data-n="${feld}" class="${an ? 'an' : ''}">${text}</button>`;
+    // Auswahlliste (Optionen ohne Emojis – in <option> können keine Symbole stehen)
+    const wahl = (feld, wert, optionen) => `<select data-w="rs" data-v="${i}" data-n="${feld}">` +
+      optionen.map(([v, t]) => `<option value="${v}"${String(v) === String(wert) ? ' selected' : ''}>${t}</option>`).join('') + '</select>';
+    const warenListe = WAREN.filter(w => w.id !== 'wasser').map(w => [w.id, w.name]);
+    const stueck = n => `${n} ${T('Stück', 'units')}`;
+    const kaufMengen = ROUTE_KAUF_MENGEN.map(m => [m, m === 'voll' ? T('so viel wie passt', 'as much as fits') : stueck(m)]);
+    const verkaufMengen = ROUTE_VERKAUF_MENGEN.map(m => [m, m === 'alle' ? T('alles', 'all') : m === 'haelfte' ? T('die Hälfte', 'half') : stueck(m)]);
+
+    let v = `<div class="st-zeile"><span class="st-titel">${T('Verkaufen', 'Sell')}</span>` +
+      wahl('modus', st.verkaufModus, [['alles', T('alles (außer Einkäufe hier)', 'everything (except purchases here)')],
+                                      ['auswahl', T('nur bestimmte Waren', 'only selected goods')], ['nichts', T('nichts', 'nothing')]]) + '</div>';
+    if (st.verkaufModus === 'auswahl') {
+      st.verkauf.forEach((e, j) => {
+        v += `<div class="st-zeile st-unter">${wahl('verkaufWare:' + j, e.ware, warenListe)}${wahl('verkaufMenge:' + j, e.menge, verkaufMengen)}${knopf('verkaufWeg:' + j, '✕', false)}</div>`;
+      });
+      if (st.verkauf.length < 6) v += `<div class="st-zeile st-unter">${knopf('verkaufPlus', T('＋ Ware', '＋ Goods'), false)}</div>`;
+    }
+    if (st.verkaufModus !== 'nichts') {
+      v += `<div class="st-zeile st-unter"><span class="hinweis">${T('Preis:', 'Price:')}</span>` +
+        wahl('mindest', st.mindest, [['egal', T('zu jedem Preis', 'at any price')], ['verlust', T('nur ohne Verlust', 'only without a loss')],
+                                     ['g10', T('mind. 10 % Gewinn', 'at least 10% profit')], ['g25', T('mind. 25 % Gewinn', 'at least 25% profit')],
+                                     ['g50', T('mind. 50 % Gewinn', 'at least 50% profit')]]) + '</div>';
+    }
+
+    let k2 = `<div class="st-zeile"><span class="st-titel">${T('Einkaufen', 'Buy')}</span>${st.kauf.length ? '' : `<span class="hinweis">${T('nichts', 'nothing')}</span>`}</div>`;
+    st.kauf.forEach((e, j) => {
+      k2 += `<div class="st-zeile st-unter">${wahl('kaufWare:' + j, e.ware, warenListe)}${wahl('kaufMenge:' + j, e.menge, kaufMengen)}${knopf('kaufWeg:' + j, '✕', false)}</div>`;
+    });
+    if (st.kauf.length < 4) k2 += `<div class="st-zeile st-unter">${knopf('kaufPlus', T('＋ Ware', '＋ Goods'), false)}</div>`;
+    if (st.kauf.length) {
+      k2 += `<div class="st-zeile st-unter"><span class="hinweis">${T('Preis:', 'Price:')}</span>` +
+        wahl('hoechst', st.hoechst, [['p0', T('höchstens Grundpreis', 'at most base price')], ['p15', T('bis Grundpreis +15 %', 'up to base price +15%')],
+                                     ['p30', T('bis Grundpreis +30 %', 'up to base price +30%')], ['p60', T('bis Grundpreis +60 %', 'up to base price +60%')],
+                                     ['egal', T('zu jedem Preis', 'at any price')]]) + '</div>';
+    }
+
     h += `<div class="station ${aktuell ? 'aktuell' : ''}">
-            <b>${i + 1}. ${o.name}</b>${aktuell ? T(' ◀ nächstes Ziel', ' ◀ next stop') : ''}${!o.aktiv ? ` <span class="warnung">${T('versiegt', 'dried up')}</span>` : ''}
-            ${knopf('weg', '✕', false)}<br>
-            ${knopf('verkaufen', T('Ladung verkaufen', 'Sell cargo'), st.verkaufen)}
-            ${knopf('ware', T('Kaufe: ', 'Buy: ') + (w ? w.icon + ' ' + w.name : T('nichts', 'nothing')), !!w)}
-            ${w ? knopf('menge', st.kaufMenge === 'voll' ? T('so viel wie passt', 'as much as fits') : st.kaufMenge + T(' Stück', ' units'), true) : ''}
-            ${hatLager ? knopf('lagerAbgeben', T('⬇ ins Lager', '⬇ to storage'), st.lagerAbgeben) + knopf('lagerAbholen', T('⬆ aus Lager', '⬆ from storage'), st.lagerAbholen) : ''}
+            <div class="st-kopf"><b>${i + 1}. ${o.name}</b>${aktuell ? T(' ◀ nächstes Ziel', ' ◀ next stop') : ''}${!o.aktiv ? ` <span class="warnung">${T('versiegt', 'dried up')}</span>` : ''}
+            ${knopf('weg', '✕', false)}</div>
+            ${v}${k2}
+            ${hatLager ? `<div class="st-zeile"><span class="st-titel">${T('Lagerhaus', 'Warehouse')}</span>${knopf('lagerAbgeben', T('⬇ einlagern', '⬇ store'), st.lagerAbgeben)}${knopf('lagerAbholen', T('⬆ abholen', '⬆ collect'), st.lagerAbholen)}</div>` : ''}
           </div>`;
   });
   const o = oase(S.gewOase);
@@ -545,8 +581,8 @@ function htmlRoute(k) {
   if (r.stationen.length >= 2) {
     h += `<button data-a="route" class="${r.aktiv ? 'an' : ''}">${r.aktiv ? T('⏸ Route anhalten', '⏸ Pause route') : T('▶ Route starten', '▶ Start route')}</button>`;
   }
-  h += `<div class="hinweis">${T('Tippe auf die Knöpfe einer Station, um sie umzuschalten. Gekauft wird nur, wenn der Preis höchstens 30 % über dem Grundpreis liegt – verkauft nur ohne Verlust.',
-                                 'Tap a stop\'s buttons to switch them. Goods are only bought at no more than 30% above the base price – and only sold without a loss.')}</div>`;
+  h += `<div class="hinweis">${T('Pro Station kannst du bis zu 4 Waren einkaufen und festlegen, was und wie viel verkauft wird. Mit den Preisgrenzen kauft die Karawane nie zu teuer und verkauft nie zu billig. Wasser für die nächste Etappe kauft sie immer selbst.',
+                                 'At each stop you can buy up to 4 goods and set what and how much is sold. With the price limits the caravan never buys too dear or sells too cheap. It always buys water for the next leg by itself.')}</div>`;
   return h;
 }
 
@@ -590,6 +626,7 @@ const AKTIONEN = {
   betrieb:    v => betriebBauen(v),
   lager:      (v, n) => lagerAktion(n, v),
   rs:         (v, n) => routeStationAendern(+v, n),
+  rsw:        (v, n, w) => routeStationWahl(+v, n, w),
   rsplus:     () => routeStationHinzu(),
   route:      () => routeUmschalten(),
   brunnen:    () => brunnenBauen(),
@@ -615,6 +652,10 @@ document.getElementById('seite').addEventListener('click', e => {
 });
 
 // Auf-/Zuklappen merken ("toggle" sprudelt nicht nach oben, darum "capture" = true)
+document.getElementById('seite').addEventListener('change', e => {
+  const s = e.target.closest && e.target.closest('select[data-w="rs"]');
+  if (s) { s.blur(); routeStationWahl(+s.dataset.v, s.dataset.n, s.value); }
+});
 document.getElementById('seite').addEventListener('input', e => {
   if (e.target.id !== 'schieberRegler') return;
   schieber.menge = +e.target.value;

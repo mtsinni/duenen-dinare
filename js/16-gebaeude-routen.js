@@ -171,7 +171,31 @@ function verderben() {
 
 // --- Handelsrouten: Karawanen fahren eine feste Runde selbstständig ab ---
 
-const ROUTE_MENGEN = [10, 20, 30, 50, 'voll'];
+// Auswahlmöglichkeiten für die Stationen einer Handelsroute
+const ROUTE_KAUF_MENGEN = [5, 10, 20, 30, 50, 'voll'];
+const ROUTE_VERKAUF_MENGEN = ['alle', 'haelfte', 5, 10, 20, 30, 50];
+const ROUTE_HOECHST = { p0: 1, p15: 1.15, p30: 1.3, p60: 1.6, egal: Infinity };   // Kaufen höchstens zu Grundpreis × …
+const ROUTE_MINDEST = { egal: 0, verlust: 1, g10: 1.1, g25: 1.25, g50: 1.5 };      // Verkaufen mindestens zu Einkaufspreis × …
+
+// Eine leere Station – und alte Stationen (nur eine Kaufware) in die neue Form bringen
+function neueStation(oasenId) {
+  return { oase: oasenId, kauf: [], verkaufModus: 'alles', verkauf: [], mindest: 'verlust', hoechst: 'p30',
+           lagerAbgeben: false, lagerAbholen: false };
+}
+function stationAufruesten(st) {
+  if (!st.kauf) st.kauf = st.kaufWare ? [{ ware: st.kaufWare, menge: st.kaufMenge || 20 }] : [];
+  if (!st.verkaufModus) st.verkaufModus = st.verkaufen === false ? 'nichts' : 'alles';
+  if (!st.verkauf) st.verkauf = [];
+  if (!st.mindest) st.mindest = 'verlust';
+  if (!st.hoechst) st.hoechst = 'p30';
+  delete st.kaufWare; delete st.kaufMenge; delete st.verkaufen;
+}
+function verkaufMenge(k, wid, regel) {
+  const da = Math.floor(k.ladung[wid]);
+  if (regel === 'alle') return da;
+  if (regel === 'haelfte') return Math.floor(da / 2);
+  return Math.min(da, +regel);
+}
 
 // Wie viel Wasser braucht k von a nach b? Mit 80 % Reserve – ein Sandsturm kann die Reise stark verlängern
 function wasserFuer(k, a, b) {
@@ -213,26 +237,37 @@ function routeFortsetzen(k) {
 function stationAbarbeiten(k, st) {
   const o = oase(k.ort);
   if (!o.aktiv) return;
+  stationAufruesten(st);
   const g = S.gebaeude[o.id];
   const teile = [];
+  const hierGekauft = new Set(st.kauf.map(e => e.ware));
 
   // 1. Aufträge, die hierhin gehen, automatisch abliefern
   for (const a of [...S.auftraege]) {
     if (a.oase === o.id && k.ladung[a.ware] >= a.menge) auftragAbliefern(k, o, a);
   }
 
-  // 2. Ladung abgeben: ins eigene Lagerhaus oder verkaufen
-  for (const w of WAREN) {
-    if (w.id === 'wasser' || w.id === st.kaufWare || k.ladung[w.id] < 1) continue;
-    if (st.lagerAbgeben && g) {
+  // 2. Ladung abgeben: ins eigene Lagerhaus …
+  if (st.lagerAbgeben && g) {
+    for (const w of WAREN) {
+      if (w.id === 'wasser' || hierGekauft.has(w.id) || k.ladung[w.id] < 1) continue;
       const n = einlagern(k, o, w.id, Infinity);
       if (n) teile.push(T(`${n} ${w.name} eingelagert`, `${n} ${w.name.toLowerCase()} stored`));
-    } else if (st.verkaufen) {
-      // Nie mit Verlust verkaufen – lieber zur nächsten Station mitnehmen
-      const r = handelVerkaufen(k, o, w.id, Infinity, Math.ceil(k.einstand[w.id] || 0));
-      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} verkauft (+${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} sold (+${r.betrag} 🪙)`));
-      if (k.ladung[w.id] >= 1) teile.push(T(`${Math.floor(k.ladung[w.id])} ${w.name} behalten (Preis zu niedrig)`, `${Math.floor(k.ladung[w.id])} ${w.name.toLowerCase()} kept (price too low)`));
     }
+  }
+  // … oder verkaufen: alles, nichts oder nur die gewählten Waren in der gewählten Menge
+  const regeln = st.verkaufModus === 'alles'
+    ? WAREN.filter(w => w.id !== 'wasser' && !hierGekauft.has(w.id)).map(w => ({ ware: w.id, menge: 'alle' }))
+    : st.verkaufModus === 'auswahl' ? st.verkauf : [];
+  for (const regel of regeln) {
+    const w = ware(regel.ware);
+    if (!w || k.ladung[w.id] < 1) continue;
+    const menge = verkaufMenge(k, w.id, regel.menge);
+    if (menge < 1) continue;
+    const mindest = Math.ceil((k.einstand[w.id] || 0) * ROUTE_MINDEST[st.mindest]);
+    const r = handelVerkaufen(k, o, w.id, menge, mindest);
+    if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} verkauft (+${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} sold (+${r.betrag} 🪙)`));
+    if (r.anzahl < menge) teile.push(T(`${menge - r.anzahl} ${w.name} behalten (Preis zu niedrig)`, `${menge - r.anzahl} ${w.name.toLowerCase()} kept (price too low)`));
   }
 
   // Platz für das Wasser der nächsten Etappe freihalten
@@ -249,16 +284,16 @@ function stationAbarbeiten(k, st) {
     }
   }
 
-  // 4. Einkaufen – aber nur, wenn der Preis vernünftig ist (höchstens 30 % über Grundpreis)
-  if (st.kaufWare) {
-    const w = ware(st.kaufWare);
-    const menge = Math.max(0, Math.min(freierPlatz(), st.kaufMenge === 'voll' ? Infinity : st.kaufMenge));
-    if (kaufPreis(o, w) > w.basis * 1.3) {
-      teile.push(T(`${w.name} zu teuer`, `${w.name} too expensive`));
-    } else {
-      const r = handelKaufen(k, o, w.id, menge);
-      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} gekauft (−${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} bought (−${r.betrag} 🪙)`));
-    }
+  // 4. Einkaufen – Ware für Ware, jeweils bis zum eingestellten Höchstpreis
+  for (const e of st.kauf) {
+    const w = ware(e.ware);
+    if (!w) continue;
+    const hoechst = Math.floor(w.basis * ROUTE_HOECHST[st.hoechst]);
+    const menge = Math.max(0, Math.min(freierPlatz(), e.menge === 'voll' ? Infinity : e.menge));
+    if (menge < 1) { teile.push(T(`kein Platz mehr für ${w.name}`, `no room left for ${w.name.toLowerCase()}`)); continue; }
+    if (kaufPreis(o, w) > hoechst) { teile.push(T(`${w.name} zu teuer`, `${w.name} too expensive`)); continue; }
+    const r = handelKaufen(k, o, w.id, menge, hoechst);
+    if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} gekauft (−${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} bought (−${r.betrag} 🪙)`));
   }
 
   if (teile.length) log(T(`🔁 ${k.name} in ${o.name}: `, `🔁 ${k.name} in ${o.name}: `) + teile.join(', ') + '.');
@@ -269,8 +304,7 @@ function routeStationHinzu() {
   if (!k || !o || !o.aktiv || k.route.stationen.length >= 6) return;
   const letzte = k.route.stationen[k.route.stationen.length - 1];
   if (letzte && letzte.oase === o.id) return;
-  k.route.stationen.push({ oase: o.id, kaufWare: null, kaufMenge: 20,
-                           verkaufen: true, lagerAbgeben: false, lagerAbholen: false });
+  k.route.stationen.push(neueStation(o.id));
   zeichnePanel();
 }
 
@@ -283,14 +317,36 @@ function routeStationAendern(i, feld) {
     k.route.stationen.splice(i, 1);
     if (k.route.stationen.length < 2) k.route.aktiv = false;
     k.route.index = 0;
-  } else if (feld === 'ware') {
-    const liste = [null, ...WAREN.filter(w => w.id !== 'wasser').map(w => w.id)];
-    st.kaufWare = liste[(liste.indexOf(st.kaufWare) + 1) % liste.length];
-  } else if (feld === 'menge') {
-    st.kaufMenge = ROUTE_MENGEN[(ROUTE_MENGEN.indexOf(st.kaufMenge) + 1) % ROUTE_MENGEN.length];
+  } else if (feld === 'kaufPlus' && st.kauf.length < 4) {
+    const frei = WAREN.find(w => w.id !== 'wasser' && !st.kauf.some(e => e.ware === w.id));
+    st.kauf.push({ ware: frei.id, menge: 20 });
+  } else if (feld === 'verkaufPlus' && st.verkauf.length < 6) {
+    const frei = WAREN.find(w => w.id !== 'wasser' && !st.verkauf.some(e => e.ware === w.id));
+    st.verkauf.push({ ware: frei.id, menge: 'alle' });
+  } else if (feld.startsWith('kaufWeg:')) {
+    st.kauf.splice(+feld.split(':')[1], 1);
+  } else if (feld.startsWith('verkaufWeg:')) {
+    st.verkauf.splice(+feld.split(':')[1], 1);
   } else {
     st[feld] = !st[feld];   // verkaufen / lagerAbgeben / lagerAbholen an- oder ausschalten
   }
+  zeichnePanel();
+}
+
+// Auswahllisten einer Station (Ware, Menge, Modus, Preisgrenzen)
+function routeStationWahl(i, feld, wert) {
+  const k = karawane(S.gewKarawane);
+  const st = k && k.route.stationen[i];
+  if (!st) return;
+  stationAufruesten(st);
+  const zahlOder = v => (isNaN(+v) ? v : +v);
+  const [art, nr] = feld.split(':');
+  if (art === 'kaufWare') st.kauf[+nr].ware = wert;
+  else if (art === 'kaufMenge') st.kauf[+nr].menge = zahlOder(wert);
+  else if (art === 'verkaufWare') st.verkauf[+nr].ware = wert;
+  else if (art === 'verkaufMenge') st.verkauf[+nr].menge = zahlOder(wert);
+  else if (art === 'modus') { st.verkaufModus = wert; if (wert === 'auswahl' && !st.verkauf.length) routeStationAendern(i, 'verkaufPlus'); }
+  else if (art === 'mindest' || art === 'hoechst') st[art] = wert;
   zeichnePanel();
 }
 

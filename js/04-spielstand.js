@@ -42,6 +42,7 @@ function karawaneAufruesten(k) {
   if (k.verirrt == null) k.verirrt = 0; // Tage, die sie noch einer Fata Morgana folgt
   if (k.nachtmarsch == null) k.nachtmarsch = false;
   if (!k.passagiere) k.passagiere = [];
+  for (const st of k.route.stationen) stationAufruesten(st);
 }
 
 function neuerFuehrer() {

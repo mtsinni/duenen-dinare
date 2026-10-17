@@ -9,13 +9,14 @@ function kannHandeln() {
 
 // --- Grundfunktionen: funktionieren für JEDE Karawane (auch automatische Routen) ---
 
-function handelKaufen(k, o, wid, menge) {
+// hoechstPreis: darüber wird nicht gekauft (wichtig für automatische Routen)
+function handelKaufen(k, o, wid, menge, hoechstPreis = Infinity) {
   const w = ware(wid);
   let anzahl = 0, kosten = 0;
   for (let i = 0; i < menge; i++) {
     if (o.lager[wid] < 1 || ladungGewicht(k) + 1 > kapazitaet(k)) break;
     const preis = kaufPreis(o, w);         // Preis jedes Mal neu – er steigt beim Kaufen
-    if (S.gold < preis) break;
+    if (S.gold < preis || preis > hoechstPreis) break;
     // Durchschnittlicher Einkaufspreis ("Einstand") – damit wir später den Gewinn kennen
     const vorher = k.ladung[wid];
     k.einstand[wid] = ((k.einstand[wid] || 0) * vorher + preis) / (vorher + 1);

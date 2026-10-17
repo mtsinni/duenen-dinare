@@ -81,7 +81,7 @@ function hausAktion(art, index) {
     const waren = new Set();
     for (const k of S.karawanen) {
       for (const w of WAREN) if (w.id !== 'wasser' && k.ladung[w.id] >= 1) waren.add(w.id);
-      for (const st of k.route.stationen) if (st.kaufWare) waren.add(st.kaufWare);
+      for (const st of k.route.stationen) for (const e of st.kauf || []) waren.add(e.ware);
     }
     if (!waren.size) { log(T('Für eine Preisabsprache musst du erst Waren transportieren oder eine Route mit Einkäufen haben.', 'For a price agreement you first need to carry goods or have a route with purchases.')); zeichnePanel(); return; }
     S.gold -= kosten; buche('Diplomatie', -kosten);

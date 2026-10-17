@@ -238,6 +238,13 @@ details[open] > summary::before { transform: rotate(90deg); }
 .station { border: 1px solid var(--linie); border-radius: 5px; padding: 6px 8px; margin: 5px 0; font-size: .9rem; }
 .station.aktuell { border-color: var(--messing); background: rgba(200,160,74,.08); }
 .station button { margin: 2px 0; }
+.st-kopf { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 4px; }
+.st-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 3px 0; }
+.st-unter { padding-left: 12px; }
+.st-titel { font-weight: 700; color: var(--messing-hell); min-width: 5.5em; }
+.station select { background: var(--tuch-hell); color: var(--sand); border: 1px solid var(--naht); border-radius: 4px;
+                  padding: 4px 6px; font: inherit; font-size: .88rem; max-width: 100%; }
+.station select:focus { outline: 2px solid var(--messing); outline-offset: 1px; }
 
 .punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
