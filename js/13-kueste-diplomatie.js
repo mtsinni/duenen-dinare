@@ -149,14 +149,14 @@ function htmlHaeuser() {
   let h = `<h2>🤝 ${T('Handelshäuser', 'Trading houses')}</h2>`;
   S.rivalen.forEach((r, i) => {
     const kannSabotage = S.tag >= (r.sabotageBis || 0);
-    let s = `<div class="info">${T('Vermögen', 'Fortune')} ≈ ${zahl(rivalenVermoegen(r))} D · ${r.karawanen.length} ${T('Karawane(n)', 'caravan(s)')}</div>
+    let s = `<div class="info">${T('Vermögen', 'Fortune')} ≈ ${zahl(rivalenVermoegen(r))} 🪙 · ${r.karawanen.length} ${T('Karawane(n)', 'caravan(s)')}</div>
              <div class="info">${T('Beziehung', 'Relations')}: <b>${beziehungTitel(r)}</b> (${Math.round(r.beziehung)})</div>`;
     if (r.absprache) s += `<div class="hinweis">📉 ${T(`Preisabsprache bis Tag ${r.absprache.bis}`, `Price agreement until day ${r.absprache.bis}`)}: ${r.absprache.waren.map(id => ware(id).name).join(', ')}</div>`;
     s += `<div>
-      <button data-a="haus" data-v="geschenk" data-n="${i}" ${S.gold < DIPLO.geschenk ? 'disabled' : ''}>🎁 ${T('Geschenk', 'Gift')} (${DIPLO.geschenk} D)</button>
-      ${r.buendnis ? '' : `<button data-a="haus" data-v="buendnis" data-n="${i}" ${r.beziehung < 50 || S.gold < DIPLO.buendnis ? 'disabled' : ''}>🤝 ${T('Bündnis', 'Alliance')} (${DIPLO.buendnis} D)</button>`}
-      <button data-a="haus" data-v="absprache" data-n="${i}" ${r.beziehung < 25 || r.absprache || S.gold < DIPLO.absprache ? 'disabled' : ''}>📉 ${T('Preisabsprache', 'Price agreement')} (${DIPLO.absprache} D)</button>
-      <button data-a="haus" data-v="sabotage" data-n="${i}" ${!kannSabotage || S.gold < DIPLO.sabotage ? 'disabled' : ''}>🗡️ Sabotage (${DIPLO.sabotage} D)</button>
+      <button data-a="haus" data-v="geschenk" data-n="${i}" ${S.gold < DIPLO.geschenk ? 'disabled' : ''}>🎁 ${T('Geschenk', 'Gift')} (${DIPLO.geschenk} 🪙)</button>
+      ${r.buendnis ? '' : `<button data-a="haus" data-v="buendnis" data-n="${i}" ${r.beziehung < 50 || S.gold < DIPLO.buendnis ? 'disabled' : ''}>🤝 ${T('Bündnis', 'Alliance')} (${DIPLO.buendnis} 🪙)</button>`}
+      <button data-a="haus" data-v="absprache" data-n="${i}" ${r.beziehung < 25 || r.absprache || S.gold < DIPLO.absprache ? 'disabled' : ''}>📉 ${T('Preisabsprache', 'Price agreement')} (${DIPLO.absprache} 🪙)</button>
+      <button data-a="haus" data-v="sabotage" data-n="${i}" ${!kannSabotage || S.gold < DIPLO.sabotage ? 'disabled' : ''}>🗡️ Sabotage (${DIPLO.sabotage} 🪙)</button>
     </div>`;
     h += bereich('haus' + i, `<span class="punkt" style="background:${r.farbe}"></span>${r.name} · ${beziehungTitel(r)}`, s);
   });

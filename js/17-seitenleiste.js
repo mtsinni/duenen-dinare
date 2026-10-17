@@ -12,10 +12,10 @@ function zeichnePanel() {
   document.getElementById('anzeigeTag').textContent = T('Tag ', 'Day ') + S.tag;
   document.getElementById('anzeigeRang').textContent = RAENGE[S.rang].name;
   const gold = document.getElementById('anzeigeGold');
-  gold.textContent = zahlText(Math.floor(S.gold)) + T(' Dinar', ' dinars');
+  gold.textContent = zahlText(Math.floor(S.gold));
   gold.classList.toggle('minus', S.gold < 0);
   document.getElementById('anzeigeSchulden').textContent =
-    S.schulden > 0 ? `📉 ${zahlText(Math.round(S.schulden))} ${T('Schulden', 'debt')}` : '';
+    S.schulden > 0 ? `📉 ${zahlText(Math.round(S.schulden))} 🪙 ${T('Schulden', 'debt')}` : '';
 
   // Pause-Knopf: zeigt „Weiter“, solange angehalten ist. Der Tempo-Knopf, mit dem es
   // danach weitergeht, bleibt während der Pause schwach markiert.
@@ -27,7 +27,7 @@ function zeichnePanel() {
     b.classList.toggle('gemerkt', S.pause && +b.dataset.tempo === S.tempo);
   });
 
-  document.getElementById('panelOase').innerHTML = htmlOase();
+  if (!schieber.zieht) document.getElementById('panelOase').innerHTML = htmlOase();
   document.getElementById('panelKarawanen').innerHTML = htmlKarawanen();
   document.getElementById('panelAuftraege').innerHTML = htmlAuftraege();
   document.getElementById('panelZiele').innerHTML = htmlZiele();
@@ -134,14 +134,14 @@ function htmlOase() {
     let s = '';
     for (const a of angebote) {
       const w = ware(a.ware);
-      s += `<div class="info">${T('Sucht', 'Wants')} <b>${a.menge} ${w.icon} ${w.name}</b> · ${T('Lohn', 'pay')} ${a.lohn} D · ${T(`Frist ${a.frist} Tage`, `${a.frist} days`)}
+      s += `<div class="info">${T('Sucht', 'Wants')} <b>${a.menge} ${w.icon} ${w.name}</b> · ${T('Lohn', 'pay')} ${a.lohn} 🪙 · ${T(`Frist ${a.frist} Tage`, `${a.frist} days`)}
             <button data-a="annehmen" data-v="${a.id}" ${S.auftraege.length >= 3 ? 'disabled' : ''}>${T('Annehmen', 'Accept')}</button></div>`;
     }
     if (angebote.length && S.auftraege.length >= 3) s += `<p class="hinweis">${T('Du hast schon 3 offene Aufträge.', 'You already have 3 open contracts.')}</p>`;
     for (const a of auftraege) {
       const w = ware(a.ware);
       const kannLiefern = handel && handel.k.ladung[w.id] >= a.menge;
-      s += `<div class="info">${T('Dein Auftrag', 'Your contract')}: <b>${a.menge} ${w.icon} ${w.name}</b> · ${a.lohn} D · ${T(`noch ${a.bisTag - S.tag} Tage`, `${a.bisTag - S.tag} days left`)}
+      s += `<div class="info">${T('Dein Auftrag', 'Your contract')}: <b>${a.menge} ${w.icon} ${w.name}</b> · ${a.lohn} 🪙 · ${T(`noch ${a.bisTag - S.tag} Tage`, `${a.bisTag - S.tag} days left`)}
             <button data-a="erfuellen" data-v="${a.id}" ${kannLiefern ? '' : 'disabled'}>${T('Abliefern', 'Deliver')}</button></div>`;
     }
     dazu('scheich', '📜', 'Scheich', 'Sheikh', `<h3>${T(`Der Scheich von ${o.name}`, `The sheikh of ${o.name}`)}</h3>` + s, angebote.length + auftraege.length);
@@ -154,7 +154,7 @@ function htmlOase() {
   if (augenVorOrt(o)) {
     dazu('kundschafter', '🔭', 'Kundschafter', 'Scouts',
       `<div class="info">${T('Kundschafter kartieren unbekannte Wüste in der Nähe – vielleicht finden sie etwas.', 'Scouts map unknown desert nearby – maybe they find something.')}</div>
-       <button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} D)</button>`);
+       <button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} 🪙)</button>`);
   }
   dazu('gebaeude', '🏛️', 'Gebäude', 'Buildings', htmlGebaeude(o));
   dazu('dienste', '🏗️', 'Dienste', 'Services', htmlDienste(o, handel));
@@ -163,15 +163,15 @@ function htmlOase() {
   if (o.bev >= VERLEIHER_AB_BEV) {
     const rest = KREDIT_RAHMEN - S.schulden;
     dazu('verleiher', '💰', 'Geldverleiher', 'Moneylender', `
-          <div class="info">${T('Deine Schulden', 'Your debt')}: <b>${Math.round(S.schulden)} D</b> · ${T('Zinsen', 'interest')} ${zahlText(zinsSatz() * 100)} % ${T('pro Tag', 'per day')}
-            (≈ ${Math.round(S.schulden * zinsSatz())} D ${T('täglich', 'daily')})</div>
+          <div class="info">${T('Deine Schulden', 'Your debt')}: <b>${Math.round(S.schulden)} 🪙</b> · ${T('Zinsen', 'interest')} ${zahlText(zinsSatz() * 100)} % ${T('pro Tag', 'per day')}
+            (≈ ${Math.round(S.schulden * zinsSatz())} 🪙 ${T('täglich', 'daily')})</div>
           <div class="info">
             <button data-a="leihen" data-v="500" ${rest < 500 ? 'disabled' : ''}>${T('500 leihen', 'Borrow 500')}</button>
             <button data-a="leihen" data-v="1000" ${rest < 1000 ? 'disabled' : ''}>${T('1000 leihen', 'Borrow 1000')}</button>
             <button data-a="tilgen" data-v="500" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('500 zurück', 'Repay 500')}</button>
             <button data-a="tilgen" data-v="999999" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('alles zurück', 'Repay all')}</button>
           </div>
-          <div class="hinweis">${T(`Kreditrahmen ${KREDIT_RAHMEN} D. Über ${PFAENDUNG_AB} D Schulden wird gepfändet.`, `Credit limit ${KREDIT_RAHMEN} D. Debts above ${PFAENDUNG_AB} D lead to seizure.`)}</div>`);
+          <div class="hinweis">${T(`Kreditrahmen ${KREDIT_RAHMEN} 🪙. Über ${PFAENDUNG_AB} 🪙 Schulden wird gepfändet.`, `Credit limit ${KREDIT_RAHMEN} 🪙. Debts above ${PFAENDUNG_AB} 🪙 lead to seizure.`)}</div>`);
   }
 
   // Tiermarkt
@@ -184,7 +184,7 @@ function htmlOase() {
     const verfuegbar = typ !== 'elefant' || o.bev >= 1000;
     t += `<tr><td>${tier.icon} ${tier.name}</td><td>${tier.kapazitaet}</td><td>${tier.tempo}</td><td>${zahlText(tier.durst)}</td>
           <td>${verfuegbar
-              ? `<button data-a="tier" data-v="${typ}" ${S.gold < tier.preis ? 'disabled' : ''}>${tier.preis} D</button>`
+              ? `<button data-a="tier" data-v="${typ}" ${S.gold < tier.preis ? 'disabled' : ''}>${tier.preis} 🪙</button>`
               : `<small>${T('nur in Städten', 'cities only')}</small>`}</td></tr>`;
   }
   dazu('tiere', '🐾', 'Tiermarkt', 'Animals', t + '</table>');
@@ -206,11 +206,106 @@ function schmal() {
   return breite < 600;
 }
 
+// --- Schieber: beliebige Menge kaufen (nach rechts) oder verkaufen (nach links) ---
+const schieber = { ware: null, menge: 0, zieht: false };
+
+// Was würde der Handel kosten / bringen? Wir rechnen jede Einheit einzeln durch –
+// genau wie beim echten Kauf, denn der Preis ändert sich mit jeder Einheit.
+// Das Lager wird dafür nur kurz verändert und sofort wiederhergestellt.
+function handelVorschau(k, o, wid, menge) {
+  const w = ware(wid), lagerVorher = o.lager[wid];
+  let anzahl = 0, betrag = 0;
+  if (menge > 0) {
+    let gold = S.gold, platz = kapazitaet(k) - ladungGewicht(k);
+    for (let i = 0; i < menge; i++) {
+      if (o.lager[wid] < 1 || platz < 1) break;
+      const preis = kaufPreis(o, w);
+      if (gold < preis) break;
+      gold -= preis; platz--; o.lager[wid]--; anzahl++; betrag += preis;
+    }
+  } else {
+    for (let i = 0; i < -menge && i < Math.floor(k.ladung[wid]); i++) {
+      const preis = verkaufPreis(o, w);
+      o.lager[wid]++; anzahl++; betrag += preis;
+    }
+  }
+  o.lager[wid] = lagerVorher;
+  return { anzahl, betrag };
+}
+
+// Wie viel geht höchstens? (Kaufen: Geld, Platz und Vorrat der Oase – Verkaufen: was dabei ist)
+function schieberGrenzen(k, o, wid) {
+  return { maxKauf: handelVorschau(k, o, wid, 9999).anzahl, maxVerk: Math.floor(k.ladung[wid]) };
+}
+
+function htmlSchieber(k, o, w) {
+  const g = schieberGrenzen(k, o, w.id);
+  schieber.menge = Math.max(-g.maxVerk, Math.min(g.maxKauf, schieber.menge));
+  return `<div class="schieber">
+      <span class="s-grenze s-verk">${g.maxVerk ? '−' + g.maxVerk : '0'}</span>
+      <button data-a="schieberSchritt" data-v="-1" title="−1">‹</button>
+      <input type="range" id="schieberRegler" min="${-g.maxVerk}" max="${g.maxKauf}" step="1" value="${schieber.menge}" style="--null:${g.maxVerk + g.maxKauf ? (g.maxVerk / (g.maxVerk + g.maxKauf) * 100).toFixed(1) : 50}%"
+             aria-label="${T('Menge', 'Amount')}">
+      <button data-a="schieberSchritt" data-v="1" title="+1">›</button>
+      <span class="s-grenze s-kauf">${g.maxKauf ? '+' + g.maxKauf : '0'}</span>
+    </div>
+    <div class="schieber-fuss">
+      <span id="schieberInfo">${schieberText(k, o, w.id, schieber.menge)}</span>
+      <span>
+        <button data-a="schieberOk" id="schieberOk" class="an" ${schieber.menge ? '' : 'disabled'}>${T('Handeln', 'Trade')}</button>
+        <button data-a="schieber" data-v="${w.id}" title="${T('Schließen', 'Close')}">✕</button>
+      </span>
+    </div>`;
+}
+
+function schieberText(k, o, wid, menge) {
+  const w = ware(wid);
+  if (!menge) return `<span class="hinweis">${T('← verkaufen · kaufen →', '← sell · buy →')}</span>`;
+  const v = handelVorschau(k, o, wid, menge);
+  const schnitt = v.anzahl ? Math.round(v.betrag / v.anzahl) : 0;
+  return (menge > 0 ? T('Kaufen', 'Buy') : T('Verkaufen', 'Sell')) +
+    `: <b>${v.anzahl} ${w.icon} ${w.name}</b> ${menge > 0 ? T('für', 'for') : T('bringt', 'earns')} <b>${zahlText(v.betrag)}</b>${DINAR}` +
+    ` <span class="hinweis">(Ø ${schnitt}${DINAR})</span>`;
+}
+
+// Nur die Anzeige unter dem Regler auffrischen – nicht das ganze Panel,
+// sonst würde der Regler beim Ziehen neu gebaut und "losgelassen".
+function schieberAnzeigen() {
+  const h = kannHandeln(); if (!h || !schieber.ware) return;
+  const info = document.getElementById('schieberInfo'), ok = document.getElementById('schieberOk');
+  if (info) info.innerHTML = schieberText(h.k, h.o, schieber.ware, schieber.menge);
+  if (ok) ok.disabled = !schieber.menge;
+}
+
+function schieberUmschalten(wid) {
+  schieber.ware = schieber.ware === wid ? null : wid;
+  schieber.menge = 0;
+  zeichnePanel();
+}
+
+function schieberSchritt(d) {
+  const r = document.getElementById('schieberRegler'); if (!r) return;
+  schieber.menge = Math.max(+r.min, Math.min(+r.max, schieber.menge + d));
+  r.value = schieber.menge;
+  schieberAnzeigen();
+}
+
+function schieberHandeln() {
+  const wid = schieber.ware, menge = schieber.menge;
+  schieber.ware = null; schieber.menge = 0;
+  if (menge > 0) kaufen(wid, menge);
+  else if (menge < 0) verkaufen(wid, -menge);
+  else zeichnePanel();
+}
+
+// Kleine Münze hinter jedem Preis
+const DINAR = ' <span class="waehrung">🪙</span>';
+
 function htmlMarkt(o, handel) {
   const live = augenVorOrt(o);
   if (live) merkePreise(o);
   const p = S.wissen[o.id];
-  const bote = `<button data-a="bote" ${S.gold < BOTE_PREIS ? 'disabled' : ''}>🏃 ${T('Boten schicken', 'Send a messenger')} (${BOTE_PREIS} D)</button>`;
+  const bote = `<button data-a="bote" ${S.gold < BOTE_PREIS ? 'disabled' : ''}>🏃 ${T('Boten schicken', 'Send a messenger')} (${BOTE_PREIS} 🪙)</button>`;
   if (!p) return `<p class="hinweis">${T('Die Preise hier kennst du noch nicht – du warst noch nie hier.', 'You do not know the prices here yet – you have never been here.')}</p>${bote}`;
 
   let h = '';
@@ -225,16 +320,19 @@ function htmlMarkt(o, handel) {
     if (!wareZeigen(w, p.lager[w.id], o)) continue;   // seltene Waren nur, wenn es sie gibt
     const fest = festFaktor(o, w) > 1 ? ' 🎉' : '';
     h += `<tr><td>${w.icon} ${w.name}${w.verderb ? ' ⏳' : ''}${fest}</td><td>${p.lager[w.id]}</td>
-          <td>${p.kauf[w.id]}</td><td>${p.verk[w.id]}</td>`;
+          <td>${p.kauf[w.id]}${DINAR}</td><td>${p.verk[w.id]}${DINAR}</td>`;
     if (handel) {
       const dabei = Math.floor(handel.k.ladung[w.id]);
-      const knoepfe = `<button data-a="kauf" data-v="${w.id}" data-n="1">+1</button>
+      const offen = schieber.ware === w.id;
+      const knoepfe = `<button data-a="schieber" data-v="${w.id}" class="${offen ? 'an' : ''}" title="${T('Menge frei wählen', 'Choose any amount')}">⚖️</button>
+              <button data-a="kauf" data-v="${w.id}" data-n="1">+1</button>
               <button data-a="kauf" data-v="${w.id}" data-n="10">+10</button>
               <button data-a="verk" data-v="${w.id}" data-n="1" ${dabei < 1 ? 'disabled' : ''}>−1</button>
               <button data-a="verk" data-v="${w.id}" data-n="9999" ${dabei < 1 ? 'disabled' : ''}>${T('alle', 'all')}</button>`;
       // Auf dem Handy kommen die Knöpfe in eine eigene Zeile darunter
       h += schmal() ? `<td>${dabei}</td></tr><tr class="knopfzeile"><td colspan="5">${knoepfe}</td>`
                     : `<td>${dabei}</td><td style="white-space:nowrap">${knoepfe}</td>`;
+      if (offen) h += `</tr><tr class="schieberzeile"><td colspan="${schmal() ? 5 : 6}">${htmlSchieber(handel.k, o, w)}</td>`;
     }
     h += '</tr>';
   }
@@ -251,10 +349,10 @@ function htmlGebaeude(o) {
   if (!g) {
     if (!vorOrt || !o.aktiv) return `<p class="hinweis">${T('Mit einer Karawane vor Ort kannst du hier ein Lagerhaus bauen.', 'With a caravan here you can build a warehouse.')}</p>`;
     return `<div class="info">${T(`Ein Lagerhaus fasst ${AUSBAU[1].platz} Einheiten, zeigt dir immer die aktuellen Preise
-              und kostet ${LAGERHAUS.unterhalt} D/Tag. Danach kannst du hier einen Betrieb und eine Werkstatt errichten.`,
+              und kostet ${LAGERHAUS.unterhalt} 🪙/Tag. Danach kannst du hier einen Betrieb und eine Werkstatt errichten.`,
               `A warehouse holds ${AUSBAU[1].platz} units, always shows you the current prices
-              and costs ${LAGERHAUS.unterhalt} D/day. Afterwards you can set up a business and a workshop here.`)}</div>
-            <button data-a="lagerhaus" ${S.gold < LAGERHAUS.preis ? 'disabled' : ''}>🏛️ ${T('Lagerhaus bauen', 'Build warehouse')} (${LAGERHAUS.preis} D)</button>`;
+              and costs ${LAGERHAUS.unterhalt} 🪙/day. Afterwards you can set up a business and a workshop here.`)}</div>
+            <button data-a="lagerhaus" ${S.gold < LAGERHAUS.preis ? 'disabled' : ''}>🏛️ ${T('Lagerhaus bauen', 'Build warehouse')} (${LAGERHAUS.preis} 🪙)</button>`;
   }
 
   let h = `<div class="info">🏛️ ${T(`Lagerhaus Stufe ${g.stufe || 1}`, `Warehouse level ${g.stufe || 1}`)}: ${Math.floor(lagerBestand(g))}/${lagerPlatz(g)} ${T('belegt', 'used')}</div>`;
@@ -283,8 +381,8 @@ function htmlGebaeude(o) {
   } else if (o.aktiv) {
     const moeglich = o.produziert.filter(id => BETRIEB_NAMEN[id]);   // nur Waren, für die es einen Betrieb gibt
     if (vorOrt) {
-      h += `<div class="info">${T(`Betrieb errichten (${BETRIEB.preis} D, ${BETRIEB.unterhalt} D/Tag) – liefert täglich Ware ins Lagerhaus:`,
-                                  `Set up a business (${BETRIEB.preis} D, ${BETRIEB.unterhalt} D/day) – delivers goods to the warehouse daily:`)}</div>`;
+      h += `<div class="info">${T(`Betrieb errichten (${BETRIEB.preis} 🪙, ${BETRIEB.unterhalt} 🪙/Tag) – liefert täglich Ware ins Lagerhaus:`,
+                                  `Set up a business (${BETRIEB.preis} 🪙, ${BETRIEB.unterhalt} 🪙/day) – delivers goods to the warehouse daily:`)}</div>`;
       for (const id of moeglich) {
         h += `<button data-a="betrieb" data-v="${id}" ${S.gold < BETRIEB.preis ? 'disabled' : ''}>${BETRIEB_NAMEN[id]}</button> `;
       }
@@ -300,7 +398,7 @@ function htmlGebaeude(o) {
     h += `<div class="info" style="margin-top:6px">🏗️ ${T(`Ausbau auf Stufe ${(g.stufe || 1) + 1}: ${naechste.platz} Lagerplätze,
           Betrieb und Werkstatt ${zahlText(naechste.faktor)}× so schnell`, `Upgrade to level ${(g.stufe || 1) + 1}: ${naechste.platz} storage spaces,
           business and workshop ${zahlText(naechste.faktor)}× as fast`)}
-          <button data-a="ausbau" ${S.gold < naechste.preis ? 'disabled' : ''}>${T('Ausbauen', 'Upgrade')} (${naechste.preis} D)</button></div>`;
+          <button data-a="ausbau" ${S.gold < naechste.preis ? 'disabled' : ''}>${T('Ausbauen', 'Upgrade')} (${naechste.preis} 🪙)</button></div>`;
   } else if (!naechste) {
     h += `<div class="hinweis">${T('🏗️ Voll ausgebaut.', '🏗️ Fully upgraded.')}</div>`;
   }
@@ -319,8 +417,8 @@ function htmlWerkstatt(g, o, vorOrt) {
   if (!vorOrt || !o.aktiv) return `<p class="hinweis">${T('Werkstätten (Juwelier, Färberei) kannst du mit einer Karawane vor Ort bauen.', 'You can build workshops (jeweller, dye works) with a caravan here.')}</p>`;
   let h = `<div class="info" style="margin-top:6px">${T('Werkstatt errichten – verarbeitet Waren aus deinem Lagerhaus:', 'Set up a workshop – it processes goods from your warehouse:')}</div>`;
   for (const [id, W] of Object.entries(WERKSTAETTEN)) {
-    h += `<div class="info"><button data-a="werkstatt" data-v="${id}" ${S.gold < W.preis ? 'disabled' : ''}>${W.name} (${W.preis} D)</button>
-          <span class="hinweis">${rezeptText(W.rezept)} → ${rezeptText(W.ergebnis)}, ${W.unterhalt} D/${T('Tag', 'day')}</span></div>`;
+    h += `<div class="info"><button data-a="werkstatt" data-v="${id}" ${S.gold < W.preis ? 'disabled' : ''}>${W.name} (${W.preis} 🪙)</button>
+          <span class="hinweis">${rezeptText(W.rezept)} → ${rezeptText(W.ergebnis)}, ${W.unterhalt} 🪙/${T('Tag', 'day')}</span></div>`;
   }
   return h;
 }
@@ -343,8 +441,8 @@ function htmlKarawanen() {
 
   // --- Übersicht der ausgewählten Karawane ---
   const tempo = reiseTempo(k), durst = karawanenDurst(k);
-  let d = `<div class="info">${T('Tempo', 'Speed')} ${Math.round(tempo)} · ${T('Durst', 'Thirst')} ${zahlText(durst, 1)} 💧/${T('Tag', 'day')} · ${T('Unterhalt', 'Upkeep')} ${unterhaltKosten(k)} D/${T('Tag', 'day')}</div>`;
-  d += `<div class="info">📈 ${T('Bilanz bisher', 'Balance so far')}: <b class="${k.bilanz < 0 ? 'warnung' : ''}">${k.bilanz >= 0 ? '+' : ''}${Math.round(k.bilanz)} D</b></div>`;
+  let d = `<div class="info">${T('Tempo', 'Speed')} ${Math.round(tempo)} · ${T('Durst', 'Thirst')} ${zahlText(durst, 1)} 💧/${T('Tag', 'day')} · ${T('Unterhalt', 'Upkeep')} ${unterhaltKosten(k)} 🪙/${T('Tag', 'day')}</div>`;
+  d += `<div class="info">📈 ${T('Bilanz bisher', 'Balance so far')}: <b class="${k.bilanz < 0 ? 'warnung' : ''}">${k.bilanz >= 0 ? '+' : ''}${Math.round(k.bilanz)} 🪙</b></div>`;
 
   const stufe = fuehrerStufe(k);
   const naechste = STUFEN_EP[stufe];   // undefined, wenn schon Stufe 5
@@ -357,14 +455,14 @@ function htmlKarawanen() {
 
   const anOase = k.ort != null && oase(k.ort).aktiv;
   d += `<div class="info">⚔️ ${T('Wachen', 'Guards')}: ${k.wachen}` + (anOase
-       ? ` <button data-a="wache" data-v="1" ${S.gold < WACHE_PREIS ? 'disabled' : ''}>${T('+1 anheuern', 'Hire +1')} (${WACHE_PREIS} D)</button>
+       ? ` <button data-a="wache" data-v="1" ${S.gold < WACHE_PREIS ? 'disabled' : ''}>${T('+1 anheuern', 'Hire +1')} (${WACHE_PREIS} 🪙)</button>
            <button data-a="wache" data-v="-1" ${k.wachen < 1 ? 'disabled' : ''}>${T('entlassen', 'dismiss')}</button>`
        : '') + '</div>';
 
   if (anOase) {
     for (const t in k.tiere) if (k.tiere[t] > 0) {
       d += `<div class="info">${TIERE[t].icon} ${k.tiere[t]}× ${TIERE[t].name}
-            <button data-a="tierv" data-v="${t}">${T('verkaufen', 'sell')} (${Math.floor(TIERE[t].preis * 0.5)} D)</button></div>`;
+            <button data-a="tierv" data-v="${t}">${T('verkaufen', 'sell')} (${Math.floor(TIERE[t].preis * 0.5)} 🪙)</button></div>`;
     }
   }
 
@@ -447,7 +545,7 @@ function htmlAuftraege() {
   }
   for (const a of S.auftraege) {
     const w = ware(a.ware), rest = a.bisTag - S.tag;
-    h += `<div class="info">${w.icon} ${a.menge} ${w.name} → <b>${oase(a.oase).name}</b> · ${a.lohn} D ·
+    h += `<div class="info">${w.icon} ${a.menge} ${w.name} → <b>${oase(a.oase).name}</b> · ${a.lohn} 🪙 ·
           <span class="${rest <= 3 ? 'warnung' : ''}">${T(`noch ${rest} Tage`, `${rest} days left`)}</span></div>`;
   }
   if (S.angebote.length) h += `<div class="hinweis">${T(`${S.angebote.length} Angebot(e) warten auf Händler.`, `${S.angebote.length} offer(s) waiting for a merchant.`)}</div>`;
@@ -458,6 +556,9 @@ function htmlAuftraege() {
 // dazu optional data-v="…" und data-n="…" (Werte, die die Funktion braucht).
 const AKTIONEN = {
   kauf:       (v, n) => kaufen(v, +n),
+  schieber:   v => schieberUmschalten(v),
+  schieberSchritt: v => schieberSchritt(+v),
+  schieberOk: () => schieberHandeln(),
   verk:       (v, n) => verkaufen(v, +n),
   tier:       v => tierKaufen(v),
   tierv:      v => tierVerkaufen(v),
@@ -500,6 +601,17 @@ document.getElementById('seite').addEventListener('click', e => {
 });
 
 // Auf-/Zuklappen merken ("toggle" sprudelt nicht nach oben, darum "capture" = true)
+document.getElementById('seite').addEventListener('input', e => {
+  if (e.target.id !== 'schieberRegler') return;
+  schieber.menge = +e.target.value;
+  schieberAnzeigen();
+});
+document.getElementById('seite').addEventListener('pointerdown', e => {
+  if (e.target.id === 'schieberRegler') schieber.zieht = true;
+});
+document.addEventListener('pointerup', () => { schieber.zieht = false; });
+document.addEventListener('pointercancel', () => { schieber.zieht = false; });
+
 document.getElementById('seite').addEventListener('toggle', e => {
   const id = e.target.dataset && e.target.dataset.bereich;
   if (!id) return;

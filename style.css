@@ -58,7 +58,7 @@ header .kasten {
 header .k-tag  { width: 6.4em; }
 header .k-uhr  { width: 5.4em; }
 header .k-jahr { width: 12.2em; }
-header .k-gold { width: 10.2em; }
+header .k-gold { width: 7.6em; }
 header .k-rang { min-width: 10em; }
 header .wert { font-weight: 700; color: #fff4dc; font-variant-numeric: tabular-nums; }
 header .minus { color: var(--henna); }
@@ -109,6 +109,35 @@ header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .knopfzeile td { text-align: right !important; padding-bottom: 8px; }
 
 #menue .untertitel { margin: 0 0 12px; font-style: italic; opacity: .75; }
+
+.waehrung { font-size: .8em; margin-left: 2px; }
+
+/* Schieber für eine frei gewählte Menge */
+.schieberzeile td { background: var(--tuch-hell); border-radius: 6px; padding: 8px 10px !important; }
+.schieber { display: flex; align-items: center; gap: 6px; }
+/* Der Regler: links von der Null rot (verkaufen), rechts grün (kaufen), dazwischen ein Strich */
+.schieber input[type=range] {
+  flex: 1; min-width: 0; height: 30px; margin: 0; background: transparent;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  --spur: linear-gradient(to right,
+            rgba(255,155,132,.6) 0 calc(var(--null) - 1.5px), #10142b calc(var(--null) - 1.5px) calc(var(--null) + 1.5px),
+            rgba(169,217,143,.6) calc(var(--null) + 1.5px) 100%);
+}
+.schieber input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: var(--spur); }
+.schieber input[type=range]::-moz-range-track { height: 8px; border-radius: 4px; background: var(--spur); }
+.schieber input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 24px; height: 24px; margin-top: -8px; border-radius: 50%;
+  background: var(--messing-hell); border: 2px solid #10142b; box-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.schieber input[type=range]::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--messing-hell); border: 2px solid #10142b;
+}
+.s-verk { color: var(--henna) !important; }
+.s-kauf { color: var(--gruen) !important; }
+.schieber button { padding: 2px 9px; font-size: 1.1rem; line-height: 1.2; }
+.s-grenze { font-size: .8rem; color: var(--gedaempft); min-width: 2.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.schieber-fuss { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; margin-top: 6px; font-size: .92rem; }
+.schieber-fuss > span:last-child { white-space: nowrap; margin-left: auto; }
 
 /* ---------- Reiter innerhalb der Oase ---------- */
 .oasen-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -250,7 +279,7 @@ button.gross { display: block; width: 100%; font-family: var(--schrift-titel); f
   header h1 { display: none; }
   header .anzeige { gap: 4px; font-size: .84rem; }
   header .kasten { padding: 2px 4px; }
-  header .k-tag { width: 5.6em; } header .k-uhr { width: 4.9em; } header .k-gold { width: 9.4em; }
+  header .k-tag { width: 5.6em; } header .k-uhr { width: 4.9em; } header .k-gold { width: 6.9em; }
   header .k-jahr { width: auto; min-width: 9em; } header .k-rang { min-width: 0; }
   header .knoepfe { width: 100%; gap: 4px; flex-wrap: nowrap; }
   header .knoepfe button { flex: 1 1 auto; padding: 5px 4px; }

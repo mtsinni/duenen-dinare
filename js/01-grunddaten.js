@@ -3,7 +3,7 @@
    Hier kannst du das Spiel am leichtesten anpassen (Preise, Tempo ...).
    ===================================================================== */
 
-const SEK_PRO_TAG = 60;          // Wie viele echte Sekunden ein Spieltag bei Tempo 1× dauert
+const SEK_PRO_TAG = 60;         // Wie viele echte Sekunden ein Spieltag bei Tempo 1× dauert
 const KARTE_B = 1350, KARTE_H = 700;   // seit v5 mit der Küste im Osten
 
 // basis = Grundpreis in Dinar

@@ -44,7 +44,7 @@ benutzen, was frühere anlegen – und `20-steuerung.js` startet das Spiel, daru
 ## Spieltempo
 
 Wie lange ein Spieltag dauert, steht ganz oben in `js/01-grunddaten.js`:
-`const SEK_PRO_TAG = 3;` – also 3 echte Sekunden pro Tag bei Tempo 1×. Größere Zahl = langsameres Spiel.
+`const SEK_PRO_TAG = 60;` – also 60 echte Sekunden (1 Minute) pro Tag bei Tempo 1×. Größere Zahl = langsameres Spiel.
 
 ## Sprache (Deutsch / English)
 

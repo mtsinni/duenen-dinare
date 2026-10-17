@@ -230,7 +230,7 @@ function stationAbarbeiten(k, st) {
     } else if (st.verkaufen) {
       // Nie mit Verlust verkaufen – lieber zur nächsten Station mitnehmen
       const r = handelVerkaufen(k, o, w.id, Infinity, Math.ceil(k.einstand[w.id] || 0));
-      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} verkauft (+${r.betrag} D)`, `${r.anzahl} ${w.name.toLowerCase()} sold (+${r.betrag} D)`));
+      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} verkauft (+${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} sold (+${r.betrag} 🪙)`));
       if (k.ladung[w.id] >= 1) teile.push(T(`${Math.floor(k.ladung[w.id])} ${w.name} behalten (Preis zu niedrig)`, `${Math.floor(k.ladung[w.id])} ${w.name.toLowerCase()} kept (price too low)`));
     }
   }
@@ -257,7 +257,7 @@ function stationAbarbeiten(k, st) {
       teile.push(T(`${w.name} zu teuer`, `${w.name} too expensive`));
     } else {
       const r = handelKaufen(k, o, w.id, menge);
-      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} gekauft (−${r.betrag} D)`, `${r.anzahl} ${w.name.toLowerCase()} bought (−${r.betrag} D)`));
+      if (r.anzahl) teile.push(T(`${r.anzahl} ${w.name} gekauft (−${r.betrag} 🪙)`, `${r.anzahl} ${w.name.toLowerCase()} bought (−${r.betrag} 🪙)`));
     }
   }
 

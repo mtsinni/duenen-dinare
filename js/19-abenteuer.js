@@ -65,8 +65,8 @@ function htmlKarawansereiBau(k) {
   const unterwegs = S.karawansereien.filter(s => abstandPunktStrecke(s, a, b) < KARAWANSEREI.radius);
   let h = unterwegs.length ? `<div class="info">🏰 ${T('Unterwegs', 'On the way')}: ${unterwegs.map(s => s.name).join(', ')} – ${T('dort wird Wasser aufgefüllt.', 'water is refilled there.')}</div>` : '';
   if (!grund) {
-    h += `<div class="info"><button data-a="serei" ${S.gold < KARAWANSEREI.preis ? 'disabled' : ''}>🏰 ${T('Karawanserei auf halber Strecke bauen', 'Build a caravanserai halfway')} (${KARAWANSEREI.preis} D)</button>
-          <span class="hinweis">${T(`Brunnen zum Auffüllen und Wachen gegen Räuber, ${KARAWANSEREI.unterhalt} D/Tag.`, `A well for refilling and guards against robbers, ${KARAWANSEREI.unterhalt} D/day.`)}</span></div>`;
+    h += `<div class="info"><button data-a="serei" ${S.gold < KARAWANSEREI.preis ? 'disabled' : ''}>🏰 ${T('Karawanserei auf halber Strecke bauen', 'Build a caravanserai halfway')} (${KARAWANSEREI.preis} 🪙)</button>
+          <span class="hinweis">${T(`Brunnen zum Auffüllen und Wachen gegen Räuber, ${KARAWANSEREI.unterhalt} 🪙/Tag.`, `A well for refilling and guards against robbers, ${KARAWANSEREI.unterhalt} 🪙/day.`)}</span></div>`;
   }
   return h;
 }
@@ -275,7 +275,7 @@ function htmlReisende(o, handel) {
   for (const r of liste) {
     const platz = handel ? kapazitaet(handel.k) - ladungGewicht(handel.k) : 0;
     s += `<div class="info">${reisendeIcon(r.art)} <b>${r.anzahl} ${reisendeWort(r.art)}</b> ${T('nach', 'to')} ${oase(r.ziel).name}
-          · ${r.lohn} D · ${T(`${r.frist} Tage Zeit`, `${r.frist} days`)}
+          · ${r.lohn} 🪙 · ${T(`${r.frist} Tage Zeit`, `${r.frist} days`)}
           ${handel ? `<button data-a="reisende" data-v="${r.id}" ${platz < r.anzahl * 2 ? 'disabled' : ''}>${T('Mitnehmen', 'Take along')}</button>` : ''}</div>`;
   }
   s += `<div class="hinweis">${T('Jeder Reisende braucht 2 Lastplätze und trinkt unterwegs mit. Wer zu spät ankommt, zahlt nur die Hälfte.',
@@ -287,7 +287,7 @@ function htmlPassagiere(k) {
   return (k.passagiere || []).map(p => {
     const rest = p.bisTag - S.tag;
     return `<div class="info">${reisendeIcon(p.art)} ${p.anzahl} ${reisendeWort(p.art)} ${T('nach', 'to')} <b>${oase(p.ziel).name}</b> ·
-            ${p.lohn} D · <span class="${rest <= 3 ? 'warnung' : ''}">${rest >= 0 ? T(`noch ${rest} Tage`, `${rest} days left`) : T('verspätet', 'late')}</span></div>`;
+            ${p.lohn} 🪙 · <span class="${rest <= 3 ? 'warnung' : ''}">${rest >= 0 ? T(`noch ${rest} Tage`, `${rest} days left`) : T('verspätet', 'late')}</span></div>`;
   }).join('');
 }
 

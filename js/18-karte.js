@@ -1083,10 +1083,10 @@ function zeichneInfoKarte() {
     const teuer = waren.map(w => ({ w, v: p.verk[w.id] / w.basis })).sort((a, b) => b.v - a.v).slice(0, 3);
     const billig = waren.filter(w => p.lager[w.id] >= 3).map(w => ({ w, v: p.kauf[w.id] / w.basis })).sort((a, b) => a.v - b.v).slice(0, 2);
     zeilen.push([T('Hier gut verkaufen:', 'Good to sell here:'), '', 'titel']);
-    for (const t of teuer) zeilen.push([`${t.w.icon} ${t.w.name}`, `${p.verk[t.w.id]} D`]);
+    for (const t of teuer) zeilen.push([`${t.w.icon} ${t.w.name}`, `${p.verk[t.w.id]} 🪙`]);
     if (billig.length) {
       zeilen.push([T('Hier günstig kaufen:', 'Cheap to buy here:'), '', 'titel']);
-      for (const t of billig) zeilen.push([`${t.w.icon} ${t.w.name}`, `${p.kauf[t.w.id]} D`]);
+      for (const t of billig) zeilen.push([`${t.w.icon} ${t.w.name}`, `${p.kauf[t.w.id]} 🪙`]);
     }
     zeilen.push([live ? T('Preise von heute', 'Today\'s prices') : T(`Preise von Tag ${p.tag}`, `Prices from day ${p.tag}`), '', 'klein']);
   }

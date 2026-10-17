@@ -160,16 +160,16 @@ function htmlZiele() {
   const wert = vermoegen();
   const naechster = RAENGE[S.rang + 1];
   let h = `<h2>🎯 ${T('Ziele', 'Goals')}</h2>
-           <div class="info">🏅 ${T('Rang', 'Rank')}: <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} ${zahlText(wert)} D</div>`;
+           <div class="info">🏅 ${T('Rang', 'Rank')}: <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} ${zahlText(wert)} 🪙</div>`;
   if (naechster) {
     const anteil = Math.max(0, Math.min(100, (wert - RAENGE[S.rang].ab) / (naechster.ab - RAENGE[S.rang].ab) * 100));
-    h += `<div class="hinweis">${T(`Nächster Rang „${naechster.name}“ ab ${zahlText(naechster.ab)} D`, `Next rank "${naechster.name}" from ${zahlText(naechster.ab)} D`)}</div>
+    h += `<div class="hinweis">${T(`Nächster Rang „${naechster.name}“ ab ${zahlText(naechster.ab)} 🪙`, `Next rank "${naechster.name}" from ${zahlText(naechster.ab)} 🪙`)}</div>
           <div class="bar"><div style="width:${anteil}%;background:var(--akzent)"></div></div>`;
   }
   const offen = AUFGABEN.filter(a => !S.erledigt.includes(a.id) && !aufgabeVerpasst(a));
   let liste = '';
   for (const a of offen.slice(0, 3)) {
-    liste += `<div class="info">⏳ <b>${a.titel}</b> – ${a.text} <span class="hinweis">(+${a.lohn} D${a.frist ? T(`, noch ${Math.max(0, a.frist - S.tag)} Tage`, `, ${Math.max(0, a.frist - S.tag)} days left`) : ''})</span></div>`;
+    liste += `<div class="info">⏳ <b>${a.titel}</b> – ${a.text} <span class="hinweis">(+${a.lohn} 🪙${a.frist ? T(`, noch ${Math.max(0, a.frist - S.tag)} Tage`, `, ${Math.max(0, a.frist - S.tag)} days left`) : ''})</span></div>`;
   }
   if (offen.length > 3) liste += `<div class="hinweis">${T(`… und ${offen.length - 3} weitere Aufgaben.`, `… and ${offen.length - 3} more quests.`)}</div>`;
   for (const a of AUFGABEN.filter(a => S.erledigt.includes(a.id))) liste += `<div class="hinweis">✅ ${a.titel}</div>`;
@@ -212,14 +212,14 @@ function zeichneStatistik() {
       <h2 style="margin:0">📊 ${T('Statistik', 'Statistics')} – ${T('Tag', 'Day')} ${S.tag}</h2>
       <button data-s="zu">✕ ${T('Schließen', 'Close')}</button>
     </div>
-    <p class="info">🏅 <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} <b>${zahl(ich)} D</b>
-       (${T('Gold', 'Gold')} ${zahl(S.gold)} D${S.schulden > 0 ? `, ${T('Schulden', 'debts')} ${zahl(S.schulden)} D` : ''})</p>
+    <p class="info">🏅 <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} <b>${zahl(ich)} 🪙</b>
+       (${T('Gold', 'Gold')} ${zahl(S.gold)} 🪙${S.schulden > 0 ? `, ${T('Schulden', 'debts')} ${zahl(S.schulden)} 🪙` : ''})</p>
 
     <h3>${T('Vermögensverlauf', 'Fortune over time')}</h3>${htmlVerlaufsDiagramm()}
 
     <h3>${T('Rangliste der Handelshäuser', 'Ranking of the trading houses')}</h3><table>`;
   rangliste.forEach((r, i) => {
-    h += `<tr><td>${i + 1}. <span class="punkt" style="background:${r.farbe}"></span> ${r.du ? `<b>${r.name}</b>` : r.name}</td><td>${zahl(r.wert)} D</td></tr>`;
+    h += `<tr><td>${i + 1}. <span class="punkt" style="background:${r.farbe}"></span> ${r.du ? `<b>${r.name}</b>` : r.name}</td><td>${zahl(r.wert)} 🪙</td></tr>`;
   });
   h += '</table>';
 
@@ -233,7 +233,7 @@ function zeichneStatistik() {
   // Karawanen
   h += `<h3>${T('Gewinn pro Karawane', 'Profit per caravan')}</h3><table><tr><th>${T('Karawane', 'Caravan')}</th><th>${T('Führer', 'Leader')}</th><th>${T('Bilanz', 'Balance')}</th></tr>`;
   for (const k of [...S.karawanen].sort((a, b) => b.bilanz - a.bilanz)) {
-    h += `<tr><td>${k.name}${k.route.aktiv ? ' 🔁' : ''}</td><td>${k.fuehrer.name} ${'⭐'.repeat(fuehrerStufe(k))}</td><td>${k.bilanz >= 0 ? '+' : ''}${zahl(k.bilanz)} D</td></tr>`;
+    h += `<tr><td>${k.name}${k.route.aktiv ? ' 🔁' : ''}</td><td>${k.fuehrer.name} ${'⭐'.repeat(fuehrerStufe(k))}</td><td>${k.bilanz >= 0 ? '+' : ''}${zahl(k.bilanz)} 🪙</td></tr>`;
   }
   h += '</table>';
 
@@ -242,7 +242,7 @@ function zeichneStatistik() {
   h += `<h3>${T('Beste Handelsrouten', 'Best trade routes')}</h3>`;
   if (routen.length) {
     h += `<table><tr><th>${T('Route', 'Route')}</th><th>${T('Gewinn', 'Profit')}</th></tr>`;
-    for (const [name, gewinn] of routen) h += `<tr><td>${name}</td><td>${gewinn >= 0 ? '+' : ''}${zahl(gewinn)} D</td></tr>`;
+    for (const [name, gewinn] of routen) h += `<tr><td>${name}</td><td>${gewinn >= 0 ? '+' : ''}${zahl(gewinn)} 🪙</td></tr>`;
     h += '</table>';
   } else {
     h += `<p class="hinweis">${T('Noch keine Waren von einer Oase in eine andere gebracht.', 'No goods carried from one oasis to another yet.')}</p>`;
@@ -336,7 +336,7 @@ function diagrammInteraktiv() {
     linie.setAttribute('x1', xx); linie.setAttribute('x2', xx); linie.setAttribute('visibility', 'visible');
     tip.innerHTML = `<b>${T('Tag', 'Day')} ${d.v[i].tag}</b>` + d.reihen
       .map(r => ({ r, w: r.werte[i] })).filter(z => z.w != null).sort((a, b) => b.w - a.w)
-      .map(z => `<div><span class="punkt" style="background:${z.r.farbe}"></span>${z.r.name}: ${zahl(z.w)} D</div>`).join('');
+      .map(z => `<div><span class="punkt" style="background:${z.r.farbe}"></span>${z.r.name}: ${zahl(z.w)} 🪙</div>`).join('');
     tip.style.display = 'block';
     const links = xx / d.B * box.width;
     tip.style.left = (links > box.width / 2 ? links - tip.offsetWidth - 12 : links + 12) + 'px';

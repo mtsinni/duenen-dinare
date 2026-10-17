@@ -258,14 +258,14 @@ function htmlDienste(o, handel) {
             Die Bewohner werden es dir danken – besonders, wenn das Wasser knapp ist.`,
             `🏗️ <b>Deepen the well:</b> +30% water at once, and the spring dries up more slowly afterwards.
             The people will thank you – especially when water is scarce.`) +
-         ` <button data-a="brunnen" ${S.gold < brunnenPreis(o) ? 'disabled' : ''}>${T('Bauen', 'Build')} (${brunnenPreis(o)} D)</button></div>`;
+         ` <button data-a="brunnen" ${S.gold < brunnenPreis(o) ? 'disabled' : ''}>${T('Bauen', 'Build')} (${brunnenPreis(o)} 🪙)</button></div>`;
   } else {
     s += '<div class="hinweis">' + T('Die Brunnen hier sind voll ausgebaut.', 'The wells here are fully built.') + '</div>';
   }
   if (o.bev >= HEILER_AB_BEV) {
     const k = handel.k, preis = HEILER_PREIS * tierAnzahl(k);
     s += `<div class="info">🩺 <b>${T('Tierheiler', 'Animal healer')}:</b> ` + (k.krank
-         ? `<button data-a="heilen" ${S.gold < preis ? 'disabled' : ''}>${T(`Tiere von ${k.name} heilen`, `Heal the animals of ${k.name}`)} (${preis} D)</button>`
+         ? `<button data-a="heilen" ${S.gold < preis ? 'disabled' : ''}>${T(`Tiere von ${k.name} heilen`, `Heal the animals of ${k.name}`)} (${preis} 🪙)</button>`
          : T('Deine Tiere sind gesund.', 'Your animals are healthy.')) + '</div>';
   }
   return s;

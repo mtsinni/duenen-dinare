@@ -114,7 +114,7 @@ function zeichneMenue() {
     const z = d.zusammenfassung || {};
     const s = SCHWIERIGKEITEN[d.schwierigkeit] || SCHWIERIGKEITEN.normal;
     h += `<div class="slot ${n === S.slot ? 'aktuell' : ''}">
-            <b>${T('Platz', 'Slot')} ${n}</b> · ${s.icon} ${s.name} · ${T('Tag', 'Day')} ${d.tag}${RAENGE[d.rang] ? ' · 🏅 ' + RAENGE[d.rang].name : ''}${z.vermoegen != null ? ' · ' + zahl(z.vermoegen) + ' D' : ''}${d.bankrott ? ' · 💀 ' + T('bankrott', 'bankrupt') : ''}
+            <b>${T('Platz', 'Slot')} ${n}</b> · ${s.icon} ${s.name} · ${T('Tag', 'Day')} ${d.tag}${RAENGE[d.rang] ? ' · 🏅 ' + RAENGE[d.rang].name : ''}${z.vermoegen != null ? ' · ' + zahl(z.vermoegen) + ' 🪙' : ''}${d.bankrott ? ' · 💀 ' + T('bankrott', 'bankrupt') : ''}
             <div style="margin-top:4px">
               <button data-m="laden" data-n="${n}">${T('Laden', 'Load')}</button>
               <button data-m="export" data-n="${n}">💾 ${T('Als Datei sichern', 'Save as file')}</button>
@@ -130,7 +130,7 @@ function zeichneMenue() {
     h += `<button data-m="sw" data-n="${id}" class="${menueWahl.schwierigkeit === id ? 'an' : ''}">${s.icon} ${s.name}</button> `;
   }
   h += `</div><div class="hinweis">${SCHWIERIGKEITEN[menueWahl.schwierigkeit].text}
-        ${T('Startgold', 'Starting gold')}: ${SCHWIERIGKEITEN[menueWahl.schwierigkeit].startGold} D.</div>
+        ${T('Startgold', 'Starting gold')}: ${SCHWIERIGKEITEN[menueWahl.schwierigkeit].startGold} 🪙.</div>
         <div class="info" style="margin-top:8px">${T('Speicherplatz', 'Save slot')}:</div><div>`;
   for (let n = 1; n <= SLOT_ANZAHL; n++) {
     h += `<button data-m="slot" data-n="${n}" class="${menueWahl.slot === n ? 'an' : ''}">${T('Platz', 'Slot')} ${n}${slotLesen(n) ? T(' (belegt)', ' (in use)') : ''}</button> `;
@@ -242,9 +242,9 @@ const EINFUEHRUNG = [
   { text: 'Im Reiter <b>🐪 Karawanen</b> siehst du Reisedauer und Wasserbedarf. Reicht dein Wasser? Dann tippe auf <b>Aufbrechen</b>.',
     textEn: 'The <b>🐪 Caravans</b> tab shows the travel time and the water needed. Enough water? Then tap <b>Set out</b>.',
     fertig: k => k.nach != null },
-  { text: `Deine Karawane ist unterwegs – die Zeit läuft jetzt! Mit <b>0,5× / 1× / 1,5×</b> oben änderst du das Tempo,
+  { text: `Deine Karawane ist unterwegs – die Zeit läuft jetzt! Mit <b>0,5× bis 5×</b> oben änderst du das Tempo,
       <b>Pause</b> (oder die Leertaste) hält sie an. Meide Sandstürme 🌪️ und rote Räubergebiete ⚔️.`,
-    textEn: `Your caravan is on its way – time is running now! Change the speed with <b>0.5× / 1× / 1.5×</b> at the top,
+    textEn: `Your caravan is on its way – time is running now! Change the speed with <b>0.5× to 5×</b> at the top,
       <b>Pause</b> (or the space bar) stops it. Avoid sandstorms 🌪️ and red robber areas ⚔️.`,
     fertig: k => k.ort != null },
   { text: 'Angekommen! Verkaufe deine Ware mit <b>alle</b>. Ist der Preis höher als in Agadez, hast du Gewinn gemacht.',
