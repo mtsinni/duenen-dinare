@@ -200,6 +200,7 @@ function aufruesten() {
   // Rang-System: bestes Vermögen, Umsatz der letzten 30 Tage, Zähler für den Sultan
   if (S.rekordVermoegen == null) S.rekordVermoegen = Math.max(RAENGE[S.rang || 0].ab, S.karawanen.length ? vermoegen() : S.gold);
   if (!S.umsatzVerlauf) S.umsatzVerlauf = [];
+  if (!S.bluete) S.bluete = [];   // Wüstenblüte nach Regen
   if (S.rangSeitTag == null) S.rangSeitTag = S.tag;
   if (S.schwacheTage == null) S.schwacheTage = 0;
   if (S.schuldenTage == null) S.schuldenTage = 0;

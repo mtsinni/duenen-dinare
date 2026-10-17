@@ -23,6 +23,13 @@
 }
 
 * { box-sizing: border-box; }
+
+/* ---------- Eigene Symbole (statt Emojis) ---------- */
+svg.sym { width: 1.2em; height: 1.2em; vertical-align: -0.24em; display: inline-block; color: var(--sym, #e3c47e); flex: none; }
+.tipp svg.sym:not(.getoent), #menue svg.sym:not(.getoent), #statistik svg.sym:not(.getoent) { color: #8a6424; }
+.tipp svg.getoent, #menue svg.getoent, #statistik svg.getoent { filter: brightness(.62) saturate(1.25); }
+button.an svg.sym:not(.getoent) { color: #2a2238; }
+button.an svg.getoent { filter: brightness(.5) saturate(1.4); }
 body {
   margin: 0; background: var(--nacht); color: var(--sand);
   font-family: var(--schrift-text); font-size: 16px; line-height: 1.4;

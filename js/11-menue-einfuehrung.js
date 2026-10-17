@@ -141,7 +141,7 @@ function zeichneMenue() {
         <button class="gross" data-m="neu" style="margin-top:10px">🐪 ${T('Neues Spiel starten', 'Start new game')}</button>
         <p class="hinweis">${T('Dein Spiel wird jeden Spieltag automatisch auf seinem Platz gespeichert.', 'Your game is saved to its slot automatically every game day.')}</p>
       </div>`;
-  document.getElementById('menue').innerHTML = h;
+  document.getElementById('menue').innerHTML = symbole(h);
 }
 
 function menueAktion(m, n) {

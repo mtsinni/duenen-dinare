@@ -8,7 +8,9 @@ function statischeTexte() {
   document.title = T('Dünen & Dinare – Karawanenhandel in der Wüste', 'Dunes & Dinars – Caravan Trading in the Desert');
   document.querySelector('header h1').textContent = T('Dünen & Dinare', 'Dunes & Dinars');
   // Symbol + Wort; auf dem Handy wird das Wort (class "txt") ausgeblendet
-  const mitWort = (id, icon, wort) => { document.getElementById(id).innerHTML = `${icon}<span class="txt"> ${wort}</span>`; };
+  const mitWort = (id, icon, wort) => { document.getElementById(id).innerHTML = symbole(`${icon}<span class="txt"> ${wort}</span>`); };
+  // Feste Symbole in der Kopfleiste (Münze, Medaille) einmal austauschen
+  document.querySelectorAll('header .kasten').forEach(el => { if (SYMBOL_MUSTER.test(el.innerHTML)) el.innerHTML = symbole(el.innerHTML); SYMBOL_MUSTER.lastIndex = 0; });
   mitWort('btnStatistik', '📊', T('Statistik', 'Statistics'));
   mitWort('btnMenue', '☰', T('Menü', 'Menu'));
   setze('logTitel', T('Ereignisse', 'Events'));
@@ -59,6 +61,7 @@ function schleife(jetzt) {
   const dtSek = Math.min((jetzt - letzteZeit) / 1000, 0.25); // max. 0,25 s, falls der Tab im Hintergrund war
   letzteZeit = jetzt;
   if (!S.pause && !S.bankrott) aktualisiere(dtSek * S.tempo / SEK_PRO_TAG);
+  if (!S.pause && !S.bankrott) laufUhrWeiter(dtSek);
   zeichne();
   requestAnimationFrame(schleife);
 }

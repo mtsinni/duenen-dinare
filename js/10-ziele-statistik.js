@@ -292,7 +292,7 @@ const BUCHUNGSARTEN_EN = {
 function buchungsart(a) { return T(a, BUCHUNGSARTEN_EN[a] || a); }
 
 function zeichneStatistik() {
-  if (fensterArt === 'lager') { document.getElementById('statistik').innerHTML = htmlLagerFenster(); return; }
+  if (fensterArt === 'lager') { document.getElementById('statistik').innerHTML = symbole(htmlLagerFenster()); return; }
   const ich = vermoegen();
   const rangliste = [{ name: T('Du', 'You'), du: true, wert: ich, farbe: '#b5651d' },
                      ...S.rivalen.map(r => ({ name: r.name, wert: rivalenVermoegen(r), farbe: r.farbe }))]
@@ -348,7 +348,7 @@ function zeichneStatistik() {
   }
   h += '</div>';
 
-  document.getElementById('statistik').innerHTML = h;
+  document.getElementById('statistik').innerHTML = symbole(h);
   diagrammInteraktiv();
 }
 

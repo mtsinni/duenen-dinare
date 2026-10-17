@@ -16,6 +16,7 @@ und dem Ordner `js`) ins Repository laden.
 |---|---|
 | `index.html` | Gerüst der Seite: Kopfleiste, Karte, Seitenleiste, Fenster – und welche Skripte geladen werden |
 | `style.css` | Aussehen: Indigo und Messing, Pergament für Menü, Einführung und Statistik, Handy-Ansicht. Alle Farben stehen oben unter `:root` |
+| `js/00-symbole.js` | Eigener Symbolsatz (Vektorgrafiken) – ersetzt Emojis automatisch in der Oberfläche und auf der Karte |
 | `js/00-sprache.js` | Sprachwahl Deutsch/Englisch: die Funktion `T()` und das Umschalten |
 | `js/01-grunddaten.js` | **Hier lässt sich am leichtesten basteln:** Waren, Tiere, Oasen, Preise, Grenzwerte |
 | `js/02-hilfsfunktionen.js` | Kleine Werkzeuge: Zufall, Entfernung, Tempo und Durst einer Karawane |

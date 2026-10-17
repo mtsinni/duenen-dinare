@@ -320,10 +320,66 @@ function zeichneMoschee(g, x, y, fenster) {
   fenster.push({ x: x - 2, y: y - 18 });
 }
 
+// Nomadenzelt (für kleine Weiler): dunkles Ziegenhaar, helle Öffnung
+function zeltKlein(g, x, y, s) {
+  g.fillStyle = 'rgba(60,35,15,.22)'; g.beginPath(); g.ellipse(x + s * 0.3, y + 0.8, s * 1.1, 1.6, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#5b4232'; g.beginPath(); g.moveTo(x - s, y); g.quadraticCurveTo(x - s * 0.4, y - s * 0.9, x, y - s * 0.95);
+  g.quadraticCurveTo(x + s * 0.5, y - s * 0.9, x + s, y); g.closePath(); g.fill();
+  g.fillStyle = '#7a5c44'; g.beginPath(); g.moveTo(x - s, y); g.quadraticCurveTo(x - s * 0.4, y - s * 0.9, x, y - s * 0.95); g.lineTo(x - s * 0.2, y); g.closePath(); g.fill();
+  g.fillStyle = '#d9b47c'; g.beginPath(); g.moveTo(x + s * 0.1, y); g.lineTo(x + s * 0.35, y - s * 0.55); g.lineTo(x + s * 0.6, y); g.closePath(); g.fill();
+}
+
+// Bewässerter Garten: Beete in Streifen, leicht schräg wie die übrige Karte
+function zeichneGarten(g, x, y, b, h, rnd) {
+  g.fillStyle = '#6f5a36'; g.fillRect(x - 0.6, y - 0.6, b + 1.2, h + 1.2);
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle = i % 2 ? '#7fa64a' : '#5f8a3a';
+    g.fillRect(x, y + i * h / 4, b, h / 4 - 0.4);
+  }
+  g.fillStyle = 'rgba(80,170,190,.8)'; g.fillRect(x - 0.6, y + h, b + 1.2, 0.8);   // Bewässerungsgraben
+}
+
+// Marktstand mit gestreiftem Sonnendach
+function zeichneMarktstand(g, x, y, farbe) {
+  g.fillStyle = '#7a5532'; g.fillRect(x - 3.4, y - 4, 0.7, 4); g.fillRect(x + 2.8, y - 4, 0.7, 4);
+  g.fillStyle = '#c9a26a'; g.fillRect(x - 3, y - 1.6, 6, 1.6);                         // Ware auf dem Tisch
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#f3e6cc' : farbe; g.fillRect(x - 3.8 + i * 1.95, y - 6, 1.95, 2.2); }
+}
+
+// Stadtmauer um große Städte: Bogen hinter der Stadt mit Zinnen und Ecktürmen
+function zeichneStadtmauer(g, cx, cy, rx, ry, vorne) {
+  const von = vorne ? 0.08 : Math.PI + 0.08, bis = vorne ? Math.PI - 0.08 : Math.PI * 2 - 0.08;
+  g.strokeStyle = '#b48a55'; g.lineWidth = 3.2; g.lineCap = 'butt';
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, von, bis); g.stroke();
+  g.strokeStyle = '#d8b27a'; g.lineWidth = 1.2;
+  g.beginPath(); g.ellipse(cx, cy - 1.6, rx, ry, 0, von, bis); g.stroke();
+  g.fillStyle = '#c99f68';
+  for (let w = von; w <= bis; w += 0.16) {                        // Zinnen
+    g.fillRect(cx + Math.cos(w) * rx - 0.8, cy + Math.sin(w) * ry - 3.6, 1.6, 1.6);
+  }
+  for (const w of [von, (von + bis) / 2, bis]) {                  // Türme
+    const tx = cx + Math.cos(w) * rx, ty = cy + Math.sin(w) * ry;
+    g.fillStyle = '#a77d4a'; g.fillRect(tx - 2.6, ty - 7, 5.2, 7.5);
+    g.fillStyle = '#e2c08a'; g.fillRect(tx - 3.2, ty - 8, 6.4, 1.6);
+  }
+}
+
+// Dein Lagerhaus: großes Haus mit Indigo-Fahne – größer mit jeder Ausbaustufe
+function zeichneLagerhaus(g, x, y, stufe, fenster) {
+  zeichneHaus(g, x, y, 11 + stufe * 2, 7 + stufe, fenster);
+  g.strokeStyle = '#5b3a1f'; g.lineWidth = 0.8;
+  g.beginPath(); g.moveTo(x + 2, y - 7 - stufe); g.lineTo(x + 2, y - 17 - stufe); g.stroke();
+  g.fillStyle = FARBE.indigo; g.beginPath(); g.moveTo(x + 2, y - 17 - stufe); g.lineTo(x + 9, y - 15.5 - stufe); g.lineTo(x + 2, y - 13.5 - stufe); g.fill();
+  g.fillStyle = FARBE.messing; g.fillRect(x + 2, y - 15.9 - stufe, 5, 0.6);
+}
+
 function oasenBild(o) {
   const wasserStufe = Math.round(Math.max(0, o.wasser) / 10);
-  const haeuser = Math.max(1, Math.min(10, Math.round(o.bev / 220)));
-  const schluessel = `${o.id}|${o.aktiv}|${wasserStufe}|${haeuser}|${o.brunnen || 0}`;
+  const haeuser = Math.max(1, Math.min(14, Math.round(o.bev / 200)));
+  // Größenstufe: 0 Weiler, 1 Dorf, 2 Stadt, 3 große Stadt
+  const groesse = o.bev < 250 ? 0 : o.bev < 700 ? 1 : o.bev < 1400 ? 2 : 3;
+  const lagerhaus = S.gebaeude && S.gebaeude[o.id] ? (S.gebaeude[o.id].stufe || 1) : 0;
+  const schluessel = `${o.id}|${o.aktiv}|${wasserStufe}|${haeuser}|${o.brunnen || 0}|${groesse}|${lagerhaus}`;
   let bild = oasenBilder.get(schluessel);
   if (bild) return bild;
   if (oasenBilder.size > 300) oasenBilder.clear();
@@ -336,9 +392,11 @@ function oasenBild(o) {
 
   if (o.aktiv) {
     // grüner Gürtel um das Wasser
-    const gr = 26 + Math.min(20, o.bev / 70);
+    const gr = (26 + Math.min(20, o.bev / 70)) * (0.65 + 0.35 * Math.min(1, w * 1.6));
     const gruen = g.createRadialGradient(cx, cy, 4, cx, cy, gr);
-    gruen.addColorStop(0, 'rgba(92,135,58,.75)'); gruen.addColorStop(0.7, 'rgba(110,140,60,.35)'); gruen.addColorStop(1, 'rgba(110,140,60,0)');
+    const satt = Math.min(1, w * 1.5);                                  // wenig Wasser → gelblich-braun
+    const r1 = Math.round(150 - 58 * satt), g1 = Math.round(130 + 5 * satt), b1 = Math.round(60 - 2 * satt);
+    gruen.addColorStop(0, `rgba(${r1},${g1},${b1},.75)`); gruen.addColorStop(0.7, `rgba(${r1 + 18},${g1 + 5},${b1},.35)`); gruen.addColorStop(1, `rgba(${r1 + 18},${g1 + 5},${b1},0)`);
     g.fillStyle = gruen;
     g.beginPath(); g.ellipse(cx, cy, gr * 1.2, gr * 0.75, 0, 0, Math.PI * 2); g.fill();
     // nasser, dunkler Uferrand – zeigt, wie viel Wasser fehlt
@@ -352,6 +410,17 @@ function oasenBild(o) {
     g.beginPath(); g.ellipse(cx, cy, rx, rx * 0.5, 0, 0, Math.PI * 2); g.fill();
     g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1;
     g.beginPath(); g.ellipse(cx, cy, rx * 0.8, rx * 0.36, 0, Math.PI * 1.1, Math.PI * 1.6); g.stroke();
+    // Bei wenig Wasser: rissiger Schlamm am Ufer
+    if (w < 0.3) {
+      g.strokeStyle = 'rgba(95,70,40,.55)'; g.lineWidth = 0.6;
+      for (let i = 0; i < 8; i++) {
+        const a = rnd() * Math.PI * 2; let x = cx + Math.cos(a) * (rx + 3), y = cy + Math.sin(a) * (rx + 3) * 0.5;
+        g.beginPath(); g.moveTo(x, y);
+        for (let j = 0; j < 3; j++) { x += (rnd() - 0.5) * 6; y += (rnd() - 0.5) * 3; g.lineTo(x, y); }
+        g.stroke();
+      }
+    }
+    if (groesse === 3) zeichneStadtmauer(g, cx, cy + 2, 58, 32, false);   // hintere Hälfte der Mauer
     // Brunnen (gebaut vom Spieler): kleine runde Steinmauer
     for (let i = 0; i < (o.brunnen || 0); i++) {
       const bx = cx - 26 + i * 9, by = cy + 13;
@@ -368,18 +437,40 @@ function oasenBild(o) {
                    b: 7 + rnd() * 4, h: 5 + rnd() * 3 });
     }
     const palmen = Math.max(3, Math.min(9, 3 + Math.round(o.bev / 300))) + Math.round(w * 2);
+    const totAnteil = w < 0.35 ? (0.35 - w) / 0.35 * 0.6 : 0;          // Trockenheit: ein Teil der Palmen verdorrt
     for (let i = 0; i < palmen; i++) {
       const winkel = Math.PI * 0.75 + (i / palmen) * Math.PI * 1.3 + (rnd() - 0.5) * 0.4;
       const abst = 20 + rnd() * 10;
       dinge.push({ art: 'palme', x: cx + Math.cos(winkel) * abst, y: cy + Math.sin(winkel) * abst * 0.55 + 2,
-                   hoehe: 12 + rnd() * 7, neigung: (rnd() - 0.5) * 0.5 });
+                   hoehe: 12 + rnd() * 7, neigung: (rnd() - 0.5) * 0.5, tot: rnd() < totAnteil });
     }
+    // Weiler: Nomadenzelte am Rand
+    if (groesse === 0) for (let i = 0; i < 3; i++) {
+      const winkel = 0.1 + i * 0.75 + rnd() * 0.3;
+      dinge.push({ art: 'zelt', x: cx + Math.cos(winkel) * 36, y: cy + Math.sin(winkel) * 20 + 4, s: 4.5 + rnd() * 1.5 });
+    }
+    // Ab dem Dorf und mit genug Wasser: Gärten
+    if (groesse >= 1 && w > 0.45) for (let i = 0; i < Math.min(4, groesse + 1); i++) {
+      const winkel = 2.35 + i * 0.32;
+      dinge.push({ art: 'garten', x: cx + Math.cos(winkel) * (44 + (i % 2) * 6), y: cy + Math.sin(winkel) * 24 + 6, b: 11 + rnd() * 3, h: 5 + rnd() * 2 });
+    }
+    // Ab der Stadt: Marktstände am Ufer
+    if (groesse >= 2) for (let i = 0; i < groesse + 1; i++) {
+      dinge.push({ art: 'markt', x: cx - 10 + i * 8, y: cy + 15 + (i % 2) * 2, farbe: ['#b8452f', '#283463', '#3f6e2f', '#c8a04a'][i % 4] });
+    }
+    // Dein Lagerhaus
+    if (lagerhaus) dinge.push({ art: 'lagerhaus', x: cx - 44, y: cy + 16, stufe: lagerhaus });
     dinge.sort((a, b) => a.y - b.y);
     for (const d of dinge) {
-      if (d.art === 'palme') zeichnePalme(g, d.x, d.y, d.hoehe, d.neigung, rnd);
+      if (d.art === 'palme') zeichnePalme(g, d.x, d.y, d.hoehe, d.neigung, rnd, d.tot);
       else if (d.art === 'moschee') zeichneMoschee(g, d.x - 6, d.y, fenster);
+      else if (d.art === 'zelt') zeltKlein(g, d.x, d.y, d.s);
+      else if (d.art === 'garten') zeichneGarten(g, d.x - d.b / 2, d.y - d.h, d.b, d.h, rnd);
+      else if (d.art === 'markt') zeichneMarktstand(g, d.x, d.y, d.farbe);
+      else if (d.art === 'lagerhaus') zeichneLagerhaus(g, d.x, d.y, d.stufe, fenster);
       else zeichneHaus(g, d.x - d.b / 2, d.y, d.b, d.h, fenster);
     }
+    if (groesse === 3) zeichneStadtmauer(g, cx, cy + 2, 58, 32, true);    // vordere Hälfte der Mauer
     // Hafen: Bootssteg ins Meer
     if (o.hafen) {
       g.fillStyle = '#7a5532';
@@ -408,55 +499,128 @@ function oasenBild(o) {
 }
 
 /* ---------------------------------------------------------------------
-   C) TIERE – kleine Scherenschnitte, die beim Laufen die Beine bewegen
+   C) TIERE – kleine bemalte Figuren, die beim Laufen die Beine bewegen
       (Koordinaten: Blick nach rechts, Boden bei y = 0, ca. 14 Einheiten lang)
    --------------------------------------------------------------------- */
 
-function beine(g, punkte, laenge, schritt, dicke) {
-  g.lineWidth = dicke; g.lineCap = 'round';
-  punkte.forEach(([x, y], i) => {
-    const schwung = Math.sin(schritt + (i % 2 ? Math.PI : 0)) * 2.2;
-    g.beginPath(); g.moveTo(x, y); g.lineTo(x + schwung, y + laenge); g.stroke();
+// Eigene Uhr für Bewegungen: läuft in Echtzeit (auch bei 60 Sekunden pro Spieltag
+// bewegen sich die Beine flüssig), steht aber in der Pause still.
+let laufUhr = 0;
+function laufUhrWeiter(dtSek) { laufUhr += dtSek * (0.75 + 0.25 * Math.min(S.tempo, 5)); }
+
+// Natürliche Fellfarben: Grundton, Schatten (ferne Beine, Bauch), Licht (Rücken)
+const TIER_FARBEN = {
+  kamel:   { grund: '#b98149', schatten: '#7c5127', licht: '#dcae73' },
+  pferd:   { grund: '#7d4b2a', schatten: '#4b2a15', licht: '#a8703f' },
+  esel:    { grund: '#918679', schatten: '#5e554b', licht: '#bdb3a6' },
+  elefant: { grund: '#8a847e', schatten: '#5c5752', licht: '#b0aaa3' },
+};
+
+// Ein Bein mit Knie: schwingt vor und zurück und hebt den Huf beim Vorschwingen
+function bein(g, x, y, laenge, phase, dicke, farbe) {
+  const schwung = Math.sin(phase), heben = Math.max(0, Math.cos(phase)) * laenge * 0.18;
+  const kx = x + schwung * laenge * 0.16, ky = y + laenge * 0.5;
+  const fx = x + schwung * laenge * 0.34, fy = y + laenge - heben;
+  g.strokeStyle = farbe; g.lineWidth = dicke; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(x, y); g.lineTo(kx, ky); g.lineTo(fx, fy); g.stroke();
+}
+
+// Vier Beine: die hinteren (fernen) dunkler, damit die Figur Tiefe bekommt
+function vierBeine(g, f, xs, y, laenge, schritt, dicke, vorne) {
+  xs.forEach((x, i) => {
+    const fern = i % 2 === 1;
+    if (fern === vorne) return;
+    const phase = schritt + (i < 2 ? 0 : Math.PI) + (fern ? Math.PI : 0);
+    bein(g, x, y, laenge, phase, dicke, fern ? f.schatten : f.grund);
   });
 }
 
-function zeichneTier(g, typ, schritt, koerper, decke) {
-  g.fillStyle = koerper; g.strokeStyle = koerper;
+// Reiter mit indigo Turban (Tuareg) – sitzt auf dem vordersten Tier
+function reiter(g, x, y, decke) {
+  g.fillStyle = decke;
+  g.beginPath(); g.moveTo(x - 2.2, y); g.lineTo(x + 2.2, y); g.lineTo(x + 1.2, y - 4.6); g.lineTo(x - 1.2, y - 4.6); g.closePath(); g.fill();
+  g.fillStyle = '#6b4a2e'; g.beginPath(); g.arc(x + 0.3, y - 5.6, 1.25, 0, Math.PI * 2); g.fill();       // Gesicht
+  g.fillStyle = '#1f2a55'; g.beginPath(); g.arc(x, y - 6.2, 1.45, Math.PI * 0.95, Math.PI * 2.1); g.fill(); // Turban
+  g.fillRect(x - 1.5, y - 6.3, 2.4, 1.2);
+}
+
+// Gepäck: zwei Bündel über dem Rücken, in Teppich- und Stofffarben
+function gepaeck(g, x, y, breite, nr) {
+  const farben = [['#9b3b2a', '#d9a441'], ['#355e8a', '#e2c27a'], ['#6e7d3a', '#c98a3a']][nr % 3];
+  g.fillStyle = farben[0]; g.beginPath(); g.roundRect ? g.roundRect(x - breite / 2, y - 3.2, breite * 0.48, 4.2, 1.2) : g.rect(x - breite / 2, y - 3.2, breite * 0.48, 4.2); g.fill();
+  g.fillStyle = farben[1]; g.beginPath(); g.roundRect ? g.roundRect(x + 0.2, y - 3.6, breite * 0.48, 4.6, 1.2) : g.rect(x + 0.2, y - 3.6, breite * 0.48, 4.6); g.fill();
+  g.strokeStyle = 'rgba(40,25,10,.55)'; g.lineWidth = 0.5;
+  g.beginPath(); g.moveTo(x - breite / 2 + 1, y - 1.2); g.lineTo(x + breite / 2 - 0.5, y - 1.2); g.stroke();
+}
+
+// opt: { schritt, decke, reiter: true/false, last: Nummer oder -1 }
+function zeichneTier(g, typ, opt) {
+  const f = TIER_FARBEN[typ], schritt = opt.schritt;
   if (typ === 'kamel') {
-    beine(g, [[-4, -7], [-2.5, -7], [3, -7], [4.5, -7]], 7, schritt, 1.3);
-    g.beginPath(); g.ellipse(0, -8.5, 6, 3, 0, 0, Math.PI * 2); g.fill();         // Körper
-    g.beginPath(); g.arc(-0.5, -10.5, 3.4, Math.PI, 0); g.fill();                 // Höcker
-    g.lineWidth = 2.4; g.beginPath(); g.moveTo(5, -9); g.quadraticCurveTo(8.5, -10, 8.5, -15); g.stroke();   // Hals
-    g.beginPath(); g.ellipse(10, -15.3, 2.4, 1.3, 0.15, 0, Math.PI * 2); g.fill(); // Kopf
-    g.lineWidth = 0.9; g.beginPath(); g.moveTo(-6, -9); g.lineTo(-7.2, -5.5); g.stroke();   // Schwanz
-    if (decke) { g.fillStyle = decke; g.fillRect(-3.5, -13.6, 5.5, 3.6); g.fillStyle = FARBE.messing; g.fillRect(-3.5, -10.6, 5.5, 0.8); }
+    const nicken = Math.sin(schritt * 2) * 0.6;
+    vierBeine(g, f, [-4.2, -2.8, 3, 4.4], -7.5, 7.5, schritt, 1.25, false);
+    g.fillStyle = f.grund;
+    g.beginPath(); g.ellipse(0, -8.8, 6.2, 3, 0, 0, Math.PI * 2); g.fill();                    // Körper
+    g.beginPath(); g.ellipse(-0.6, -11.2, 3.3, 2.6, 0, Math.PI, 0); g.fill();                 // Höcker
+    g.fillStyle = f.licht;
+    g.beginPath(); g.ellipse(-0.8, -12.4, 2.2, 1, 0, Math.PI, 0); g.fill();                   // Licht auf dem Höcker
+    g.strokeStyle = f.grund; g.lineWidth = 2.3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(5, -9.3); g.quadraticCurveTo(8.6, -10, 8.4, -15 + nicken); g.stroke();   // Hals
+    g.fillStyle = f.grund;
+    g.beginPath(); g.ellipse(10, -15.4 + nicken, 2.6, 1.35, 0.2, 0, Math.PI * 2); g.fill();     // Kopf
+    g.fillStyle = f.schatten; g.beginPath(); g.arc(9.7, -16 + nicken, 0.35, 0, Math.PI * 2); g.fill();  // Auge
+    g.strokeStyle = f.schatten; g.lineWidth = 0.9;
+    g.beginPath(); g.moveTo(-6.1, -9.4); g.quadraticCurveTo(-7.4, -7.5, -6.8, -5.6); g.stroke();  // Schwanz
+    g.fillStyle = f.schatten; g.globalAlpha = 0.35;
+    g.beginPath(); g.ellipse(0.3, -7.2, 5.2, 1.3, 0, 0, Math.PI); g.fill(); g.globalAlpha = 1;  // Bauch im Schatten
+    vierBeine(g, f, [-4.2, -2.8, 3, 4.4], -7.5, 7.5, schritt, 1.35, true);
+    if (opt.decke) { g.fillStyle = opt.decke; g.fillRect(-3.8, -11.6, 6.2, 3.4); g.fillStyle = FARBE.messing; g.fillRect(-3.8, -8.6, 6.2, 0.7); }
+    if (opt.last >= 0) gepaeck(g, -0.8, -12.6, 7, opt.last);
+    if (opt.reiter) reiter(g, 0.4, -13.6, opt.decke || FARBE.indigo);
   } else if (typ === 'pferd') {
-    beine(g, [[-3.5, -7], [-2.2, -7], [3, -7], [4.2, -7]], 7, schritt, 1.2);
-    g.beginPath(); g.ellipse(0, -8.5, 5.6, 2.6, 0, 0, Math.PI * 2); g.fill();
-    g.lineWidth = 2.6; g.beginPath(); g.moveTo(4.2, -9.5); g.lineTo(6.5, -13.5); g.stroke();
-    g.beginPath(); g.ellipse(8, -13.2, 2.6, 1.2, 0.5, 0, Math.PI * 2); g.fill();
-    g.lineWidth = 1.4; g.beginPath(); g.moveTo(-5.5, -9.5); g.quadraticCurveTo(-8, -8, -7.5, -4.5); g.stroke();
-    if (decke) { g.fillStyle = decke; g.fillRect(-2.5, -11.6, 4.5, 3); }
+    vierBeine(g, f, [-3.8, -2.5, 3, 4.2], -7.2, 7.2, schritt * 1.2, 1.15, false);
+    g.fillStyle = f.grund;
+    g.beginPath(); g.ellipse(0, -8.6, 5.6, 2.6, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = f.grund; g.lineWidth = 2.6; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(4, -9.6); g.lineTo(6.4, -13.6); g.stroke();
+    g.beginPath(); g.ellipse(7.9, -13.3, 2.7, 1.25, 0.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = f.schatten; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(4.2, -10.4); g.lineTo(6.2, -14.4); g.stroke();                     // Mähne
+    g.lineWidth = 1.4; g.beginPath(); g.moveTo(-5.4, -9.4); g.quadraticCurveTo(-8, -8, -7.4, -4.6); g.stroke();  // Schweif
+    g.fillStyle = f.licht; g.beginPath(); g.ellipse(-0.5, -10.4, 3.4, 0.7, 0, 0, Math.PI * 2); g.fill();
+    vierBeine(g, f, [-3.8, -2.5, 3, 4.2], -7.2, 7.2, schritt * 1.2, 1.25, true);
+    if (opt.decke) { g.fillStyle = opt.decke; g.fillRect(-2.6, -11.6, 4.6, 3); }
+    if (opt.last >= 0) gepaeck(g, -0.4, -11.2, 5.5, opt.last);
+    if (opt.reiter) reiter(g, -0.2, -11.2, opt.decke || FARBE.indigo);
   } else if (typ === 'esel') {
-    beine(g, [[-3, -5.5], [-2, -5.5], [2.5, -5.5], [3.4, -5.5]], 5.5, schritt, 1.1);
-    g.beginPath(); g.ellipse(0, -7, 4.6, 2.4, 0, 0, Math.PI * 2); g.fill();
-    g.lineWidth = 2.2; g.beginPath(); g.moveTo(3.6, -8); g.lineTo(5.4, -10.5); g.stroke();
-    g.beginPath(); g.ellipse(6.6, -10.4, 2, 1.2, 0.3, 0, Math.PI * 2); g.fill();
-    g.lineWidth = 1; g.beginPath(); g.moveTo(5.6, -11); g.lineTo(5.2, -14.2); g.moveTo(6.4, -11.2); g.lineTo(6.6, -14.2); g.stroke();   // lange Ohren
-    if (decke) { g.fillStyle = decke; g.fillRect(-2.6, -10, 4.4, 2.8); }
+    vierBeine(g, f, [-3, -2, 2.5, 3.4], -5.8, 5.8, schritt * 1.3, 1.05, false);
+    g.fillStyle = f.grund;
+    g.beginPath(); g.ellipse(0, -7.2, 4.6, 2.4, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = f.grund; g.lineWidth = 2.2; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(3.6, -8.2); g.lineTo(5.4, -10.6); g.stroke();
+    g.beginPath(); g.ellipse(6.6, -10.5, 2.1, 1.25, 0.3, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 1; g.beginPath(); g.moveTo(5.6, -11.2); g.lineTo(5.1, -14.4); g.moveTo(6.4, -11.3); g.lineTo(6.7, -14.4); g.stroke();   // lange Ohren
+    g.fillStyle = f.licht; g.beginPath(); g.ellipse(0.3, -6, 3.2, 0.8, 0, 0, Math.PI * 2); g.fill();   // heller Bauch
+    vierBeine(g, f, [-3, -2, 2.5, 3.4], -5.8, 5.8, schritt * 1.3, 1.1, true);
+    if (opt.decke) { g.fillStyle = opt.decke; g.fillRect(-2.6, -10.1, 4.4, 2.8); }
+    if (opt.last >= 0) gepaeck(g, -0.3, -9.4, 6, opt.last);
+    if (opt.reiter) reiter(g, -0.2, -9.6, opt.decke || FARBE.indigo);
   } else if (typ === 'elefant') {
-    g.lineWidth = 2.8; g.lineCap = 'butt';
-    [[-5, -6], [-3, -6], [3, -6], [5, -6]].forEach(([x, y], i) => {
-      const schwung = Math.sin(schritt * 0.7 + (i % 2 ? Math.PI : 0)) * 1.4;
-      g.beginPath(); g.moveTo(x, y); g.lineTo(x + schwung, 0); g.stroke();
-    });
-    g.beginPath(); g.ellipse(0, -10, 8.5, 5.5, 0, 0, Math.PI * 2); g.fill();
+    const s = schritt * 0.7;
+    vierBeine(g, f, [-5, -3.2, 3, 5], -6.5, 6.5, s, 2.8, false);
+    g.fillStyle = f.grund;
+    g.beginPath(); g.ellipse(0, -10.2, 8.6, 5.6, 0, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(8, -12, 4, 0, Math.PI * 2); g.fill();
-    g.lineWidth = 2; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(11, -11); g.quadraticCurveTo(13.5, -6, 11.5, -2); g.stroke();   // Rüssel
-    g.fillStyle = 'rgba(255,255,255,.15)';
-    g.beginPath(); g.ellipse(6.5, -12, 2.4, 3.2, 0, 0, Math.PI * 2); g.fill();             // Ohr
-    if (decke) { g.fillStyle = decke; g.fillRect(-4.5, -16, 8, 4.5); g.fillStyle = FARBE.messing; g.fillRect(-4.5, -12.2, 8, 0.9); }
+    g.fillStyle = f.licht; g.beginPath(); g.ellipse(-1, -14, 6, 1.6, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = f.grund; g.lineWidth = 2; g.lineCap = 'round';
+    const ruessel = Math.sin(s * 1.5) * 0.8;
+    g.beginPath(); g.moveTo(11, -11); g.quadraticCurveTo(13.5 + ruessel, -6, 11.5 + ruessel, -2); g.stroke();   // Rüssel
+    g.fillStyle = f.schatten; g.beginPath(); g.ellipse(6.4, -12, 2.5, 3.3, 0, 0, Math.PI * 2); g.fill();   // Ohr
+    g.fillStyle = '#efe6d2'; g.beginPath(); g.moveTo(10.5, -9.5); g.quadraticCurveTo(12.5, -8.5, 13, -10); g.lineTo(11, -10.3); g.fill();  // Stoßzahn
+    vierBeine(g, f, [-5, -3.2, 3, 5], -6.5, 6.5, s, 3, true);
+    if (opt.decke) { g.fillStyle = opt.decke; g.fillRect(-4.5, -16, 8, 4.5); g.fillStyle = FARBE.messing; g.fillRect(-4.5, -12.2, 8, 0.9); }
+    if (opt.last >= 0) gepaeck(g, -0.5, -15.6, 8, opt.last);
+    if (opt.reiter) reiter(g, 0.5, -15.8, opt.decke || FARBE.indigo);
   }
 }
 
@@ -470,26 +634,73 @@ function karawanenFiguren(tiere) {
   return auswahl;
 }
 
-// Eine ganze Karawane: Tiere hintereinander, entlang der Laufrichtung
-function zeichneZug(figuren, x, y, richtungX, richtungY, laeuft, koerper, decke, groesse = 1.55) {
+// Schatten nach dem Stand der Sonne: morgens lang nach Westen, mittags kurz, abends lang nach Osten
+function sonnenSchatten() {
+  const h = tagesAnteil() * 24;
+  if (h < 6 || h >= 20) return { dx: 0, laenge: 1, staerke: 0.12 };   // nachts nur ein schwacher Mondschatten
+  const t = (h - 6) / 14;                       // 0 = Sonnenaufgang, 1 = Sonnenuntergang
+  return { dx: (t - 0.5) * 2 * 7, laenge: 1 + Math.abs(t - 0.5) * 1.6, staerke: 0.3 };
+}
+
+// Staubwölkchen hinter laufenden Tieren (ohne gespeicherten Zustand: Alter aus der Uhr)
+function staub(x, y, ux, groesse, nr) {
+  for (let j = 0; j < 3; j++) {
+    const alter = (laufUhr * 1.3 + j / 3 + nr * 0.37) % 1;
+    const px = x - ux * (4 + alter * 12) * groesse, py = y - alter * 6 * groesse;
+    ctx.fillStyle = `rgba(214,180,128,${(0.32 * (1 - alter)).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, (1.5 + alter * 4) * groesse, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Eine ganze Karawane: Tiere hintereinander, entlang der Laufrichtung, mit Führstrick
+// opt: { beladen: true/false, fremd: true für Karawanen anderer Handelshäuser }
+function zeichneZug(figuren, x, y, richtungX, richtungY, laeuft, koerper, decke, groesse = 1.55, opt = {}) {
   const laenge = Math.hypot(richtungX, richtungY) || 1;
   const ux = richtungX / laenge, uy = richtungY / laenge;
   const nachRechts = ux >= 0;
-  const zeit = S.zeit * 38;
-  // von hinten nach vorne malen, damit vordere Tiere oben liegen
+  const zeit = laufUhr * 7;
+  const sonne = sonnenSchatten();
+  const pos = figuren.map((_, i) => ({ x: x - ux * i * 13.5 * groesse, y: y - uy * i * 13.5 * groesse * 0.8 }));
+  if (opt.fremd) ctx.globalAlpha = 0.9;
+
+  // 1. Schatten und Staub unter allen Tieren
+  pos.forEach((p, i) => {
+    ctx.fillStyle = `rgba(60,35,15,${sonne.staerke})`;
+    ctx.beginPath(); ctx.ellipse(p.x + sonne.dx * groesse * 0.5, p.y + 0.6, 7.5 * groesse * sonne.laenge, 1.7 * groesse, 0, 0, Math.PI * 2); ctx.fill();
+    if (laeuft) staub(p.x, p.y, nachRechts ? 1 : -1, groesse * 0.8, i);
+  });
+
+  // 2. Führstrick von Tier zu Tier
+  if (figuren.length > 1) {
+    ctx.strokeStyle = 'rgba(70,45,20,.6)'; ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    for (let i = 0; i < pos.length - 1; i++) {
+      const vx = pos[i].x - (nachRechts ? 5 : -5) * groesse, vy = pos[i].y - 9 * groesse;
+      const hx = pos[i + 1].x + (nachRechts ? 9 : -9) * groesse, hy = pos[i + 1].y - 14 * groesse;
+      ctx.moveTo(vx, vy); ctx.quadraticCurveTo((vx + hx) / 2, Math.max(vy, hy) + 2 * groesse, hx, hy);
+    }
+    ctx.stroke();
+  }
+
+  // 3. Die Tiere – von hinten nach vorne, damit vordere oben liegen
   for (let i = figuren.length - 1; i >= 0; i--) {
-    const abst = i * 11 * groesse;
-    const px = x - ux * abst, py = y - uy * abst * 0.8;
     ctx.save();
-    ctx.translate(px, py);
-    ctx.fillStyle = 'rgba(60,35,15,.25)';
-    ctx.beginPath(); ctx.ellipse(0, 0.5, 8 * groesse, 1.8 * groesse, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(pos[i].x, pos[i].y);
     ctx.scale(nachRechts ? groesse : -groesse, groesse);
     const schritt = laeuft ? zeit + i * 1.7 : 0;
-    const wippen = laeuft ? Math.abs(Math.sin(schritt)) * 0.6 : 0;
+    const wippen = laeuft ? Math.abs(Math.sin(schritt)) * 0.55 : 0;
     ctx.translate(0, -wippen);
-    zeichneTier(ctx, figuren[i], schritt, koerper, decke);
+    zeichneTier(ctx, figuren[i], { schritt, decke, reiter: i === 0, last: opt.beladen && i > 0 ? i : -1 });
     ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  // 4. Nachts trägt der Führer eine Laterne
+  const nacht = nachtStaerke();
+  if (nacht > 0.2) {
+    const lx = pos[0].x + (nachRechts ? 9 : -9) * groesse, ly = pos[0].y - 12 * groesse;
+    leuchten(lx, ly, 14 * groesse, '255,190,90', nacht * 0.8);
+    ctx.fillStyle = '#ffd98a'; ctx.beginPath(); ctx.arc(lx, ly, 1.1 * groesse, 0, Math.PI * 2); ctx.fill();
   }
 }
 
@@ -502,9 +713,28 @@ function abzeichen(x, y, zeichen, r = 9.5) {
   ctx.fillStyle = FARBE.indigo;
   ctx.strokeStyle = FARBE.messing; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (symbolMalen(ctx, zeichen, x, y, r * 1.45, '#ecd08a')) return;   // eigenes Symbol, wenn es eins gibt
   ctx.font = `${Math.round(r * 1.15)}px serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(zeichen, x, y + 0.5);
+}
+
+// Text mit Symbol am Anfang ("💧 Wasser") oder Ende ("12 🪙"): das Emoji wird durch unser Symbol ersetzt
+function textMitSymbol(text, x, y, gr, ausrichtung, aufHell = false) {
+  const vorne = text.match(/^(\S+)\s+(.*)$/), hinten = text.match(/^(.*\S)\s+(\S+)$/);
+  const istSymbol = e => e && SYMBOLE[e.replace(/\uFE0F/g, '')];
+  ctx.textAlign = ausrichtung;
+  if (ausrichtung === 'left' && vorne && istSymbol(vorne[1])) {
+    symbolMalen(ctx, vorne[1], x + gr * 0.55, y, gr * 1.15, ctx.fillStyle, aufHell); ctx.textAlign = 'left'; ctx.fillText(vorne[2], x + gr * 1.3, y); return;
+  }
+  if (ausrichtung === 'right' && hinten && istSymbol(hinten[2])) {
+    symbolMalen(ctx, hinten[2], x - gr * 0.55, y, gr * 1.1, ctx.fillStyle, aufHell); ctx.textAlign = 'right'; ctx.fillText(hinten[1], x - gr * 1.25, y); return;
+  }
+  if (ausrichtung === 'right' && vorne && istSymbol(vorne[1])) {
+    ctx.fillText(vorne[2], x, y);
+    symbolMalen(ctx, vorne[1], x - ctx.measureText(vorne[2]).width - gr * 0.7, y, gr * 1.1, ctx.fillStyle, aufHell); return;
+  }
+  ctx.fillText(text, x, y);
 }
 
 function beschriftung(text, x, y, groesse, farbe, kursiv = false, halo = 'rgba(246,232,200,.9)') {
@@ -684,18 +914,41 @@ function zeichne() {
   beschriftung(T('Rotes Meer', 'Red Sea'), 0, 0, 16, 'rgba(235,248,250,.75)', true, null);
   ctx.restore();
 
-  // Regen: kühler Schimmer und fallende Striche
+  zeichneWolkenschatten(echtzeit, nacht);
+  zeichneBluete();
+
+  // Regen: nasser, dunkler Boden, Wolken, fallende Striche und kleine Spritzer
   for (const r of S.regen) {
-    leuchten(r.x, r.y, r.r, '60,110,170', 0.22);
+    const staerke = Math.max(0, Math.min(1, (r.bis - S.zeit) * 2, (S.zeit - (r.bis - 2)) * 4 + 0.2));
+    leuchten(r.x, r.y, r.r * 1.05, '80,62,40', 0.32 * staerke);          // nasser Sand
+    leuchten(r.x, r.y, r.r, '60,110,170', 0.22 * staerke);
     ctx.save();
     ctx.beginPath(); ctx.arc(r.x, r.y, r.r * 0.85, 0, Math.PI * 2); ctx.clip();
-    ctx.strokeStyle = 'rgba(225,238,250,.5)'; ctx.lineWidth = 1;
-    for (let i = 0; i < 140; i++) {
+    ctx.strokeStyle = `rgba(225,238,250,${(0.5 * staerke).toFixed(2)})`; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 160; i++) {
       const x = r.x - r.r + hash01(i, 3) * r.r * 2;
       const y = r.y - r.r + ((hash01(i, 4) * r.r * 2 + echtzeit * 260) % (r.r * 2));
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 9); ctx.stroke();
+      ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 9);
     }
+    ctx.stroke();
+    // Spritzer: kleine Ringe, die aufgehen und verblassen (in vier Helligkeitsstufen gesammelt)
+    ctx.lineWidth = 0.8;
+    const ringe = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    for (let i = 0; i < 32; i++) {
+      const lauf = echtzeit * 1.6 + hash01(i, 21), alter = lauf % 1, nr = i + Math.floor(lauf) * 7;
+      const x = r.x - r.r * 0.8 + hash01(nr, 22) * r.r * 1.6, y = r.y - r.r * 0.8 + hash01(nr, 23) * r.r * 1.6;
+      const rx = 1 + alter * 4;
+      ringe[Math.min(3, Math.floor(alter * 4))].moveTo(x + rx, y);
+      ringe[Math.min(3, Math.floor(alter * 4))].ellipse(x, y, rx, 0.5 + alter * 2, 0, 0, Math.PI * 2);
+    }
+    ringe.forEach((p, i) => { ctx.strokeStyle = `rgba(230,240,250,${(0.45 * (1 - (i + 0.5) / 4) * staerke).toFixed(2)})`; ctx.stroke(p); });
     ctx.restore();
+    // Regenwolken ziehen langsam über das Gebiet
+    for (let i = 0; i < 3; i++) {
+      const w = echtzeit * 0.05 + i * 2.1;
+      leuchten(r.x + Math.cos(w) * r.r * 0.4, r.y + Math.sin(w) * r.r * 0.28, r.r * 0.62, '55,62,78', 0.26 * staerke);
+    }
   }
 
   // Räuberlager: Gebiet mit Henna-Rand, in der Mitte Zelte und ein Feuer
@@ -710,6 +963,7 @@ function zeichne() {
     const flackern = 0.75 + 0.25 * Math.sin(echtzeit * 13 + g.x);
     ctx.fillStyle = `rgba(255,${Math.round(140 + 60 * flackern)},60,.95)`;
     ctx.beginPath(); ctx.arc(g.x - 3, g.y + 7, 1.8 + flackern, 0, Math.PI * 2); ctx.fill();
+    if (nacht < 0.6) geier(g, echtzeit);
   }
 
   zeichneNebel();
@@ -821,7 +1075,7 @@ function zeichne() {
     for (const k of r.karawanen) {
       if (k.nach == null) continue;
       const a = oase(k.von), b = oase(k.nach);
-      zeichneZug(['kamel', 'kamel'], k.x, k.y, b.x - a.x, b.y - a.y, true, '#5a4632', r.farbe, 1.3);
+      zeichneZug(['kamel', 'kamel'], k.x, k.y, b.x - a.x, b.y - a.y, true, '#5a4632', r.farbe, 1.3, { beladen: k.menge > 0, fremd: true });
     }
   }
 
@@ -847,7 +1101,8 @@ function zeichne() {
       ctx.fillStyle = 'rgba(241,213,138,.25)';
       ctx.beginPath(); ctx.ellipse(x - 6, y + 1, 22, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     }
-    zeichneZug(figuren, x, y, rx, ry, laeuft, FARBE.tinte, FARBE.indigo);
+    const beladen = WAREN.some(w => w.id !== 'wasser' && k.ladung[w.id] >= 1);
+    zeichneZug(figuren, x, y, rx, ry, laeuft, FARBE.tinte, FARBE.indigo, 1.55, { beladen });
     if (k.nach != null && k.nachtmarsch && !istNacht()) zelt(x - 4, y + 1, 8);
 
     const zeichen = [];
@@ -886,6 +1141,8 @@ function zeichne() {
     }
   }
 
+  zeichneTageslicht(echtzeit, nacht);
+
   // Nacht: tiefes Indigo legt sich über die Wüste, Sterne funkeln, Laternen leuchten
   if (nacht > 0) {
     ctx.fillStyle = `rgba(16,22,58,${(nacht * 0.5).toFixed(3)})`;
@@ -895,6 +1152,7 @@ function zeichne() {
       ctx.fillStyle = `rgba(255,250,230,${(nacht * funkeln * 0.7).toFixed(2)})`;
       ctx.fillRect(hash01(i, 9) * KARTE_B, hash01(i, 10) * KARTE_H, 1.2, 1.2);
     }
+    zeichneNachthimmel(echtzeit, nacht);
     ctx.globalCompositeOperation = 'lighter';
     for (const o of S.oasen) {
       if (!o.aktiv) continue;
@@ -912,7 +1170,8 @@ function zeichne() {
     }
     ctx.globalCompositeOperation = 'source-over';
   }
-  anzeigeUhr.textContent = `${istNacht() ? '🌙' : '☀️'} ` + `${String(stunde()).padStart(2, '0')}:00`;
+  const uhrText = `${istNacht() ? '🌙' : '☀️'} ` + `${String(stunde()).padStart(2, '0')}:00`;
+  if (anzeigeUhr.dataset.text !== uhrText) { anzeigeUhr.dataset.text = uhrText; anzeigeUhr.innerHTML = symbole(uhrText); }
 
   // Ab hier ohne Zoom: Schriftzüge sollen immer gleich groß und mittig sein
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -1118,7 +1377,7 @@ function zeichneInfoKarte() {
     ctx.font = '12px "Alegreya Sans", system-ui, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillStyle = wasserFarbe(o.wasser) === '#e8664c' ? '#a33a24' : '#2c6f74';
-    ctx.fillText(`💧 ${Math.round(o.wasser)} %`, x + breite - 10, y + 15);
+    textMitSymbol(`💧 ${Math.round(o.wasser)} %`, x + breite - 10, y + 15, 12, 'right', true);
   }
   zeilen.forEach(([links, rechts, art], i) => {
     const zy = y + kopf + i * zeilenHoehe + 8;
@@ -1127,7 +1386,114 @@ function zeichneInfoKarte() {
     ctx.font = art === 'titel' ? '700 12px "Alegreya Sans", system-ui, sans-serif'
              : art === 'klein' ? 'italic 11px "Alegreya Sans", system-ui, sans-serif'
              : '13px "Alegreya Sans", system-ui, sans-serif';
-    ctx.fillText(links, x + 10, zy);
-    if (rechts) { ctx.textAlign = 'right'; ctx.font = '700 13px "Alegreya Sans", system-ui, sans-serif'; ctx.fillText(rechts, x + breite - 10, zy); }
+    textMitSymbol(links, x + 10, zy, 13, 'left', true);
+    if (rechts) { ctx.font = '700 13px "Alegreya Sans", system-ui, sans-serif'; textMitSymbol(rechts, x + breite - 10, zy, 13, 'right', true); }
   });
+}
+
+/* ---------------------------------------------------------------------
+   H) ATMOSPHÄRE – Licht der Tageszeit, Hitzeflimmern, Wolkenschatten,
+      Wüstenblüte nach dem Regen, Mond und Sternschnuppen, Geier
+   --------------------------------------------------------------------- */
+
+// Morgenrot, Mittagsglut und Abendrot als hauchdünner Farbschleier über der Karte
+function zeichneTageslicht(echtzeit, nacht) {
+  const h = tagesAnteil() * 24;
+  const glocke = (mitte, breite) => Math.max(0, 1 - Math.abs(h - mitte) / breite);
+  const morgen = glocke(6.2, 1.6), abend = glocke(18.8, 1.8), mittag = glocke(13, 3);
+  if (morgen > 0) { ctx.fillStyle = `rgba(255,150,175,${(0.13 * morgen).toFixed(3)})`; ctx.fillRect(0, 0, KARTE_B, KARTE_H); }
+  if (abend > 0)  { ctx.fillStyle = `rgba(255,128,50,${(0.16 * abend).toFixed(3)})`;  ctx.fillRect(0, 0, KARTE_B, KARTE_H); }
+  if (mittag > 0) {
+    ctx.fillStyle = `rgba(255,240,205,${(0.07 * mittag).toFixed(3)})`; ctx.fillRect(0, 0, KARTE_B, KARTE_H);
+    // Hitzeflimmern: feine, wabernde Linien, die langsam nach oben steigen
+    ctx.strokeStyle = `rgba(255,252,240,${(0.09 * mittag).toFixed(3)})`; ctx.lineWidth = 1.4;
+    for (let i = 0; i < 14; i++) {
+      const y = KARTE_H - ((hash01(i, 31) * KARTE_H + echtzeit * 9) % KARTE_H);
+      const x0 = hash01(i, 32) * KARTE_B * 0.7, laenge = 140 + hash01(i, 33) * 220;
+      ctx.beginPath();
+      for (let x = 0; x <= laenge; x += 12) {
+        const yy = y + Math.sin(x / 18 + echtzeit * 3 + i) * 1.6;
+        x ? ctx.lineTo(x0 + x, yy) : ctx.moveTo(x0 + x, yy);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+// Große, weiche Wolkenschatten ziehen tagsüber langsam nach Osten
+function zeichneWolkenschatten(echtzeit, nacht) {
+  if (nacht > 0.6) return;
+  for (let i = 0; i < 4; i++) {
+    const x = ((hash01(i, 41) * (KARTE_B + 600) + echtzeit * (5 + i)) % (KARTE_B + 600)) - 300;
+    const y = 80 + hash01(i, 42) * (KARTE_H - 160);
+    leuchten(x, y, 160 + hash01(i, 43) * 90, '70,45,20', 0.1 * (1 - nacht));
+  }
+}
+
+// Wüstenblüte: nach dem Regen sprießen Gras und Blumen – erst zart, dann voll, dann verblassend.
+// Alle Halme einer Farbe werden zu EINEM Pfad gesammelt und auf einmal gezeichnet – das ist viel schneller.
+const BLUETE_FARBEN = ['#f4d35e', '#f29bb5', '#fbf3e4', '#c9a0ea'];
+function zeichneBluete() {
+  for (const b of S.bluete || []) {
+    const alter = (S.zeit - b.von) / (b.bis - b.von);
+    if (alter <= 0 || alter >= 1) continue;
+    const staerke = Math.min(1, alter * 5) * Math.min(1, (1 - alter) * 3);
+    leuchten(b.x, b.y, b.r, '110,165,60', 0.42 * staerke);
+    const gras = [new Path2D(), new Path2D()], blumen = BLUETE_FARBEN.map(() => new Path2D());
+    for (let i = 0; i < 320; i++) {
+      if (hash01(i, 53) > staerke + 0.1) continue;          // am Anfang und Ende weniger
+      const w = hash01(i, 51) * Math.PI * 2, d = Math.sqrt(hash01(i, 52)) * b.r;
+      const x = b.x + Math.cos(w) * d, y = b.y + Math.sin(w) * d * 0.8;
+      if (x > kuesteX(y) - 6) continue;                    // nicht im Meer
+      if (i % 4 === 0) {
+        const p = blumen[(i % 16) >> 2];
+        p.moveTo(x + 1.7, y); p.arc(x, y, 1.7, 0, Math.PI * 2);
+      } else {
+        const p = gras[i % 3 ? 0 : 1];
+        p.moveTo(x - 2.2, y - 3.4); p.lineTo(x, y); p.lineTo(x + 2.2, y - 3.6); p.moveTo(x, y); p.lineTo(x + 0.2, y - 4.4);
+      }
+    }
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = 'rgba(80,135,45,.9)'; ctx.stroke(gras[0]);
+    ctx.strokeStyle = 'rgba(125,170,60,.9)'; ctx.stroke(gras[1]);
+    blumen.forEach((p, i) => { ctx.fillStyle = BLUETE_FARBEN[i]; ctx.fill(p); });
+  }
+}
+
+// Mondlicht, helle funkelnde Sterne und ab und zu eine Sternschnuppe
+function zeichneNachthimmel(echtzeit, nacht) {
+  // kühles Mondlicht von Nordosten: ein einfacher Farbverlauf (viel schneller als ein großes Leuchten)
+  const mond = ctx.createLinearGradient(KARTE_B, 0, KARTE_B * 0.4, KARTE_H);
+  mond.addColorStop(0, `rgba(150,175,240,${(0.12 * nacht).toFixed(3)})`); mond.addColorStop(1, 'rgba(150,175,240,0)');
+  ctx.fillStyle = mond; ctx.fillRect(0, 0, KARTE_B, KARTE_H);
+  // ein paar große Sterne mit Strahlenkreuz
+  for (let i = 0; i < 16; i++) {
+    const x = hash01(i, 61) * KARTE_B, y = hash01(i, 62) * KARTE_H;
+    const f = (0.55 + 0.45 * Math.sin(echtzeit * 1.3 + i * 3.7)) * nacht;
+    const l = 2 + hash01(i, 63) * 2.5;
+    ctx.strokeStyle = `rgba(255,248,225,${(0.75 * f).toFixed(2)})`; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(x - l, y); ctx.lineTo(x + l, y); ctx.moveTo(x, y - l); ctx.lineTo(x, y + l); ctx.stroke();
+    ctx.fillStyle = `rgba(255,252,240,${f.toFixed(2)})`; ctx.fillRect(x - 0.8, y - 0.8, 1.6, 1.6);
+  }
+  // Sternschnuppe: etwa alle 11 Sekunden, für einen Augenblick
+  const runde = Math.floor(echtzeit / 11), t = (echtzeit % 11) / 0.9;
+  if (t < 1 && nacht > 0.5) {
+    const x0 = 100 + hash01(runde, 64) * (KARTE_B - 300), y0 = 40 + hash01(runde, 65) * 220;
+    const x = x0 + t * 160, y = y0 + t * 70;
+    const verlauf = ctx.createLinearGradient(x - 60, y - 26, x, y);
+    verlauf.addColorStop(0, 'rgba(255,250,230,0)'); verlauf.addColorStop(1, `rgba(255,250,230,${(0.9 * (1 - t) * nacht).toFixed(2)})`);
+    ctx.strokeStyle = verlauf; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x - 60, y - 26); ctx.lineTo(x, y); ctx.stroke();
+  }
+}
+
+// Zwei Geier kreisen über einem Räuberlager
+function geier(g, echtzeit) {
+  ctx.strokeStyle = 'rgba(45,30,20,.75)'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+  for (let i = 0; i < 2; i++) {
+    const w = echtzeit * (0.45 + i * 0.12) + i * Math.PI + g.x;
+    const x = g.x + Math.cos(w) * g.r * 0.45, y = g.y - 18 + Math.sin(w) * g.r * 0.22;
+    const schlag = Math.sin(echtzeit * 4 + i) * 1.2;
+    ctx.beginPath(); ctx.moveTo(x - 5, y - 1.5 + schlag); ctx.quadraticCurveTo(x - 2, y - 2.5, x, y); ctx.quadraticCurveTo(x + 2, y - 2.5, x + 5, y - 1.5 + schlag); ctx.stroke();
+  }
 }

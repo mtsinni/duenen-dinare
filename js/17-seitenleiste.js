@@ -5,10 +5,10 @@
 function zeichnePanel() {
   pruefeAufgaben();
   einfuehrungPruefen();
-  document.getElementById('panelTipp').innerHTML = htmlTipp();
+  document.getElementById('panelTipp').innerHTML = symbole(htmlTipp());
   const j = jahreszeit();
-  document.getElementById('anzeigeJahreszeit').textContent = `${j.icon} ${j.name}, ${T('Jahr', 'year')} ${jahr()}`;
-  document.getElementById('btnTon').textContent = tonAn ? '🔊' : '🔇';
+  document.getElementById('anzeigeJahreszeit').innerHTML = symbole(`${j.icon} ${j.name}, ${T('Jahr', 'year')} ${jahr()}`);
+  document.getElementById('btnTon').innerHTML = symbole(tonAn ? '🔊' : '🔇');
   document.getElementById('anzeigeTag').textContent = T('Tag ', 'Day ') + S.tag;
   document.getElementById('anzeigeRang').textContent = RAENGE[S.rang].name;
   // Fortschrittsbalken im Rang-Kästchen: wie weit ist es noch bis zum nächsten Rang?
@@ -22,29 +22,29 @@ function zeichnePanel() {
   const gold = document.getElementById('anzeigeGold');
   gold.textContent = zahlText(Math.floor(S.gold));
   gold.classList.toggle('minus', S.gold < 0);
-  document.getElementById('anzeigeSchulden').textContent =
-    S.schulden > 0 ? `📉 ${zahlText(Math.round(S.schulden))} 🪙 ${T('Schulden', 'debt')}` : '';
+  document.getElementById('anzeigeSchulden').innerHTML = symbole(
+    S.schulden > 0 ? `📉 ${zahlText(Math.round(S.schulden))} 🪙 ${T('Schulden', 'debt')}` : '');
 
   // Pause-Knopf: zeigt „Weiter“, solange angehalten ist. Der Tempo-Knopf, mit dem es
   // danach weitergeht, bleibt während der Pause schwach markiert.
   const pk = document.getElementById('btnPause');
   pk.classList.toggle('an', S.pause);
-  pk.innerHTML = S.pause ? `▶<span class="txt"> ${T('Weiter', 'Resume')}</span>` : `⏸<span class="txt"> ${T('Pause', 'Pause')}</span>`;
+  pk.innerHTML = symbole(S.pause ? `▶<span class="txt"> ${T('Weiter', 'Resume')}</span>` : `⏸<span class="txt"> ${T('Pause', 'Pause')}</span>`);
   document.querySelectorAll('[data-tempo]').forEach(b => {
     b.classList.toggle('an', !S.pause && +b.dataset.tempo === S.tempo);
     b.classList.toggle('gemerkt', S.pause && +b.dataset.tempo === S.tempo);
   });
 
-  if (!schieber.zieht) document.getElementById('panelOase').innerHTML = htmlOase();
-  document.getElementById('panelKarawanen').innerHTML = htmlKarawanen();
-  document.getElementById('panelAuftraege').innerHTML = htmlAuftraege();
-  document.getElementById('panelZiele').innerHTML = htmlZiele();
-  document.getElementById('panelHaeuser').innerHTML = htmlHaeuser();
+  if (!schieber.zieht) document.getElementById('panelOase').innerHTML = symbole(htmlOase());
+  document.getElementById('panelKarawanen').innerHTML = symbole(htmlKarawanen());
+  document.getElementById('panelAuftraege').innerHTML = symbole(htmlAuftraege());
+  document.getElementById('panelZiele').innerHTML = symbole(htmlZiele());
+  document.getElementById('panelHaeuser').innerHTML = symbole(htmlHaeuser());
   document.getElementById('log').innerHTML =
-    S.log.map(e => `<div class="${e.art}">${T('Tag', 'Day')} ${e.tag}: ${e.text}</div>`).join('');
+    symbole(S.log.map(e => `<div class="${e.art}">${T('Tag', 'Day')} ${e.tag}: ${e.text}</div>`).join(''));
   const neueste = S.log[0];
   document.getElementById('ticker').innerHTML = neueste
-    ? `<span class="${neueste.art}">${T('Tag', 'Day')} ${neueste.tag}: ${neueste.text}</span>` : '';
+    ? symbole(`<span class="${neueste.art}">${T('Tag', 'Day')} ${neueste.tag}: ${neueste.text}</span>`) : '';
   zeichneReiter();
 }
 
@@ -74,12 +74,12 @@ function reiterWaehlen(id) {
 
 function zeichneReiter() {
   if (aktiverReiter === 'ereignisse') ungeleseneMeldungen = 0;
-  document.getElementById('reiter').innerHTML = REITER.map(r => {
+  document.getElementById('reiter').innerHTML = symbole(REITER.map(r => {
     const zahl = r.id === 'ereignisse' && ungeleseneMeldungen > 0
       ? `<span class="punkt">${ungeleseneMeldungen > 9 ? '9+' : ungeleseneMeldungen}</span>` : '';
     return `<button data-reiter="${r.id}" class="${r.id === aktiverReiter ? 'an' : ''}" title="${T(r.de, r.en)}">
               <span class="r-icon">${r.icon}</span><small>${T(r.de, r.en)}</small>${zahl}</button>`;
-  }).join('');
+  }).join(''));
   for (const r of REITER) document.getElementById(r.panel).classList.toggle('versteckt', r.id !== aktiverReiter);
 }
 
@@ -281,7 +281,7 @@ function schieberText(k, o, wid, menge) {
 function schieberAnzeigen() {
   const h = kannHandeln(); if (!h || !schieber.ware) return;
   const info = document.getElementById('schieberInfo'), ok = document.getElementById('schieberOk');
-  if (info) info.innerHTML = schieberText(h.k, h.o, schieber.ware, schieber.menge);
+  if (info) info.innerHTML = symbole(schieberText(h.k, h.o, schieber.ware, schieber.menge));
   if (ok) ok.disabled = !schieber.menge;
 }
 

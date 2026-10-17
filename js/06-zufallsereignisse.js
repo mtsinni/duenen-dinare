@@ -33,6 +33,9 @@ function hitzewelle() {
 function starkregen() {
   const x = zufall(80, KARTE_B - 170), y = zufall(80, KARTE_H - 80), r = 230;
   S.regen.push({ x, y, r, bis: S.zeit + 2 });
+  // Nach dem Regen blüht die Wüste: Gras und Blumen für etwa zwei Wochen
+  if (!S.bluete) S.bluete = [];
+  S.bluete.push({ x, y, r: r * 0.85, von: S.zeit + 0.6, bis: S.zeit + 15 });
   log(T('🌧️ Starke Regenfälle gehen über der Wüste nieder!', '🌧️ Heavy rain is falling over the desert!'), 'gut');
 
   for (const o of S.oasen) {

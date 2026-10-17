@@ -10,6 +10,7 @@ function aktualisiere(dt) {
   for (const s of S.stuerme) { s.x += s.dx * dt; s.y += s.dy * dt; }
   S.stuerme = S.stuerme.filter(s => s.x > -250 && s.x < KARTE_B + 250);
   S.regen = S.regen.filter(r => r.bis > S.zeit);
+  if (S.bluete) S.bluete = S.bluete.filter(b => b.bis > S.zeit);
   while (S.zeit >= S.tag + 1) tagesWechsel();
 }
 

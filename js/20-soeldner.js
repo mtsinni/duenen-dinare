@@ -176,5 +176,8 @@ function zeichneSoeldnerMarke(g) {
   const v = lagerVertrag(g);
   if (!v) return;
   const rest = Math.max(0, v.bisTag - S.tag);
-  beschriftung(`${v.icon} ${rest ? T(`in ${rest} T.`, `in ${rest} d`) : '!'}`, g.x, g.y - 22, 12, '#7a2a18');
+  const text = rest ? T(`in ${rest} T.`, `in ${rest} d`) : '!';
+  beschriftung(text, g.x + 8, g.y - 22, 12, '#7a2a18');
+  const breite = ctx.measureText(text).width;
+  if (!symbolMalen(ctx, v.icon, g.x + 8 - breite / 2 - 9, g.y - 22, 15, '#7a2a18')) beschriftung(v.icon, g.x + 8 - breite / 2 - 9, g.y - 22, 12, '#7a2a18');
 }
