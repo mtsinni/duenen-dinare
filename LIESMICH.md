@@ -1,4 +1,6 @@
-# Karawane – Handel in der Wüste
+# Dünen & Dinare – Karawanenhandel in der Wüste
+
+(englisch: *Dunes & Dinars*)
 
 Ein Handelsspiel im Browser: Schicke Karawanen von Oase zu Oase, trotze Sandstürmen,
 Räubern und Dürre – und werde zum Herrn der Wüste.

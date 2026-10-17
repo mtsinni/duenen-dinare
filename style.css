@@ -108,6 +108,8 @@ header .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .markt-schmal tr:not(.knopfzeile) td { border-bottom: none; }
 .knopfzeile td { text-align: right !important; padding-bottom: 8px; }
 
+#menue .untertitel { margin: 0 0 12px; font-style: italic; opacity: .75; }
+
 /* ---------- Reiter innerhalb der Oase ---------- */
 .oasen-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .oasen-kopf h2 { margin-bottom: 4px !important; }

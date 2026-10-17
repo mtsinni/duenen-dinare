@@ -5,8 +5,8 @@
 // Feste Texte der Seite (Kopfleiste, Knöpfe) in der gewählten Sprache setzen
 function statischeTexte() {
   const setze = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  document.title = T('Karawane – Handel in der Wüste', 'Caravan – Trading in the Desert');
-  document.querySelector('header h1').textContent = T('Karawane', 'Caravan');
+  document.title = T('Dünen & Dinare – Karawanenhandel in der Wüste', 'Dunes & Dinars – Caravan Trading in the Desert');
+  document.querySelector('header h1').textContent = T('Dünen & Dinare', 'Dunes & Dinars');
   // Symbol + Wort; auf dem Handy wird das Wort (class "txt") ausgeblendet
   const mitWort = (id, icon, wort) => { document.getElementById(id).innerHTML = `${icon}<span class="txt"> ${wort}</span>`; };
   mitWort('btnStatistik', '📊', T('Statistik', 'Statistics'));

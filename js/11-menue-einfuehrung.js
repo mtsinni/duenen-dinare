@@ -87,7 +87,8 @@ function zeichneMenue() {
       <button data-m="sprache" data-n="de" class="${SPRACHE === 'de' ? 'an' : ''}" lang="de">Deutsch</button>
       <button data-m="sprache" data-n="en" class="${SPRACHE === 'en' ? 'an' : ''}" lang="en">English</button>
     </div>
-    <h2 style="margin-top:0">🐪 ${T('Karawane – Handel in der Wüste', 'Caravan – Trading in the Desert')}</h2>`;
+    <h2 style="margin-top:0; margin-bottom:2px">🐪 ${T('Dünen & Dinare', 'Dunes & Dinars')}</h2>
+    <p class="untertitel">${T('Karawanenhandel in der Wüste', 'Caravan trading in the desert')}</p>`;
   if (laeuft) {
     h += `<button class="gross" data-m="weiter">▶ ${T(`Weiterspielen (Platz ${S.slot}, Tag ${S.tag})`, `Continue (slot ${S.slot}, day ${S.tag})`)}</button>`;
   }
@@ -167,7 +168,7 @@ function spielstandExportieren(n) {
   const datei = new Blob([JSON.stringify(daten)], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(datei);
-  link.download = T(`karawane-platz${n}-tag${daten.tag}.json`, `caravan-slot${n}-day${daten.tag}.json`);
+  link.download = T(`duenen-dinare-platz${n}-tag${daten.tag}.json`, `dunes-dinars-slot${n}-day${daten.tag}.json`);
   document.body.appendChild(link);
   link.click();
   link.remove();
