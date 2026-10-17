@@ -455,7 +455,8 @@ function htmlKarawanen() {
 
   // --- Übersicht der ausgewählten Karawane ---
   const tempo = reiseTempo(k), durst = karawanenDurst(k);
-  let d = `<div class="info">${T('Tempo', 'Speed')} ${Math.round(tempo)} · ${T('Durst', 'Thirst')} ${zahlText(durst, 1)} 💧/${T('Tag', 'day')} · ${T('Unterhalt', 'Upkeep')} ${unterhaltKosten(k)} 🪙/${T('Tag', 'day')}</div>`;
+  let d = `<div class="info"><button data-a="umbenennen">✏️ ${T('Umbenennen', 'Rename')}</button></div>`;
+  d += `<div class="info">${T('Tempo', 'Speed')} ${Math.round(tempo)} · ${T('Durst', 'Thirst')} ${zahlText(durst, 1)} 💧/${T('Tag', 'day')} · ${T('Unterhalt', 'Upkeep')} ${unterhaltKosten(k)} 🪙/${T('Tag', 'day')}</div>`;
   d += `<div class="info">📈 ${T('Bilanz bisher', 'Balance so far')}: <b class="${k.bilanz < 0 ? 'warnung' : ''}">${k.bilanz >= 0 ? '+' : ''}${Math.round(k.bilanz)} 🪙</b></div>`;
 
   const stufe = fuehrerStufe(k);
@@ -628,6 +629,7 @@ const AKTIONEN = {
   rs:         (v, n) => routeStationAendern(+v, n),
   rsw:        (v, n, w) => routeStationWahl(+v, n, w),
   rsplus:     () => routeStationHinzu(),
+  umbenennen: () => karawaneUmbenennen(),
   route:      () => routeUmschalten(),
   brunnen:    () => brunnenBauen(),
   heilen:     () => heilen(),

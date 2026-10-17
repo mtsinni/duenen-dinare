@@ -166,6 +166,19 @@ function losziehen() {
   zeichnePanel();
 }
 
+// Eigener Name für die ausgewählte Karawane (höchstens 24 Zeichen, ohne Zeichen, die HTML stören)
+function karawaneUmbenennen() {
+  const k = karawane(S.gewKarawane);
+  if (!k || typeof prompt === 'undefined') return;
+  const eingabe = prompt(T(`Neuer Name für „${k.name}“:`, `New name for "${k.name}":`), k.name);
+  if (eingabe == null) return;                               // abgebrochen
+  const neu = eingabe.replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+  if (!neu || neu === k.name) return;
+  log(T(`✏️ ${k.name} heißt jetzt „${neu}“.`, `✏️ ${k.name} is now called "${neu}".`));
+  k.name = neu;
+  zeichnePanel();
+}
+
 function waehleOase(id) {
   S.gewOase = id;
   const k = karawane(S.gewKarawane);
