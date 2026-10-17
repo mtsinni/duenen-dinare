@@ -158,6 +158,7 @@ button:hover:not(:disabled) { background: rgba(200,160,74,.22); border-color: va
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .35; cursor: default; }
 button.an { background: var(--messing); border-color: var(--messing); color: #161b36; font-weight: 700; }
+button.gemerkt { border-color: var(--messing); color: var(--messing-hell); box-shadow: inset 0 0 0 1px var(--messing); }
 button.an:hover:not(:disabled) { background: var(--messing-hell); border-color: var(--messing-hell); color: #161b36; }
 button:focus-visible, summary:focus-visible { outline: 2px solid var(--messing-hell); outline-offset: 2px; }
 header button { background: transparent; }

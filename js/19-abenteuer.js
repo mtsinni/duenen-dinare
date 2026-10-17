@@ -195,7 +195,7 @@ function erkundenTag() {
 function passagierAnzahl(k) { return (k.passagiere || []).reduce((s, p) => s + p.anzahl, 0); }
 
 function reisendeTag() {
-  S.reisende = S.reisende.filter(r => r.ablauf >= S.tag && oase(r.von).aktiv);
+  S.reisende = S.reisende.filter(r => r.ablauf >= S.tag && oase(r.von) && oase(r.von).aktiv && oase(r.ziel));
   if (Math.random() > 0.14 || S.reisende.length >= 4) return;
   const starts = S.oasen.filter(o => o.aktiv && !o.hafen && o.bev >= 400 && !S.reisende.some(r => r.von === o.id));
   if (!starts.length) return;

@@ -58,6 +58,9 @@ function alterSpielstandUebernehmen() {
 // --- Das Menü-Fenster ---
 
 let menueOffen = false, pauseVorMenue = false;
+// Direkt nach dem Öffnen der Seite ist der letzte Spielstand gerade erst geladen –
+// dann bleibt das Spiel auch nach „Weiter“ angehalten.
+let geradeGeladen = true;
 const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true };
 
 function menueOeffnen() {
@@ -77,7 +80,14 @@ function menueSchliessen(weiterLaufen) {
   menueOffen = false;
   document.getElementById('menue').classList.remove('offen');
   S.pause = weiterLaufen ? false : pauseVorMenue;
+  if (geradeGeladen) { S.pause = true; geradeGeladen = false; }
   zeichnePanel();
+}
+
+// Neues oder geladenes Spiel: immer erst einmal angehalten, damit man sich umschauen kann
+function menueSchliessenMitPause() {
+  pauseVorMenue = true;
+  menueSchliessen(false);
 }
 
 function zeichneMenue() {
@@ -137,7 +147,7 @@ function zeichneMenue() {
 function menueAktion(m, n) {
   if (m === 'sprache') spracheSetzen(n);
   if (m === 'weiter') menueSchliessen(true);
-  if (m === 'laden' && ladeSlot(+n)) { speichern(); menueSchliessen(true); }
+  if (m === 'laden' && ladeSlot(+n)) { speichern(); menueSchliessenMitPause(); }
   if (m === 'loeschen') {
     if (confirm(T(`Spielstand auf Platz ${n} wirklich löschen?`, `Really delete the game in slot ${n}?`))) {
       slotLoeschen(+n);
@@ -154,7 +164,7 @@ function menueAktion(m, n) {
     if (slotLesen(menueWahl.slot) && !confirm(T(`Platz ${menueWahl.slot} ist belegt. Überschreiben?`, `Slot ${menueWahl.slot} is in use. Overwrite it?`))) return;
     neuesSpiel(menueWahl.schwierigkeit, menueWahl.slot, menueWahl.einfuehrung);
     speichern();
-    menueSchliessen(false);
+    menueSchliessenMitPause();
   }
 }
 
@@ -196,7 +206,7 @@ function spielstandImportieren(n) {
       try { localStorage.setItem(slotSchluessel(n), JSON.stringify(daten)); } catch (e) {}
       ladeSlot(n);
       speichern();
-      menueSchliessen(false);
+      menueSchliessenMitPause();
       log(T(`📂 Spielstand aus „${datei.name}“ geladen.`, `📂 Game loaded from "${datei.name}".`), 'gut');
       zeichnePanel();
     };

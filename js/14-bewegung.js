@@ -75,6 +75,13 @@ function ankunft(k, ziel) {
   k.sturmErlebt = false;
   if (ziel.aktiv) merkePreise(ziel);    // vor Ort sieht man die aktuellen Preise
   if (S.gewKarawane === k.id) S.gewOase = ziel.id;
+  // Von Hand geschickte Karawane angekommen: Spiel anhalten und den Markt der Oase zeigen.
+  // Karawanen auf einer Handelsroute fahren von selbst weiter – die halten nicht an.
+  if (!k.route.aktiv) {
+    S.pause = true;
+    S.gewKarawane = k.id; S.gewOase = ziel.id; S.ziel = null;
+    if (typeof aktiverReiter !== 'undefined') { aktiverReiter = 'oase'; aktiverOasenReiter = 'markt'; }
+  }
   routeFortsetzen(k);                   // fährt die Karawane eine Handelsroute?
   zeichnePanel();
 }

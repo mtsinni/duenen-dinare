@@ -17,9 +17,15 @@ function zeichnePanel() {
   document.getElementById('anzeigeSchulden').textContent =
     S.schulden > 0 ? `📉 ${zahlText(Math.round(S.schulden))} ${T('Schulden', 'debt')}` : '';
 
-  document.getElementById('btnPause').classList.toggle('an', S.pause);
-  document.querySelectorAll('[data-tempo]').forEach(b =>
-    b.classList.toggle('an', !S.pause && +b.dataset.tempo === S.tempo));
+  // Pause-Knopf: zeigt „Weiter“, solange angehalten ist. Der Tempo-Knopf, mit dem es
+  // danach weitergeht, bleibt während der Pause schwach markiert.
+  const pk = document.getElementById('btnPause');
+  pk.classList.toggle('an', S.pause);
+  pk.innerHTML = S.pause ? `▶<span class="txt"> ${T('Weiter', 'Resume')}</span>` : `⏸<span class="txt"> ${T('Pause', 'Pause')}</span>`;
+  document.querySelectorAll('[data-tempo]').forEach(b => {
+    b.classList.toggle('an', !S.pause && +b.dataset.tempo === S.tempo);
+    b.classList.toggle('gemerkt', S.pause && +b.dataset.tempo === S.tempo);
+  });
 
   document.getElementById('panelOase').innerHTML = htmlOase();
   document.getElementById('panelKarawanen').innerHTML = htmlKarawanen();

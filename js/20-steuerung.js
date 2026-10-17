@@ -10,7 +10,6 @@ function statischeTexte() {
   // Symbol + Wort; auf dem Handy wird das Wort (class "txt") ausgeblendet
   const mitWort = (id, icon, wort) => { document.getElementById(id).innerHTML = `${icon}<span class="txt"> ${wort}</span>`; };
   mitWort('btnStatistik', '📊', T('Statistik', 'Statistics'));
-  mitWort('btnPause', '⏸', T('Pause', 'Pause'));
   mitWort('btnMenue', '☰', T('Menü', 'Menu'));
   setze('logTitel', T('Ereignisse', 'Events'));
   document.querySelectorAll('[data-tempo]').forEach(b => { b.textContent = zahlText(+b.dataset.tempo) + '×'; });
