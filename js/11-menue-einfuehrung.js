@@ -298,3 +298,164 @@ function htmlTipp() {
       <button data-a="tippende">${T('Einführung beenden', 'End tutorial')}</button>
     </div></div>`;
 }
+
+// =====================================================================
+// --- Die Startseite: Abendstimmung über den Dünen, eine Karawane zieht vorbei ---
+// =====================================================================
+
+let startOffen = false, startSpielGeladen = false, startBeginn = 0;
+
+function startseiteOeffnen(gespeichert) {
+  startOffen = true;
+  startSpielGeladen = gespeichert;
+  startBeginn = performance.now();
+  S.pause = true;
+  document.getElementById('startseite').classList.add('offen');
+  zeichneStartInhalt();
+  requestAnimationFrame(startMalen);
+}
+
+function startseiteSchliessen() {
+  startOffen = false;
+  document.getElementById('startseite').classList.remove('offen');
+}
+
+function zeichneStartInhalt() {
+  let weiter = '';
+  if (startSpielGeladen) {
+    const s = SCHWIERIGKEITEN[S.schwierigkeit] || SCHWIERIGKEITEN.normal;
+    weiter = `<button class="start-haupt" data-st="weiter">▶ ${T('Weiterspielen', 'Continue')}
+                <small>${T('Platz', 'Slot')} ${S.slot} · ${T('Tag', 'Day')} ${S.tag} · 🏅 ${RAENGE[S.rang].name} · ${s.icon} ${s.name}</small></button>`;
+  }
+  document.getElementById('startInhalt').innerHTML = symbole(`
+    <div class="start-sprache">
+      <button data-st="sprache" data-n="de" class="${SPRACHE === 'de' ? 'an' : ''}">Deutsch</button>
+      <button data-st="sprache" data-n="en" class="${SPRACHE === 'en' ? 'an' : ''}">English</button>
+    </div>
+    <div class="start-mitte">
+      <div class="start-zier">✦ ✦ ✦</div>
+      <h1 class="start-titel">${T('Dünen <span>&amp;</span> Dinare', 'Dunes <span>&amp;</span> Dinars')}</h1>
+      <div class="start-unter">${T('Karawanenhandel in der Wüste', 'Caravan trading in the desert')}</div>
+      <p class="start-text">${T('Führe deine Karawanen von Oase zu Oase, handle mit Salz, Weihrauch und Gold, trotze Sandstürmen und Räubern – und werde Herr der Wüste.',
+                                'Lead your caravans from oasis to oasis, trade salt, frankincense and gold, brave sandstorms and robbers – and become Lord of the Desert.')}</p>
+      <div class="start-knoepfe">
+        ${weiter}
+        <button class="${startSpielGeladen ? 'start-neben' : 'start-haupt'}" data-st="menue">${startSpielGeladen
+          ? T('Neues Spiel · Spielstände', 'New game · Saved games')
+          : T('🐪 Neues Spiel beginnen', '🐪 Start a new game')}</button>
+      </div>
+    </div>`);
+}
+
+function startAktion(art, n) {
+  if (art === 'sprache') { spracheSetzen(n); zeichneStartInhalt(); return; }
+  startseiteSchliessen();
+  if (art === 'weiter') { geradeGeladen = false; S.pause = true; zeichnePanel(); }   // angehalten – Leertaste/▶ startet
+  if (art === 'menue') menueOeffnen();
+}
+
+// Silhouetten-Farben für die Karawane vor dem Abendhimmel
+const START_SCHATTEN = { grund: '#1d1020', schatten: '#140a18', licht: '#2b1a2c' };
+
+// Höhe eines Dünenkamms an der Stelle x (aus ein paar Sinuswellen zusammengesetzt)
+function duenenKamm(x, b, h, basis, wellen) {
+  let y = basis * h;
+  for (const [hoch, laenge, versatz] of wellen) y -= Math.sin(x / (b * laenge) + versatz) * hoch * h;
+  return y;
+}
+
+function startMalen(jetzt) {
+  if (!startOffen) return;
+  const c = document.getElementById('startHimmel'), g = c.getContext('2d');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const b = c.clientWidth, h = c.clientHeight;
+  if (c.width !== Math.round(b * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(b * dpr); c.height = Math.round(h * dpr); }
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const t = (jetzt - startBeginn) / 1000;
+  const horizont = h * 0.64;
+
+  // 1. Himmel: oben tiefes Indigo, am Horizont glühendes Orange
+  const himmel = g.createLinearGradient(0, 0, 0, horizont);
+  himmel.addColorStop(0, '#11163a'); himmel.addColorStop(0.45, '#4a2a5c'); himmel.addColorStop(0.78, '#c4613f'); himmel.addColorStop(1, '#f2b25c');
+  g.fillStyle = himmel; g.fillRect(0, 0, b, h);
+
+  // 2. Sterne erscheinen langsam
+  const sternLicht = Math.min(1, t / 6);
+  for (let i = 0; i < 90; i++) {
+    const x = hash01(i, 71) * b, y = hash01(i, 72) * horizont * 0.55;
+    const a = sternLicht * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.7 + i * 5.3))) * (1 - y / (horizont * 0.55));
+    g.fillStyle = `rgba(255,248,230,${a.toFixed(2)})`;
+    g.fillRect(x, y, i % 9 === 0 ? 2 : 1.2, i % 9 === 0 ? 2 : 1.2);
+  }
+
+  // 3. Die tief stehende Sonne mit weichem Glühen – sie sinkt ganz langsam
+  const sx = b * 0.7, sy = horizont - h * 0.03 + Math.min(t * 0.6, h * 0.04), sr = Math.min(b, h) * 0.085;
+  const glut = g.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 6);
+  glut.addColorStop(0, 'rgba(255,190,110,.55)'); glut.addColorStop(1, 'rgba(255,150,80,0)');
+  g.fillStyle = glut; g.fillRect(0, 0, b, h);
+  const sonne = g.createLinearGradient(0, sy - sr, 0, sy + sr);
+  sonne.addColorStop(0, '#ffe39a'); sonne.addColorStop(1, '#ff8c4a');
+  g.fillStyle = sonne; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
+
+  // 4. Dünenreihen von hinten nach vorne – je näher, desto dunkler
+  const reihen = [
+    { farbe: '#a4524a', basis: 0.66, wellen: [[0.025, 0.11, 1], [0.012, 0.05, 2]] },
+    { farbe: '#77394a', basis: 0.72, wellen: [[0.035, 0.16, 3], [0.015, 0.07, 1]] },
+    { farbe: '#4a2440', basis: 0.8,  wellen: [[0.04, 0.2, 5], [0.02, 0.08, 2]] },
+  ];
+  reihen.forEach((r, nr) => {
+    g.fillStyle = r.farbe;
+    g.beginPath(); g.moveTo(0, h);
+    for (let x = 0; x <= b + 10; x += 8) g.lineTo(x, duenenKamm(x, b, h, r.basis, r.wellen));
+    g.lineTo(b, h); g.closePath(); g.fill();
+    if (nr === 0) {
+      // eine Oase am Horizont: Palmen-Silhouetten und warme Lichter
+      const ox = b * 0.22, oy = duenenKamm(ox, b, h, r.basis, r.wellen);
+      g.fillStyle = '#5a2c3c';
+      for (let i = 0; i < 5; i++) {
+        const px = ox + (i - 2) * h * 0.022, ph = h * (0.035 + hash01(i, 73) * 0.02);
+        g.fillRect(px - 0.8, oy - ph, 1.6, ph);
+        for (let j = 0; j < 6; j++) {
+          const w = j / 6 * Math.PI * 2;
+          g.beginPath(); g.ellipse(px + Math.cos(w) * h * 0.008, oy - ph + Math.sin(w) * h * 0.003, h * 0.01, h * 0.0025, w, 0, Math.PI * 2); g.fill();
+        }
+      }
+      for (let i = 0; i < 4; i++) {
+        const f = 0.6 + 0.4 * Math.sin(t * 3 + i * 2);
+        g.fillStyle = `rgba(255,200,110,${(0.8 * f).toFixed(2)})`;
+        g.fillRect(ox - h * 0.03 + i * h * 0.018, oy - 2, 1.8, 1.8);
+      }
+    }
+  });
+
+  // 5. Vorderste Düne mit der Karawane auf dem Kamm
+  const vorn = { basis: 0.88, wellen: [[0.05, 0.25, 0.6], [0.015, 0.09, 4]] };
+  g.fillStyle = '#26132a';
+  g.beginPath(); g.moveTo(0, h);
+  for (let x = 0; x <= b + 10; x += 6) g.lineTo(x, duenenKamm(x, b, h, vorn.basis, vorn.wellen));
+  g.lineTo(b, h); g.closePath(); g.fill();
+
+  const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
+  const figuren = ['kamel', 'kamel', 'kamel', 'esel', 'kamel'];
+  const weg = b + figuren.length * 18 * gr + 200;
+  const kopfX = ((t * 22 * gr) % weg) - 100;
+  figuren.forEach((typ, i) => {
+    const x = kopfX - i * 18 * gr, y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
+    const schritt = t * 6.5 + i * 1.7;
+    g.save(); g.translate(x, y - Math.abs(Math.sin(schritt)) * 0.5 * gr); g.scale(gr, gr);
+    zeichneTier(g, typ, { schritt, farben: START_SCHATTEN, decke: '#24162c', reiter: i === 0, last: -1 });
+    g.restore();
+  });
+
+  // 6. Dunkler Rand, damit die Mitte leuchtet
+  const rand = g.createRadialGradient(b / 2, h * 0.45, Math.min(b, h) * 0.3, b / 2, h * 0.45, Math.max(b, h) * 0.8);
+  rand.addColorStop(0, 'rgba(10,8,25,0)'); rand.addColorStop(1, 'rgba(10,8,25,.55)');
+  g.fillStyle = rand; g.fillRect(0, 0, b, h);
+
+  requestAnimationFrame(startMalen);
+}
+
+document.getElementById('startInhalt').addEventListener('click', e => {
+  const k = e.target.closest('[data-st]');
+  if (k) startAktion(k.dataset.st, k.dataset.n);
+});

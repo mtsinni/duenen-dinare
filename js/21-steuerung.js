@@ -53,7 +53,7 @@ document.getElementById('menue').addEventListener('click', e => {
 // Browser erlauben Töne erst nach der ersten Berührung – dann den Audio-Kanal wecken
 document.addEventListener('pointerdown', () => { if (tonAn) audioBereit(); }, { once: true });
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && !menueOffen) { e.preventDefault(); S.pause = !S.pause; zeichnePanel(); }
+  if (e.code === 'Space' && !menueOffen && !startOffen) { e.preventDefault(); S.pause = !S.pause; zeichnePanel(); }
 });
 
 let letzteZeit = performance.now();
@@ -69,7 +69,8 @@ function schleife(jetzt) {
 ansichtBegrenzen();
 datenUebersetzen();
 statischeTexte();
-if (!laden()) neuesSpiel('normal', 1, true);   // vorläufiges Spiel, bis im Menü gewählt wird
+const gespeichert = laden();
+if (!gespeichert) neuesSpiel('normal', 1, true);   // vorläufiges Spiel, bis im Menü gewählt wird
 zeichnePanel();
-menueOeffnen();
+startseiteOeffnen(gespeichert);
 requestAnimationFrame(schleife);

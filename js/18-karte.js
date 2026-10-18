@@ -555,7 +555,7 @@ function gepaeck(g, x, y, breite, nr) {
 
 // opt: { schritt, decke, reiter: true/false, last: Nummer oder -1 }
 function zeichneTier(g, typ, opt) {
-  const f = TIER_FARBEN[typ], schritt = opt.schritt;
+  const f = opt.farben || TIER_FARBEN[typ], schritt = opt.schritt;   // opt.farben: z. B. Scherenschnitt auf der Startseite
   if (typ === 'kamel') {
     const nicken = Math.sin(schritt * 2) * 0.6;
     vierBeine(g, f, [-4.2, -2.8, 3, 4.4], -7.5, 7.5, schritt, 1.25, false);
