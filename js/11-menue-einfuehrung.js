@@ -364,6 +364,26 @@ function duenenKamm(x, b, h, basis, wellen) {
   return y;
 }
 
+// Eine runde Sprechblase mit Fragezeichen (für die wartende Karawane auf der Startseite)
+function fragezeichenBlase(g, x, y, r, neigung, sicht) {
+  g.save();
+  g.globalAlpha = sicht;
+  g.translate(x, y);
+  // Blase mit kleinem Zipfel nach unten
+  g.fillStyle = '#f6e7c4'; g.strokeStyle = '#3a1d2c'; g.lineWidth = Math.max(1.2, r * 0.12);
+  g.beginPath();
+  g.moveTo(-r * 0.25, r * 0.8); g.lineTo(-r * 0.45, r * 1.45); g.lineTo(r * 0.2, r * 0.9);
+  g.arc(0, 0, r, Math.PI * 0.3, Math.PI * 0.62, true);
+  g.closePath(); g.fill(); g.stroke();
+  // das Fragezeichen wackelt leicht hin und her
+  g.rotate(neigung);
+  g.fillStyle = '#7a2e1f';
+  g.font = `700 ${Math.round(r * 1.5)}px Amiri, Georgia, serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('?', 0, r * 0.08);
+  g.restore();
+}
+
 function startMalen(jetzt) {
   if (!startOffen) return;
   const c = document.getElementById('startHimmel'), g = c.getContext('2d');
@@ -436,8 +456,9 @@ function startMalen(jetzt) {
   g.lineTo(b, h); g.closePath(); g.fill();
 
   const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
-  // Alle Tiere, die man im Spiel kaufen kann – jedes mit seiner eigenen Länge als Abstand
-  const figuren = ['kamel', 'pferd', 'elefant', 'kamel', 'esel'];
+  // Alle Tiere, die man im Spiel kaufen kann. Der Elefant läuft hinten und ist langsamer:
+  // Hat die Spitze 60 % des Bildes erreicht, wartet der vordere Teil, bis der Elefant aufgeschlossen hat.
+  const figuren = ['kamel', 'pferd', 'kamel', 'esel', 'elefant'];
   // Wie weit ragt jedes Tier nach vorne (Kopf, Rüssel) und nach hinten (Schwanz)? Dazwischen kommt eine Lücke.
   const VORNE = { kamel: 12.8, pferd: 10.8, esel: 8.8, elefant: 14 }, HINTEN = { kamel: 7.4, pferd: 8.2, esel: 5.2, elefant: 9 };
   const LUECKE = 5;
@@ -446,15 +467,65 @@ function startMalen(jetzt) {
     if (i) summe += HINTEN[figuren[i - 1]] + VORNE[typ] + LUECKE;
     abstaende.push(summe);
   });
-  const weg = b + summe * gr + 200;
-  const kopfX = ((t * 22 * gr) % weg) - 100;
+  const elefantAbstand = abstaende[figuren.length - 1] * gr;     // sein Platz, wenn er aufgeschlossen hat
+  const tempo = 22 * gr, elefantTempo = tempo * 0.7;            // Pixel pro Sekunde
+  const start = -100, halt = b * 0.6;                           // die Spitze startet links, hält bei 60 %
+  const ende = b + elefantAbstand + 120;                        // so weit, bis auch der Elefant raus ist
+  const FRAGE = 2.6;                                            // so lange wundert sich die Karawane, bevor der Elefant auftaucht
+  const ziel = halt - elefantAbstand;                           // hier schließt der Elefant auf
+  // Beim Halt ist der Elefant noch außerhalb des Bildes – genau so weit, dass sein Rüssel nach FRAGE Sekunden links hereinkommt
+  const elefantBeiHalt = -(VORNE.elefant + 2) * gr - elefantTempo * FRAGE;
+
+  // Der Ablauf in drei Abschnitten – aus der Zeit berechnet, damit nichts gespeichert werden muss:
+  const t1 = (halt - start) / tempo;                            // 1. die Spitze läuft, der Elefant bummelt unsichtbar hinterher
+  const t2 = (ziel - elefantBeiHalt) / elefantTempo;            // 2. vorne warten („?“), der Elefant kommt ins Bild und holt auf
+  const t3 = (ende - halt) / tempo;                             // 3. alle zusammen hinaus
+  const tt = t % (t1 + t2 + t3);
+  let kopfX, elefantX, vorneLaeuft, vorneGelaufen, elefantGelaufen, wartet = -1;
+  if (tt < t1) {
+    kopfX = start + tempo * tt; elefantX = elefantBeiHalt - elefantTempo * (t1 - tt);
+    vorneLaeuft = true; vorneGelaufen = tt; elefantGelaufen = tt;
+  } else if (tt < t1 + t2) {
+    wartet = tt - t1;
+    kopfX = halt; elefantX = elefantBeiHalt + elefantTempo * wartet;
+    vorneLaeuft = false; vorneGelaufen = t1; elefantGelaufen = tt;
+  } else {
+    const nach = tt - t1 - t2;
+    kopfX = halt + tempo * nach; elefantX = kopfX - elefantAbstand;
+    vorneLaeuft = true; vorneGelaufen = t1 + nach; elefantGelaufen = t1 + t2 + nach;
+  }
+
   figuren.forEach((typ, i) => {
-    const x = kopfX - abstaende[i] * gr, y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
-    const schritt = t * 6.5 + i * 1.7;
-    g.save(); g.translate(x, y - Math.abs(Math.sin(schritt)) * 0.5 * gr); g.scale(gr, gr);
+    const elefant = typ === 'elefant';
+    const x = elefant ? elefantX : kopfX - abstaende[i] * gr;
+    if (x < -60 * gr || x > b + 60 * gr) return;               // außerhalb des Bildes: nicht malen
+    const y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
+    const laeuft = elefant || vorneLaeuft;
+    // Schrittfolge: der Elefant mit langsamen, schweren Schritten; wer steht, steht auf allen vier Beinen
+    let schritt = (elefant ? elefantGelaufen * 4.2 : vorneGelaufen * 6.5) + i * 1.7;
+    if (!laeuft) schritt = Math.round(schritt / Math.PI) * Math.PI;
+    g.save(); g.translate(x, y - (laeuft ? Math.abs(Math.sin(schritt)) * 0.5 * gr : 0)); g.scale(gr, gr);
     zeichneTier(g, typ, { schritt, farben: START_SCHATTEN, decke: '#24162c', reiter: i === 0, last: -1 });
     g.restore();
   });
+
+  // Während des Wartens: Fragezeichen-Blasen über dem Reiter und dem Esel („Wo bleibt der Elefant?“)
+  if (wartet >= 0) {
+    const blasen = [{ nr: 0, ab: 0.25, hoehe: 40, gross: 1 }, { nr: 3, ab: 0.75, hoehe: 25, gross: 0.8 }];
+    blasen.forEach(bl => {
+      const seit = wartet - bl.ab;
+      if (seit <= 0) return;
+      // erscheint mit einem kleinen Hüpfer, verblasst, sobald der Elefant zu sehen ist
+      const auf = Math.min(1, seit / 0.35);
+      const hupf = 1 + 0.35 * Math.sin(auf * Math.PI) * (1 - auf * 0.4);
+      const weg = Math.max(0, Math.min(1, (wartet - FRAGE - 0.4) / 0.6));
+      const sicht = (1 - weg) * Math.min(1, seit / 0.15);
+      if (sicht <= 0) return;
+      const x = kopfX - abstaende[bl.nr] * gr + 2 * gr;
+      const y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) - bl.hoehe * gr + Math.sin(wartet * 3 + bl.nr) * 1.5 * gr;
+      fragezeichenBlase(g, x, y, 8 * gr * bl.gross * hupf, Math.sin(wartet * 2.4 + bl.nr) * 0.12, sicht);
+    });
+  }
 
   // 6. Dunkler Rand, damit die Mitte leuchtet
   const rand = g.createRadialGradient(b / 2, h * 0.45, Math.min(b, h) * 0.3, b / 2, h * 0.45, Math.max(b, h) * 0.8);
