@@ -436,11 +436,15 @@ function startMalen(jetzt) {
   g.lineTo(b, h); g.closePath(); g.fill();
 
   const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
-  const figuren = ['kamel', 'kamel', 'kamel', 'esel', 'kamel'];
-  const weg = b + figuren.length * 18 * gr + 200;
+  // Alle Tiere, die man im Spiel kaufen kann – jedes mit seiner eigenen Länge als Abstand
+  const figuren = ['kamel', 'pferd', 'elefant', 'kamel', 'esel'];
+  const LAENGE = { kamel: 18, pferd: 16, esel: 14, elefant: 24 };
+  const abstaende = []; let summe = 0;
+  for (const typ of figuren) { abstaende.push(summe); summe += LAENGE[typ]; }
+  const weg = b + summe * gr + 200;
   const kopfX = ((t * 22 * gr) % weg) - 100;
   figuren.forEach((typ, i) => {
-    const x = kopfX - i * 18 * gr, y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
+    const x = kopfX - abstaende[i] * gr, y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
     const schritt = t * 6.5 + i * 1.7;
     g.save(); g.translate(x, y - Math.abs(Math.sin(schritt)) * 0.5 * gr); g.scale(gr, gr);
     zeichneTier(g, typ, { schritt, farben: START_SCHATTEN, decke: '#24162c', reiter: i === 0, last: -1 });
