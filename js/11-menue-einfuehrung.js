@@ -438,9 +438,14 @@ function startMalen(jetzt) {
   const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
   // Alle Tiere, die man im Spiel kaufen kann – jedes mit seiner eigenen Länge als Abstand
   const figuren = ['kamel', 'pferd', 'elefant', 'kamel', 'esel'];
-  const LAENGE = { kamel: 18, pferd: 16, esel: 14, elefant: 24 };
+  // Wie weit ragt jedes Tier nach vorne (Kopf, Rüssel) und nach hinten (Schwanz)? Dazwischen kommt eine Lücke.
+  const VORNE = { kamel: 12.8, pferd: 10.8, esel: 8.8, elefant: 14 }, HINTEN = { kamel: 7.4, pferd: 8.2, esel: 5.2, elefant: 9 };
+  const LUECKE = 5;
   const abstaende = []; let summe = 0;
-  for (const typ of figuren) { abstaende.push(summe); summe += LAENGE[typ]; }
+  figuren.forEach((typ, i) => {
+    if (i) summe += HINTEN[figuren[i - 1]] + VORNE[typ] + LUECKE;
+    abstaende.push(summe);
+  });
   const weg = b + summe * gr + 200;
   const kopfX = ((t * 22 * gr) % weg) - 100;
   figuren.forEach((typ, i) => {
