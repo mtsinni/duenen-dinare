@@ -364,6 +364,134 @@ function duenenKamm(x, b, h, basis, wellen) {
   return y;
 }
 
+// Die Dünenreihen der Startseite, von hinten nach vorne – je näher, desto dunkler.
+// zug: Farben und Größe der Karawane, wenn sie auf dieser Düne läuft (weiter hinten = kleiner und blasser)
+const START_DUENEN = [
+  { farbe: '#a4524a', basis: 0.66, wellen: [[0.025, 0.11, 1], [0.012, 0.05, 2]], gross: 0.34, richtung: -1,
+    zug: { grund: '#62293a', schatten: '#4e2030', licht: '#74343f' }, decke: '#55223a' },
+  { farbe: '#77394a', basis: 0.72, wellen: [[0.035, 0.16, 3], [0.015, 0.07, 1]], gross: 0.46, richtung: 1,
+    zug: { grund: '#47203a', schatten: '#381830', licht: '#552a42' }, decke: '#3e1b33' },
+  { farbe: '#4a2440', basis: 0.8,  wellen: [[0.04, 0.2, 5], [0.02, 0.08, 2]], gross: 0.62, richtung: -1,
+    zug: { grund: '#2b1428', schatten: '#200e1e', licht: '#3a1d34' }, decke: '#2a1430' },
+];
+const START_VORN = { basis: 0.88, wellen: [[0.05, 0.25, 0.6], [0.015, 0.09, 4]] };
+const START_RAST = 5;     // so viele Sekunden rastet die Karawane an der Oase
+
+// Wo die Palmen der Oase stehen (auf der hintersten Düne) – Mitte und Breite
+function startOase(b, h) {
+  const m = Math.min(h, b * 1.4);
+  return { x: b * 0.22, abstand: m * 0.022, m };
+}
+
+// Die Reihenfolge der Tiere: der Elefant läuft hinten
+const START_FIGUREN = ['kamel', 'pferd', 'kamel', 'esel', 'elefant'];
+// Wie weit ragt jedes Tier nach vorne (Kopf, Rüssel) und nach hinten (Schwanz)? Dazwischen kommt eine Lücke.
+const START_VORNE = { kamel: 12.8, pferd: 10.8, esel: 8.8, elefant: 14 }, START_HINTEN = { kamel: 7.4, pferd: 8.2, esel: 5.2, elefant: 9 };
+const START_ABSTAENDE = (() => {
+  const a = []; let summe = 0;
+  START_FIGUREN.forEach((typ, i) => {
+    if (i) summe += START_HINTEN[START_FIGUREN[i - 1]] + START_VORNE[typ] + 5;
+    a.push(summe);
+  });
+  return a;
+})();
+
+// Berechnet aus der Zeit, wo die Karawane gerade ist. Die Reise hat vier Abschnitte:
+//  0. vorderste Düne, links → rechts – vorne wartet man auf den bummelnden Elefanten („?“)
+//  1. eine Düne weiter oben, rechts → links
+//  2. noch eine Düne weiter oben, links → rechts
+//  3. hinterste Düne, rechts → links – Rast bei den Palmen, dann weiter aus dem Bild
+// Danach beginnt alles von vorn.
+function startAblauf(t, b, h, gr) {
+  const tempo = 22 * gr, elefantTempo = tempo * 0.7;   // Pixel pro Sekunde
+  const elefantAbstand = START_ABSTAENDE[START_ABSTAENDE.length - 1] * gr;
+  const figurenZug = []; // Ergebnis: [{typ, x, laeuft, schritt}]
+
+  // --- Abschnitt 0 (die Szene mit dem Elefanten) ---
+  const start = -100, halt = b * 0.6, ende = b + elefantAbstand + 120;
+  const FRAGE = 2.6;                                     // so lange wundert sich die Karawane, bevor der Elefant auftaucht
+  const ziel = halt - elefantAbstand;
+  const elefantBeiHalt = -(START_VORNE.elefant + 2) * gr - elefantTempo * FRAGE;
+  const t1 = (halt - start) / tempo, t2 = (ziel - elefantBeiHalt) / elefantTempo, t3 = (ende - halt) / tempo;
+  const dauer0 = t1 + t2 + t3;
+
+  // --- Abschnitte 1–3: die Karawane läuft geschlossen auf den hinteren Dünen ---
+  const weitere = [2, 1, 0].map(reihe => {
+    const d = START_DUENEN[reihe], s = d.gross * gr;
+    const v = tempo * (0.7 + 0.3 * d.gross);             // weiter weg wirkt langsamer
+    const laenge = elefantAbstand * d.gross, rand = 30 * s;
+    const von = d.richtung > 0 ? -rand : b + rand;
+    const bis = d.richtung > 0 ? b + laenge + rand : -laenge - rand;
+    const a = { reihe, s, v, von, bis, richtung: d.richtung, rast: -1 };
+    if (reihe === 0) {
+      // Rast: die Karawane steht so, dass sie zwischen den Palmen ist
+      a.rast = startOase(b, h).x - laenge * 0.4;
+      a.dauer = Math.abs(a.rast - von) / v + START_RAST + Math.abs(bis - a.rast) / v;
+    } else a.dauer = Math.abs(bis - von) / v;
+    return a;
+  });
+  const gesamt = dauer0 + weitere.reduce((n, a) => n + a.dauer, 0);
+  let tt = t % gesamt;
+
+  if (tt < dauer0) {
+    let kopfX, elefantX, vorneLaeuft, vorneGelaufen, elefantGelaufen, wartet = -1;
+    if (tt < t1) {
+      kopfX = start + tempo * tt; elefantX = elefantBeiHalt - elefantTempo * (t1 - tt);
+      vorneLaeuft = true; vorneGelaufen = tt; elefantGelaufen = tt;
+    } else if (tt < t1 + t2) {
+      wartet = tt - t1;
+      kopfX = halt; elefantX = elefantBeiHalt + elefantTempo * wartet;
+      vorneLaeuft = false; vorneGelaufen = t1; elefantGelaufen = tt;
+    } else {
+      const nach = tt - t1 - t2;
+      kopfX = halt + tempo * nach; elefantX = kopfX - elefantAbstand;
+      vorneLaeuft = true; vorneGelaufen = t1 + nach; elefantGelaufen = t1 + t2 + nach;
+    }
+    START_FIGUREN.forEach((typ, i) => {
+      const elefant = typ === 'elefant';
+      figurenZug.push({ typ, x: elefant ? elefantX : kopfX - START_ABSTAENDE[i] * gr, laeuft: elefant || vorneLaeuft,
+        schritt: (elefant ? elefantGelaufen * 4.2 : vorneGelaufen * 6.5) + i * 1.7 });
+    });
+    return { reihe: 'vorn', s: gr, richtung: 1, figuren: figurenZug, wartet, frage: FRAGE, kopfX };
+  }
+  tt -= dauer0;
+  for (const a of weitere) {
+    if (tt >= a.dauer) { tt -= a.dauer; continue; }
+    let kopfX, laeuft = true, gelaufen;
+    if (a.rast >= 0) {
+      const hin = Math.abs(a.rast - a.von) / a.v;
+      if (tt < hin) { kopfX = a.von + a.richtung * a.v * tt; gelaufen = tt; }
+      else if (tt < hin + START_RAST) { kopfX = a.rast; laeuft = false; gelaufen = hin; }
+      else { kopfX = a.rast + a.richtung * a.v * (tt - hin - START_RAST); gelaufen = tt - START_RAST; }
+    } else { kopfX = a.von + a.richtung * a.v * tt; gelaufen = tt; }
+    // Schrittfolge passend zum Tempo, damit die kleinen Tiere nicht trippeln
+    const takt = 6.5 * Math.min(1.5, (a.v / a.s) / 22);
+    START_FIGUREN.forEach((typ, i) => {
+      figurenZug.push({ typ, x: kopfX - a.richtung * START_ABSTAENDE[i] * a.s, laeuft,
+        schritt: gelaufen * (typ === 'elefant' ? takt * 0.65 : takt) + i * 1.7 });
+    });
+    return { reihe: a.reihe, s: a.s, richtung: a.richtung, figuren: figurenZug, wartet: -1 };
+  }
+  return { reihe: -1, figuren: [] };
+}
+
+// Malt die Karawane auf den Kamm ihrer Düne (gespiegelt, wenn sie nach links läuft)
+function startZugMalen(g, zug, b, h) {
+  const d = zug.reihe === 'vorn' ? START_VORN : START_DUENEN[zug.reihe];
+  const farben = zug.reihe === 'vorn' ? START_SCHATTEN : d.zug;
+  const decke = zug.reihe === 'vorn' ? '#24162c' : d.decke;
+  zug.figuren.forEach((f, i) => {
+    if (f.x < -60 * zug.s || f.x > b + 60 * zug.s) return;   // außerhalb des Bildes: nicht malen
+    const y = duenenKamm(f.x, b, h, d.basis, d.wellen) + zug.s * 0.8;
+    let schritt = f.schritt;
+    if (!f.laeuft) schritt = Math.round(schritt / Math.PI) * Math.PI;   // wer steht, steht auf allen vier Beinen
+    g.save(); g.translate(f.x, y - (f.laeuft ? Math.abs(Math.sin(schritt)) * 0.5 * zug.s : 0));
+    g.scale(zug.s * zug.richtung, zug.s);
+    zeichneTier(g, f.typ, { schritt, farben, decke, reiter: i === 0, last: -1 });
+    g.restore();
+  });
+}
+
 // Eine runde Sprechblase mit Fragezeichen (für die wartende Karawane auf der Startseite)
 function fragezeichenBlase(g, x, y, r, neigung, sicht) {
   g.save();
@@ -417,114 +545,65 @@ function startMalen(jetzt) {
   sonne.addColorStop(0, '#ffe39a'); sonne.addColorStop(1, '#ff8c4a');
   g.fillStyle = sonne; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
 
-  // 4. Dünenreihen von hinten nach vorne – je näher, desto dunkler
-  const reihen = [
-    { farbe: '#a4524a', basis: 0.66, wellen: [[0.025, 0.11, 1], [0.012, 0.05, 2]] },
-    { farbe: '#77394a', basis: 0.72, wellen: [[0.035, 0.16, 3], [0.015, 0.07, 1]] },
-    { farbe: '#4a2440', basis: 0.8,  wellen: [[0.04, 0.2, 5], [0.02, 0.08, 2]] },
-  ];
-  reihen.forEach((r, nr) => {
+  // Wo ist die Karawane gerade? (Sie wird gleich zusammen mit ihrer Düne gemalt.)
+  const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
+  const zug = startAblauf(t, b, h, gr);
+
+  // 4. Dünenreihen von hinten nach vorne
+  START_DUENEN.forEach((r, nr) => {
     g.fillStyle = r.farbe;
     g.beginPath(); g.moveTo(0, h);
     for (let x = 0; x <= b + 10; x += 8) g.lineTo(x, duenenKamm(x, b, h, r.basis, r.wellen));
     g.lineTo(b, h); g.closePath(); g.fill();
     if (nr === 0) {
-      // eine Oase am Horizont: Palmen-Silhouetten und warme Lichter
-      const ox = b * 0.22, oy = duenenKamm(ox, b, h, r.basis, r.wellen);
+      // eine Oase am Horizont: Palmen-Silhouetten und warme Lichter – jede Palme steht auf dem Kamm
+      const oase = startOase(b, h), m = oase.m;
       g.fillStyle = '#5a2c3c';
       for (let i = 0; i < 5; i++) {
-        const px = ox + (i - 2) * h * 0.022, ph = h * (0.035 + hash01(i, 73) * 0.02);
-        g.fillRect(px - 0.8, oy - ph, 1.6, ph);
+        const px = oase.x + (i - 2) * oase.abstand, ph = m * (0.035 + hash01(i, 73) * 0.02);
+        const py = duenenKamm(px, b, h, r.basis, r.wellen) + 2;
+        g.fillRect(px - 0.8, py - ph, 1.6, ph);
         for (let j = 0; j < 6; j++) {
           const w = j / 6 * Math.PI * 2;
-          g.beginPath(); g.ellipse(px + Math.cos(w) * h * 0.008, oy - ph + Math.sin(w) * h * 0.003, h * 0.01, h * 0.0025, w, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.ellipse(px + Math.cos(w) * m * 0.008, py - ph + Math.sin(w) * m * 0.003, m * 0.01, m * 0.0025, w, 0, Math.PI * 2); g.fill();
         }
       }
       for (let i = 0; i < 4; i++) {
         const f = 0.6 + 0.4 * Math.sin(t * 3 + i * 2);
+        const lx = oase.x - m * 0.03 + i * m * 0.018;
         g.fillStyle = `rgba(255,200,110,${(0.8 * f).toFixed(2)})`;
-        g.fillRect(ox - h * 0.03 + i * h * 0.018, oy - 2, 1.8, 1.8);
+        g.fillRect(lx, duenenKamm(lx, b, h, r.basis, r.wellen) - 1, 1.8, 1.8);
       }
     }
+    if (zug.reihe === nr) startZugMalen(g, zug, b, h);
   });
 
-  // 5. Vorderste Düne mit der Karawane auf dem Kamm
-  const vorn = { basis: 0.88, wellen: [[0.05, 0.25, 0.6], [0.015, 0.09, 4]] };
+  // 5. Vorderste Düne
   g.fillStyle = '#26132a';
   g.beginPath(); g.moveTo(0, h);
-  for (let x = 0; x <= b + 10; x += 6) g.lineTo(x, duenenKamm(x, b, h, vorn.basis, vorn.wellen));
+  for (let x = 0; x <= b + 10; x += 6) g.lineTo(x, duenenKamm(x, b, h, START_VORN.basis, START_VORN.wellen));
   g.lineTo(b, h); g.closePath(); g.fill();
 
-  const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
-  // Alle Tiere, die man im Spiel kaufen kann. Der Elefant läuft hinten und ist langsamer:
-  // Hat die Spitze 60 % des Bildes erreicht, wartet der vordere Teil, bis der Elefant aufgeschlossen hat.
-  const figuren = ['kamel', 'pferd', 'kamel', 'esel', 'elefant'];
-  // Wie weit ragt jedes Tier nach vorne (Kopf, Rüssel) und nach hinten (Schwanz)? Dazwischen kommt eine Lücke.
-  const VORNE = { kamel: 12.8, pferd: 10.8, esel: 8.8, elefant: 14 }, HINTEN = { kamel: 7.4, pferd: 8.2, esel: 5.2, elefant: 9 };
-  const LUECKE = 5;
-  const abstaende = []; let summe = 0;
-  figuren.forEach((typ, i) => {
-    if (i) summe += HINTEN[figuren[i - 1]] + VORNE[typ] + LUECKE;
-    abstaende.push(summe);
-  });
-  const elefantAbstand = abstaende[figuren.length - 1] * gr;     // sein Platz, wenn er aufgeschlossen hat
-  const tempo = 22 * gr, elefantTempo = tempo * 0.7;            // Pixel pro Sekunde
-  const start = -100, halt = b * 0.6;                           // die Spitze startet links, hält bei 60 %
-  const ende = b + elefantAbstand + 120;                        // so weit, bis auch der Elefant raus ist
-  const FRAGE = 2.6;                                            // so lange wundert sich die Karawane, bevor der Elefant auftaucht
-  const ziel = halt - elefantAbstand;                           // hier schließt der Elefant auf
-  // Beim Halt ist der Elefant noch außerhalb des Bildes – genau so weit, dass sein Rüssel nach FRAGE Sekunden links hereinkommt
-  const elefantBeiHalt = -(VORNE.elefant + 2) * gr - elefantTempo * FRAGE;
-
-  // Der Ablauf in drei Abschnitten – aus der Zeit berechnet, damit nichts gespeichert werden muss:
-  const t1 = (halt - start) / tempo;                            // 1. die Spitze läuft, der Elefant bummelt unsichtbar hinterher
-  const t2 = (ziel - elefantBeiHalt) / elefantTempo;            // 2. vorne warten („?“), der Elefant kommt ins Bild und holt auf
-  const t3 = (ende - halt) / tempo;                             // 3. alle zusammen hinaus
-  const tt = t % (t1 + t2 + t3);
-  let kopfX, elefantX, vorneLaeuft, vorneGelaufen, elefantGelaufen, wartet = -1;
-  if (tt < t1) {
-    kopfX = start + tempo * tt; elefantX = elefantBeiHalt - elefantTempo * (t1 - tt);
-    vorneLaeuft = true; vorneGelaufen = tt; elefantGelaufen = tt;
-  } else if (tt < t1 + t2) {
-    wartet = tt - t1;
-    kopfX = halt; elefantX = elefantBeiHalt + elefantTempo * wartet;
-    vorneLaeuft = false; vorneGelaufen = t1; elefantGelaufen = tt;
-  } else {
-    const nach = tt - t1 - t2;
-    kopfX = halt + tempo * nach; elefantX = kopfX - elefantAbstand;
-    vorneLaeuft = true; vorneGelaufen = t1 + nach; elefantGelaufen = t1 + t2 + nach;
-  }
-
-  figuren.forEach((typ, i) => {
-    const elefant = typ === 'elefant';
-    const x = elefant ? elefantX : kopfX - abstaende[i] * gr;
-    if (x < -60 * gr || x > b + 60 * gr) return;               // außerhalb des Bildes: nicht malen
-    const y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) + 1;
-    const laeuft = elefant || vorneLaeuft;
-    // Schrittfolge: der Elefant mit langsamen, schweren Schritten; wer steht, steht auf allen vier Beinen
-    let schritt = (elefant ? elefantGelaufen * 4.2 : vorneGelaufen * 6.5) + i * 1.7;
-    if (!laeuft) schritt = Math.round(schritt / Math.PI) * Math.PI;
-    g.save(); g.translate(x, y - (laeuft ? Math.abs(Math.sin(schritt)) * 0.5 * gr : 0)); g.scale(gr, gr);
-    zeichneTier(g, typ, { schritt, farben: START_SCHATTEN, decke: '#24162c', reiter: i === 0, last: -1 });
-    g.restore();
-  });
-
-  // Während des Wartens: Fragezeichen-Blasen über dem Reiter und dem Esel („Wo bleibt der Elefant?“)
-  if (wartet >= 0) {
-    const blasen = [{ nr: 0, ab: 0.25, hoehe: 40, gross: 1 }, { nr: 3, ab: 0.75, hoehe: 25, gross: 0.8 }];
-    blasen.forEach(bl => {
-      const seit = wartet - bl.ab;
-      if (seit <= 0) return;
-      // erscheint mit einem kleinen Hüpfer, verblasst, sobald der Elefant zu sehen ist
-      const auf = Math.min(1, seit / 0.35);
-      const hupf = 1 + 0.35 * Math.sin(auf * Math.PI) * (1 - auf * 0.4);
-      const weg = Math.max(0, Math.min(1, (wartet - FRAGE - 0.4) / 0.6));
-      const sicht = (1 - weg) * Math.min(1, seit / 0.15);
-      if (sicht <= 0) return;
-      const x = kopfX - abstaende[bl.nr] * gr + 2 * gr;
-      const y = duenenKamm(x, b, h, vorn.basis, vorn.wellen) - bl.hoehe * gr + Math.sin(wartet * 3 + bl.nr) * 1.5 * gr;
-      fragezeichenBlase(g, x, y, 8 * gr * bl.gross * hupf, Math.sin(wartet * 2.4 + bl.nr) * 0.12, sicht);
-    });
+  if (zug.reihe === 'vorn') {
+    startZugMalen(g, zug, b, h);
+    // Während des Wartens: Fragezeichen-Blasen über dem Reiter und dem Esel („Wo bleibt der Elefant?“)
+    if (zug.wartet >= 0) {
+      const wartet = zug.wartet;
+      const blasen = [{ nr: 0, ab: 0.25, hoehe: 40, gross: 1 }, { nr: 3, ab: 0.75, hoehe: 25, gross: 0.8 }];
+      blasen.forEach(bl => {
+        const seit = wartet - bl.ab;
+        if (seit <= 0) return;
+        // erscheint mit einem kleinen Hüpfer, verblasst, sobald der Elefant zu sehen ist
+        const auf = Math.min(1, seit / 0.35);
+        const hupf = 1 + 0.35 * Math.sin(auf * Math.PI) * (1 - auf * 0.4);
+        const weg = Math.max(0, Math.min(1, (wartet - zug.frage - 0.4) / 0.6));
+        const sicht = (1 - weg) * Math.min(1, seit / 0.15);
+        if (sicht <= 0) return;
+        const x = zug.kopfX - START_ABSTAENDE[bl.nr] * gr + 2 * gr;
+        const y = duenenKamm(x, b, h, START_VORN.basis, START_VORN.wellen) - bl.hoehe * gr + Math.sin(wartet * 3 + bl.nr) * 1.5 * gr;
+        fragezeichenBlase(g, x, y, 8 * gr * bl.gross * hupf, Math.sin(wartet * 2.4 + bl.nr) * 0.12, sicht);
+      });
+    }
   }
 
   // 6. Dunkler Rand, damit die Mitte leuchtet
