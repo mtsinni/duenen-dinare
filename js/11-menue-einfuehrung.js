@@ -375,7 +375,7 @@ const START_DUENEN = [
     zug: { grund: '#2b1428', schatten: '#200e1e', licht: '#3a1d34' }, decke: '#2a1430' },
 ];
 const START_VORN = { basis: 0.88, wellen: [[0.05, 0.25, 0.6], [0.015, 0.09, 4]] };
-const START_RAST = 5;     // so viele Sekunden rastet die Karawane an der Oase
+const START_RAST = 10;     // so viele Sekunden rastet die Karawane an der Oase (Zelt aufbauen, Feuer machen)
 
 // Wo die Palmen der Oase stehen (auf der hintersten Düne) – Mitte und Breite
 function startOase(b, h) {
@@ -470,9 +470,92 @@ function startAblauf(t, b, h, gr) {
       figurenZug.push({ typ, x: kopfX - a.richtung * START_ABSTAENDE[i] * a.s, laeuft,
         schritt: gelaufen * (typ === 'elefant' ? takt * 0.65 : takt) + i * 1.7 });
     });
-    return { reihe: a.reihe, s: a.s, richtung: a.richtung, figuren: figurenZug, wartet: -1 };
+    const ergebnis = { reihe: a.reihe, s: a.s, richtung: a.richtung, figuren: figurenZug, wartet: -1 };
+    // Das Lager an der Oase: seit = Sekunden seit der Ankunft, uebrig = Sekunden bis dieser Abschnitt endet
+    if (a.rast >= 0) ergebnis.lager = { x: a.rast, s: a.s, seit: tt - Math.abs(a.rast - a.von) / a.v, uebrig: a.dauer - tt };
+    return ergebnis;
   }
   return { reihe: -1, figuren: [] };
+}
+
+// Das kleine Lager bei den Palmen: erst wird das Zelt aufgestellt, dann das Feuer angezündet, und Rauch steigt auf.
+// Beim Aufbruch wird das Zelt abgebaut; das Feuer glimmt noch etwas nach und raucht, bis es ausgeht.
+const LAGER = { zeltAuf: [0.3, 1.9], feuer: 2.2, zeltAb: 1.1, glimmen: 4 };
+function startLagerMalen(g, lager, b, h, t) {
+  const d = START_DUENEN[0], s = lager.s, seit = lager.seit;
+  if (seit < 0) return;
+  const zeltX = lager.x - 46 * s, feuerX = lager.x - 25 * s;
+  const boden = x => duenenKamm(x, b, h, d.basis, d.wellen) + s;
+  const weg = Math.max(0, seit - START_RAST);                     // Sekunden seit dem Aufbruch
+  const klamm = v => Math.max(0, Math.min(1, v));
+  const ausblenden = klamm(lager.uebrig / 1.5);                   // vor dem Ende des Abschnitts ist alles verschwunden
+
+  // 1. Das Zelt: wächst aus dem Boden, wird beim Aufbruch wieder eingeholt
+  let zelt = klamm((seit - LAGER.zeltAuf[0]) / (LAGER.zeltAuf[1] - LAGER.zeltAuf[0]));
+  zelt = 1 - Math.pow(1 - zelt, 3);                               // erst schnell, dann sanft
+  if (weg > 0) zelt *= 1 - klamm(weg / LAGER.zeltAb);
+  if (zelt > 0) {
+    g.save(); g.translate(zeltX, boden(zeltX)); g.scale(s * 1.35, s * 1.35 * zelt);   // etwa so hoch wie ein Kamel
+    g.fillStyle = '#6e3440';                                       // Zeltbahn
+    g.beginPath(); g.moveTo(-11, 0); g.lineTo(-8, -7.5); g.quadraticCurveTo(-3, -6, 0, -9.5);
+    g.quadraticCurveTo(3, -6, 8, -7.5); g.lineTo(11, 0); g.closePath(); g.fill();
+    g.fillStyle = '#3b1a2a';                                       // dunkler Eingang
+    g.beginPath(); g.moveTo(-2.6, 0); g.lineTo(0, -6); g.lineTo(2.6, 0); g.closePath(); g.fill();
+    g.strokeStyle = '#4a2232'; g.lineWidth = 0.7;                  // Spannseile
+    g.beginPath(); g.moveTo(-8, -7.5); g.lineTo(-13.5, 0); g.moveTo(8, -7.5); g.lineTo(13.5, 0); g.stroke();
+    g.restore();
+  }
+
+  // 2. Das Feuer: Holzscheite, Flammen, warmes Leuchten
+  const anSeit = seit - LAGER.feuer;
+  if (anSeit < 0) return;
+  let flamme = klamm(anSeit / 0.8);                               // Feuer kommt in Gang
+  if (weg > 0) flamme *= 1 - klamm(weg / LAGER.glimmen);           // glimmt nach dem Aufbruch aus
+  flamme *= ausblenden;
+  const fy = boden(feuerX);
+  // Holzscheite
+  g.save(); g.translate(feuerX, fy); g.scale(s * 1.3, s * 1.3);
+  g.strokeStyle = '#3a1a22'; g.lineWidth = 1.3; g.lineCap = 'round';
+  g.globalAlpha = ausblenden;
+  g.beginPath(); g.moveTo(-3, 0); g.lineTo(3, -1.2); g.moveTo(3, 0); g.lineTo(-3, -1.2); g.stroke();
+  g.restore();
+  if (flamme > 0.01) {
+    // Lichtschein auf dem Sand
+    const r = (20 + Math.sin(t * 9) * 1.5) * s;
+    const schein = g.createRadialGradient(feuerX, fy - 2 * s, 0, feuerX, fy - 2 * s, r);
+    schein.addColorStop(0, `rgba(255,190,90,${(0.55 * flamme).toFixed(2)})`); schein.addColorStop(1, 'rgba(255,160,70,0)');
+    g.fillStyle = schein; g.fillRect(feuerX - r, fy - 2 * s - r, r * 2, r * 2);
+    // drei flackernde Flammenzungen
+    g.save(); g.translate(feuerX, fy - 1 * s); g.scale(s * 1.4, s * 1.4);
+    [['#e8641f', 2.6, 6, 0], ['#ffa531', 1.8, 4.6, 1.7], ['#ffe08a', 1, 2.8, 3.1]].forEach(([farbe, breit, hoch, v]) => {
+      const hh = hoch * flamme * (0.85 + 0.15 * Math.sin(t * 13 + v) + 0.08 * Math.sin(t * 23 + v * 2));
+      const kipp = Math.sin(t * 7 + v) * 0.6;
+      g.fillStyle = farbe;
+      g.beginPath(); g.moveTo(-breit, 0);
+      g.quadraticCurveTo(-breit * 0.9, -hh * 0.55, kipp, -hh);
+      g.quadraticCurveTo(breit * 0.9, -hh * 0.55, breit, 0); g.closePath(); g.fill();
+    });
+    g.restore();
+  }
+
+  // 3. Rauchwolken: alle 0,3 s steigt ein Wölkchen auf, treibt leicht nach links (weg von den Tieren), wird größer und blasser
+  const ABSTAND = 0.28, LEBEN = 5;
+  const jetzt = anSeit;
+  for (let k = Math.max(0, Math.floor((jetzt - LEBEN) / ABSTAND)); k * ABSTAND <= jetzt; k++) {
+    const geboren = k * ABSTAND, alter = jetzt - geboren;
+    if (alter < 0 || alter > LEBEN) continue;
+    // Wie stark brannte das Feuer, als das Wölkchen entstand?
+    const wegDamals = Math.max(0, geboren + LAGER.feuer - START_RAST);
+    const staerke = klamm(geboren / 0.8) * (1 - klamm(wegDamals / LAGER.glimmen));
+    if (staerke <= 0) continue;
+    const p = alter / LEBEN;
+    const x = feuerX - (alter * 2.5 + alter * alter * 1.1 - Math.sin(geboren * 7 + alter * 1.8) * 1.8) * s;
+    const y = fy - (7 + alter * 11 - alter * alter * 0.5) * s;
+    const r = (2.2 + alter * 3) * s;
+    const a = staerke * ausblenden * Math.min(1, alter / 0.3) * Math.pow(1 - p, 1.3) * 0.6;
+    g.fillStyle = `rgba(226,206,210,${a.toFixed(3)})`;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
 }
 
 // Malt die Karawane auf den Kamm ihrer Düne (gespiegelt, wenn sie nach links läuft)
@@ -575,7 +658,10 @@ function startMalen(jetzt) {
         g.fillRect(lx, duenenKamm(lx, b, h, r.basis, r.wellen) - 1, 1.8, 1.8);
       }
     }
-    if (zug.reihe === nr) startZugMalen(g, zug, b, h);
+    if (zug.reihe === nr) {
+      if (zug.lager) startLagerMalen(g, zug.lager, b, h, t);
+      startZugMalen(g, zug, b, h);
+    }
   });
 
   // 5. Vorderste Düne
