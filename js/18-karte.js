@@ -1079,6 +1079,10 @@ function zeichne() {
     }
   }
 
+  // Rauch über überfallenen Oasen und die Plünderer-Reiter (22-pluenderer.js)
+  zeichneBraende();
+  zeichnePluenderer();
+
   // Deine Karawanen – wartende neben ihrer Oase, reisende auf dem Weg
   const proOase = {};
   for (const k of S.karawanen) {

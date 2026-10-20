@@ -375,7 +375,7 @@ const START_DUENEN = [
     zug: { grund: '#2b1428', schatten: '#200e1e', licht: '#3a1d34' }, decke: '#2a1430' },
 ];
 const START_VORN = { basis: 0.88, wellen: [[0.05, 0.25, 0.6], [0.015, 0.09, 4]] };
-const START_RAST = 10;     // so viele Sekunden rastet die Karawane an der Oase (Zelt aufbauen, Feuer machen)
+const START_RAST = 8;     // so viele Sekunden rastet die Karawane an der Oase (Zelt aufbauen, Feuer machen)
 
 // Wo die Palmen der Oase stehen (auf der hintersten Düne) – Mitte und Breite
 function startOase(b, h) {
@@ -595,6 +595,79 @@ function fragezeichenBlase(g, x, y, r, neigung, sicht) {
   g.restore();
 }
 
+// Die Milchstraße wird nur einmal (pro Bildschirmgröße) in ein eigenes Bild gemalt – das spart Rechenzeit.
+let milchCache = null;
+function startMilchstrasse(b, horizont, dpr) {
+  const schluessel = `${b}x${horizont}x${dpr}`;
+  if (milchCache && milchCache.schluessel === schluessel) return milchCache.bild;
+  const bild = document.createElement('canvas');
+  bild.width = Math.round(b * dpr); bild.height = Math.round(horizont * dpr);
+  const m = bild.getContext('2d');
+  m.scale(dpr, dpr);
+  // Das Band läuft schräg von links unten nach rechts oben und wird zum Horizont hin blasser
+  const x0 = -0.05 * b, y0 = horizont * 0.62, x1 = 1.05 * b, y1 = -horizont * 0.05;
+  const lang = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / lang, uy = (y1 - y0) / lang;
+  const breite = Math.max(40, Math.min(b, horizont) * 0.16);
+  const sicht = y => Math.max(0, 1 - y / (horizont * 0.7));   // unten überstrahlt das Abendrot
+  // a) weiches Leuchten aus vielen großen, ganz blassen Flecken
+  for (let i = 0; i < 70; i++) {
+    const d = hash01(i, 81) * lang, quer = (hash01(i, 82) - 0.5) * breite * 0.9;
+    const x = x0 + ux * d - uy * quer, y = y0 + uy * d + ux * quer;
+    const r = breite * (0.35 + hash01(i, 83) * 0.5), a = 0.09 * sicht(y);
+    if (a <= 0.005) continue;
+    const f = m.createRadialGradient(x, y, 0, x, y, r);
+    const farbe = i % 3 ? '220,205,255' : '255,225,235';
+    f.addColorStop(0, `rgba(${farbe},${a.toFixed(3)})`); f.addColorStop(1, `rgba(${farbe},0)`);
+    m.fillStyle = f; m.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // b) ein dunkler Staubstreifen in der Mitte des Bandes
+  m.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 30; i++) {
+    const d = (0.1 + hash01(i, 84) * 0.8) * lang, quer = (hash01(i, 85) - 0.45) * breite * 0.25;
+    const x = x0 + ux * d - uy * quer, y = y0 + uy * d + ux * quer, r = breite * (0.15 + hash01(i, 86) * 0.15);
+    const f = m.createRadialGradient(x, y, 0, x, y, r);
+    f.addColorStop(0, 'rgba(0,0,0,.35)'); f.addColorStop(1, 'rgba(0,0,0,0)');
+    m.fillStyle = f; m.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  m.globalCompositeOperation = 'source-over';
+  // c) viele winzige Sterne, dicht in der Mitte des Bandes
+  for (let i = 0; i < 700; i++) {
+    const d = hash01(i, 87) * lang;
+    const quer = (hash01(i, 88) + hash01(i, 89) + hash01(i, 90) - 1.5) * breite * 0.8;   // Glockenkurve
+    const x = x0 + ux * d - uy * quer, y = y0 + uy * d + ux * quer;
+    const a = (0.25 + hash01(i, 91) * 0.55) * sicht(y);
+    if (a <= 0.02 || x < 0 || x > b || y < 0) continue;
+    m.fillStyle = `rgba(255,248,240,${a.toFixed(2)})`;
+    const gr = hash01(i, 92) < 0.08 ? 1.4 : 0.8;
+    m.fillRect(x, y, gr, gr);
+  }
+  milchCache = { schluessel, bild };
+  return bild;
+}
+
+// Eine Sternschnuppe quer über den Himmel – seit = Sekunden seit der Ankunft an der Oase
+const SCHNUPPE = { ab: 1.1, dauer: 1.5 };
+function startSternschnuppe(g, seit, b, horizont) {
+  const p = (seit - SCHNUPPE.ab) / SCHNUPPE.dauer;
+  if (p <= 0 || p >= 1) return;
+  // Flugbahn: links oben los, leicht absinkend nach rechts
+  const lauf = 1 - Math.pow(1 - p, 1.6);                            // anfangs flott, am Ende langsamer
+  const x = b * (0.06 + 0.84 * lauf), y = horizont * (0.12 + 0.2 * lauf + 0.06 * lauf * lauf);
+  const vx = b * 0.84, vy = horizont * 0.32, vl = Math.hypot(vx, vy);
+  const schweif = Math.min(b * 0.28, 240) * (0.4 + 0.6 * Math.sin(Math.PI * Math.min(1, p * 1.3)));
+  const hell = Math.sin(Math.PI * p);                              // blendet ein und wieder aus
+  const ex = x - vx / vl * schweif, ey = y - vy / vl * schweif;
+  const verlauf = g.createLinearGradient(ex, ey, x, y);
+  verlauf.addColorStop(0, 'rgba(255,240,220,0)');
+  verlauf.addColorStop(1, `rgba(255,248,235,${(0.9 * hell).toFixed(2)})`);
+  g.strokeStyle = verlauf; g.lineWidth = 1.8; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(ex, ey); g.lineTo(x, y); g.stroke();
+  // heller Kopf mit kleinem Glühen
+  const glow = g.createRadialGradient(x, y, 0, x, y, 7);
+  glow.addColorStop(0, `rgba(255,252,240,${hell.toFixed(2)})`); glow.addColorStop(1, 'rgba(255,240,220,0)');
+  g.fillStyle = glow; g.fillRect(x - 7, y - 7, 14, 14);
+}
+
 function startMalen(jetzt) {
   if (!startOffen) return;
   const c = document.getElementById('startHimmel'), g = c.getContext('2d');
@@ -610,14 +683,26 @@ function startMalen(jetzt) {
   himmel.addColorStop(0, '#11163a'); himmel.addColorStop(0.45, '#4a2a5c'); himmel.addColorStop(0.78, '#c4613f'); himmel.addColorStop(1, '#f2b25c');
   g.fillStyle = himmel; g.fillRect(0, 0, b, h);
 
-  // 2. Sterne erscheinen langsam
+  // 2. Sterne erscheinen langsam – dazu die Milchstraße als zartes, schräges Lichtband
   const sternLicht = Math.min(1, t / 6);
+  if (sternLicht > 0) {
+    g.globalAlpha = sternLicht;
+    g.drawImage(startMilchstrasse(b, horizont, dpr), 0, 0, b, horizont);
+    g.globalAlpha = 1;
+  }
   for (let i = 0; i < 90; i++) {
     const x = hash01(i, 71) * b, y = hash01(i, 72) * horizont * 0.55;
     const a = sternLicht * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.7 + i * 5.3))) * (1 - y / (horizont * 0.55));
     g.fillStyle = `rgba(255,248,230,${a.toFixed(2)})`;
     g.fillRect(x, y, i % 9 === 0 ? 2 : 1.2, i % 9 === 0 ? 2 : 1.2);
   }
+
+  // Wo ist die Karawane gerade? (Sie wird weiter unten zusammen mit ihrer Düne gemalt.)
+  const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
+  const zug = startAblauf(t, b, h, gr);
+
+  // Sternschnuppe: während an der Oase das Lager aufgebaut wird, zieht sie von links nach rechts
+  if (zug.lager) startSternschnuppe(g, zug.lager.seit, b, horizont);
 
   // 3. Die tief stehende Sonne mit weichem Glühen – sie sinkt ganz langsam
   const sx = b * 0.7, sy = horizont - h * 0.03 + Math.min(t * 0.6, h * 0.04), sr = Math.min(b, h) * 0.085;
@@ -628,9 +713,6 @@ function startMalen(jetzt) {
   sonne.addColorStop(0, '#ffe39a'); sonne.addColorStop(1, '#ff8c4a');
   g.fillStyle = sonne; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
 
-  // Wo ist die Karawane gerade? (Sie wird gleich zusammen mit ihrer Düne gemalt.)
-  const gr = Math.max(1.3, Math.min(b, h) / 290);   // Größe der Tiere: auf dem Handy etwas kleiner
-  const zug = startAblauf(t, b, h, gr);
 
   // 4. Dünenreihen von hinten nach vorne
   START_DUENEN.forEach((r, nr) => {

@@ -38,6 +38,7 @@ und dem Ordner `js`) ins Repository laden.
 | `js/18-karte.js` | Die gezeichnete Karte: Dünen, Gebirge, Meer, Oasen mit Palmen und Häusern, laufende Tiere, Sandstürme, Nacht mit Laternen |
 | `js/19-abenteuer.js` | Karawansereien, unerforschte Gebiete mit Fundorten, Pilger und Reisende |
 | `js/20-soeldner.js` | Söldner gegen Räuberlager anheuern (ab Rang „Händler“, Lager auf der Karte antippen) |
+| `js/22-pluenderer.js` | Plünderer: Räuberlager schicken Reiter los, die Karawanen jagen oder Oasen überfallen (wird vor 21 geladen) |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien

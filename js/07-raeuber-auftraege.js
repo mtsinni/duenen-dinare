@@ -15,7 +15,7 @@ function ueberfall(k) {
       k.wachen--;
       log(T(`${k.name}: Eine Wache ist im Kampf gefallen.`, `${k.name}: A guard fell in the fight.`), 'schlecht');
     }
-    return;
+    return true;   // abgewehrt
   }
 
   const beute = [];

@@ -197,7 +197,9 @@ function aufruesten() {
     if (g.ruhtBis == null) g.ruhtBis = 0;
     if (g.id == null) g.id = S.naechsteId++;
   }
-  if (!S.soeldner) S.soeldner = [];   // angeheuerte Truppen gegen Räuberlager
+  if (!S.soeldner) S.soeldner = [];
+  if (!S.pluenderer) S.pluenderer = [];   // Räuber-Reiterscharen unterwegs
+  if (!S.braende) S.braende = [];         // Rauch über überfallenen Oasen   // angeheuerte Truppen gegen Räuberlager
   // Rang-System: bestes Vermögen, Umsatz der letzten 30 Tage, Zähler für den Sultan
   if (S.rekordVermoegen == null) S.rekordVermoegen = Math.max(RAENGE[S.rang || 0].ab, S.karawanen.length ? vermoegen() : S.gold);
   if (!S.umsatzVerlauf) S.umsatzVerlauf = [];

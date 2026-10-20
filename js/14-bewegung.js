@@ -7,6 +7,7 @@ function aktualisiere(dt) {
   S.zeit += dt;
   bewegeKarawanen(dt);
   bewegeRivalen(dt);
+  bewegePluenderer(dt);
   for (const s of S.stuerme) { s.x += s.dx * dt; s.y += s.dy * dt; }
   S.stuerme = S.stuerme.filter(s => s.x > -250 && s.x < KARTE_B + 250);
   S.regen = S.regen.filter(r => r.bis > S.zeit);
@@ -33,9 +34,9 @@ function bewegeKarawanen(dt) {
     if (k.verirrt > 0) tempo *= -0.3;                     // Fata Morgana: es geht sogar zurück!
     k.gereist = Math.max(0, k.gereist + tempo * dt);
 
-    // Räuber lauern – nachts häufiger, rastende Lager werden seltener entdeckt
+    // Räuber lauern – nachts häufiger (außerhalb der Lager kommen sie meist als Plünderer, siehe 22-pluenderer.js), rastende Lager werden seltener entdeckt
     const imRaeuberGebiet = aktiveRaeuber().some(g => Math.hypot(k.x - g.x, k.y - g.y) < g.r);
-    const ueberfallProTag = (imRaeuberGebiet ? 0.3 : 0.02) * (nacht ? 1.6 : 0.7) * (rastet ? 0.4 : 1) * sw().raeuber * sereiSchutz(k);
+    const ueberfallProTag = (imRaeuberGebiet ? 0.3 : 0.01) * (nacht ? 1.6 : 0.7) * (rastet ? 0.4 : 1) * sw().raeuber * sereiSchutz(k);
     if (Math.random() < ueberfallProTag * dt) {
       ueberfall(k);
       if (!S.karawanen.includes(k)) continue;
