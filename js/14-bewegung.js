@@ -74,6 +74,9 @@ function ankunft(k, ziel) {
 
   // Jede Reise macht den Führer erfahrener – ein überstandener Sandsturm besonders
   epGeben(k, Math.round(strecke / 8) + (k.sturmErlebt ? 15 : 0));
+  zaehle('ankuenfte');
+  if (k.sturmErlebt) zaehle('stuerme');
+  effektAnkunft(ziel.x, ziel.y);
   k.sturmErlebt = false;
   if (ziel.aktiv) merkePreise(ziel);    // vor Ort sieht man die aktuellen Preise
   if (S.gewKarawane === k.id) S.gewOase = ziel.id;
@@ -85,5 +88,6 @@ function ankunft(k, ziel) {
     if (typeof aktiverReiter !== 'undefined') { aktiverReiter = 'oase'; aktiverOasenReiter = 'markt'; }
   }
   routeFortsetzen(k);                   // fährt die Karawane eine Handelsroute?
+  errungenschaftenPruefen();
   zeichnePanel();
 }

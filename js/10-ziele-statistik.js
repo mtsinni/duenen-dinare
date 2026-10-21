@@ -247,6 +247,7 @@ function zieleTag() {
 function htmlZiele() {
   const naechster = RAENGE[S.rang + 1];
   let h = `<h2>🎯 ${T('Ziele', 'Goals')}</h2>
+           ${htmlSiegZiel()}
            <div class="info">🏅 ${T('Rang', 'Rank')}: <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} ${zahlText(vermoegen())} 🪙</div>`;
   if (naechster) {
     h += `<div class="hinweis">${T(`Nächster Rang „${naechster.name}“ ab ${zahlText(naechster.ab)} 🪙 – dein bester Stand: ${zahlText(S.rekordVermoegen || 0)} 🪙`,
@@ -264,6 +265,8 @@ function htmlZiele() {
   for (const a of AUFGABEN.filter(aufgabeVerpasst)) liste += `<div class="hinweis">❌ ${a.titel} (${T('Frist verpasst', 'deadline missed')})</div>`;
   if (!offen.length) liste += `<div class="info">${T('🏆 Du hast alle Aufgaben gemeistert!', '🏆 You have mastered every quest!')}</div>`;
   h += bereich('aufgaben', `${T('Aufgaben', 'Quests')} (${S.erledigt.length}/${AUFGABEN.length})`, liste);
+  const erreicht = errungenschaftenLesen();
+  h += `<button data-a="erfolge" style="margin-top:10px">🏆 ${T('Errungenschaften', 'Achievements')} (${ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length}/${ERRUNGENSCHAFTEN.length})</button>`;
   return h;
 }
 
@@ -293,6 +296,8 @@ function buchungsart(a) { return T(a, BUCHUNGSARTEN_EN[a] || a); }
 
 function zeichneStatistik() {
   if (fensterArt === 'lager') { document.getElementById('statistik').innerHTML = symbole(htmlLagerFenster()); return; }
+  if (fensterArt === 'erfolge') { document.getElementById('statistik').innerHTML = symbole(htmlErrungenschaften()); return; }
+  if (fensterArt === 'sieg') { document.getElementById('statistik').innerHTML = symbole(htmlSiegFenster()); return; }
   const ich = vermoegen();
   const rangliste = [{ name: T('Du', 'You'), du: true, wert: ich, farbe: '#b5651d' },
                      ...S.rivalen.map(r => ({ name: r.name, wert: rivalenVermoegen(r), farbe: r.farbe }))]

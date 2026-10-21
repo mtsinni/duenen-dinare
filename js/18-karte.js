@@ -172,6 +172,21 @@ const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
     g.stroke();
   }
 
+  // 5b. Windrippel: feine, gewellte Linien im Sand, die der Wind formt
+  g.lineWidth = 0.6;
+  for (const [ex, ey, er] of ergs) {
+    for (let i = 0; i < er * 0.9; i++) {
+      const w = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * er * 1.1;
+      const x = ex + Math.cos(w) * d - 40, y = ey + Math.sin(w) * d * 0.6;
+      if (x > kuesteX(y) - 25) continue;
+      const l = 10 + rnd() * 18;
+      g.strokeStyle = rnd() < 0.5 ? 'rgba(140,90,45,.14)' : 'rgba(255,246,222,.22)';
+      g.beginPath(); g.moveTo(x, y);
+      g.bezierCurveTo(x + l * 0.3, y - 1.6, x + l * 0.6, y + 1.6, x + l, y - 0.4 + (rnd() - 0.5));
+      g.stroke();
+    }
+  }
+
   // 6. Gebirge: viele runde Felskuppen aus dunklem Gestein, Licht von links, Schraffur rechts
   for (const geb of GEBIRGE) {
     const kuppen = [];
@@ -235,20 +250,32 @@ const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
   for (let y = 0; y <= KARTE_H; y += 4) y ? g.lineTo(kuesteX(y) + 2.5, y) : g.moveTo(kuesteX(y) + 2.5, y);
   g.stroke();
 
-  // 9. Windrose oben links, in Messing
-  const [rx, ry] = [64, 66];
+  // 9. Windrose oben links, in Messing – mit Gradring, 16 Spitzen und „N“
+  const [rx, ry] = [70, 72];
   g.save(); g.translate(rx, ry);
-  g.strokeStyle = 'rgba(120,85,35,.6)'; g.lineWidth = 1;
-  g.beginPath(); g.arc(0, 0, 30, 0, Math.PI * 2); g.stroke();
-  g.beginPath(); g.arc(0, 0, 26, 0, Math.PI * 2); g.stroke();
-  for (let i = 0; i < 8; i++) {
-    const lang = i % 2 === 0 ? 34 : 18;
-    g.rotate(Math.PI / 4);
-    g.fillStyle = i % 2 === 0 ? 'rgba(168,124,48,.9)' : 'rgba(120,85,35,.7)';
-    g.beginPath(); g.moveTo(0, -lang); g.lineTo(4, 0); g.lineTo(0, 4); g.closePath(); g.fill();
-    g.fillStyle = 'rgba(235,205,140,.9)';
-    g.beginPath(); g.moveTo(0, -lang); g.lineTo(-4, 0); g.lineTo(0, 4); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(246,232,200,.35)';
+  g.beginPath(); g.arc(0, 0, 38, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(120,85,35,.7)'; g.lineWidth = 1.2;
+  g.beginPath(); g.arc(0, 0, 38, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = 0.7;
+  g.beginPath(); g.arc(0, 0, 33, 0, Math.PI * 2); g.stroke();
+  for (let i = 0; i < 64; i++) {                       // Gradstriche zwischen den Ringen
+    const w = i / 64 * Math.PI * 2, l = i % 4 === 0 ? 5 : 2.5;
+    g.beginPath(); g.moveTo(Math.cos(w) * 33, Math.sin(w) * 33); g.lineTo(Math.cos(w) * (33 + l), Math.sin(w) * (33 + l)); g.stroke();
   }
+  for (const [n, lang, breit] of [[16, 16, 2.2], [8, 24, 3.2], [4, 40, 5]]) {
+    for (let i = 0; i < n; i++) {
+      g.save(); g.rotate(i / n * Math.PI * 2 + (n === 8 ? Math.PI / 8 * 0 + Math.PI / 4 : n === 16 ? Math.PI / 16 : 0));
+      g.fillStyle = n === 4 ? 'rgba(150,104,36,.95)' : 'rgba(120,85,35,.8)';
+      g.beginPath(); g.moveTo(0, -lang); g.lineTo(breit, 0); g.lineTo(0, breit); g.closePath(); g.fill();
+      g.fillStyle = n === 4 ? 'rgba(240,214,150,.95)' : 'rgba(225,195,130,.85)';
+      g.beginPath(); g.moveTo(0, -lang); g.lineTo(-breit, 0); g.lineTo(0, breit); g.closePath(); g.fill();
+      g.restore();
+    }
+  }
+  g.fillStyle = 'rgba(92,60,24,.95)'; g.beginPath(); g.arc(0, 0, 2.6, 0, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(92,60,24,.9)'; g.font = `700 13px ${SCHRIFT_KARTE}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('N', 0, -48);
   g.restore();
 
   // 10. Dunkler Rand wie bei einer alten, gealterten Karte
@@ -688,7 +715,8 @@ function zeichneZug(figuren, x, y, richtungX, richtungY, laeuft, koerper, decke,
     ctx.translate(pos[i].x, pos[i].y);
     ctx.scale(nachRechts ? groesse : -groesse, groesse);
     const schritt = laeuft ? zeit + i * 1.7 : 0;
-    const wippen = laeuft ? Math.abs(Math.sin(schritt)) * 0.55 : 0;
+    // laufend: Wippen im Schritt; stehend: ruhiges Atmen
+    const wippen = laeuft ? Math.abs(Math.sin(schritt)) * 0.55 : (0.5 + 0.5 * Math.sin(laufUhr * 1.7 + i * 1.9 + x * 0.05)) * 0.35;
     ctx.translate(0, -wippen);
     zeichneTier(ctx, figuren[i], { schritt, decke, reiter: i === 0, last: opt.beladen && i > 0 ? i : -1 });
     ctx.restore();
@@ -1005,6 +1033,7 @@ function zeichne() {
     const bild = oasenBild(o);
     ctx.drawImage(bild.canvas, o.x - OASE_B / 2, o.y - OASE_H / 2 - 4, OASE_B, OASE_H);
   }
+  zeichneWasserGlitzern(echtzeit, nacht);
 
   // Auswahl- und Zielringe
   const zeitRing = echtzeit;
@@ -1107,6 +1136,7 @@ function zeichne() {
     }
     const beladen = WAREN.some(w => w.id !== 'wasser' && k.ladung[w.id] >= 1);
     zeichneZug(figuren, x, y, rx, ry, laeuft, FARBE.tinte, FARBE.indigo, 1.55, { beladen });
+    wimpel(x, y, rx >= 0);
     if (k.nach != null && k.nachtmarsch && !istNacht()) zelt(x - 4, y + 1, 8);
 
     const zeichen = [];
@@ -1174,11 +1204,13 @@ function zeichne() {
     }
     ctx.globalCompositeOperation = 'source-over';
   }
+  zeichneEffekte();
   const uhrText = `${istNacht() ? '🌙' : '☀️'} ` + `${String(stunde()).padStart(2, '0')}:00`;
   if (anzeigeUhr.dataset.text !== uhrText) { anzeigeUhr.dataset.text = uhrText; anzeigeUhr.innerHTML = symbole(uhrText); }
 
   // Ab hier ohne Zoom: Schriftzüge sollen immer gleich groß und mittig sein
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  zeichneKartenRahmen();
 
   // Pause und Bankrott: ein Schleier und ein gerahmter Schriftzug
   if ((S.bankrott || S.pause) && !infoKarteSichtbar()) {

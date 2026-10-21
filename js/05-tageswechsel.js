@@ -70,6 +70,8 @@ function tagesWechsel() {
   for (const o of S.oasen) if (o.aktiv && augenVorOrt(o)) merkePreise(o);
 
   pruefeAuftraege();
+  errungenschaftenPruefen();
+  siegPruefen();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }
 

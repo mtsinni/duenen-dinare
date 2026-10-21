@@ -62,3 +62,28 @@ function spracheSetzen(code) {
   if (menueOffen) zeichneMenue();
   if (statistikOffen) zeichneStatistik();
 }
+
+// --- Flaggen für die Sprachwahl (als kleine SVG-Bilder, damit sie überall gleich aussehen) ---
+let flaggenNr = 0;
+function flaggeSvg(code) {
+  if (code === 'de') {
+    return `<svg class="flagge" viewBox="0 0 5 3" aria-hidden="true"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#dd0000"/><rect y="2" width="5" height="1" fill="#ffce00"/></svg>`;
+  }
+  // Union Jack (Großbritannien) für Englisch
+  const n = ++flaggenNr;
+  return `<svg class="flagge" viewBox="0 0 60 30" aria-hidden="true">
+    <clipPath id="ukA${n}"><path d="M0,0 v30 h60 v-30 z"/></clipPath>
+    <clipPath id="ukB${n}"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>
+    <g clip-path="url(#ukA${n})">
+      <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#ukB${n})" stroke="#C8102E" stroke-width="4"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/>
+    </g></svg>`;
+}
+// Zwei Flaggen-Knöpfe nebeneinander; attr = data-Attribut für die Klick-Behandlung (z. B. 'data-m="sprache"')
+function htmlFlaggen(attr) {
+  return ['de', 'en'].map(c => `<button ${attr} data-n="${c}" class="flaggen-knopf ${SPRACHE === c ? 'an' : ''}" lang="${c}"
+            title="${c === 'de' ? 'Deutsch' : 'English'}" aria-label="${c === 'de' ? 'Deutsch' : 'English'}">${flaggeSvg(c)}</button>`).join('');
+}

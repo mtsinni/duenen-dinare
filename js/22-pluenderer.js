@@ -110,6 +110,7 @@ function bewegePluenderer(dt) {
 function plAufgeben(p, entkommen) {
   if (p.ziel.art === 'karawane') {
     const k = karawane(p.ziel.id);
+    if (k && entkommen) zaehle('entkommen');
     if (k && entkommen) log(T(`🏁 ${k.name} hat ${k.ort != null ? oase(k.ort).name : T('ihr Ziel', 'its destination')} erreicht – die Plünderer drehen ab.`,
                               `🏁 ${k.name} reached ${k.ort != null ? oase(k.ort).name : 'its destination'} – the raiders turn back.`), 'gut');
     else if (k) log(T(`🏁 Die Plünderer verlieren die Spur von ${k.name} und reiten zurück.`,

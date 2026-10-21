@@ -12,10 +12,15 @@ function statischeTexte() {
   // Feste Symbole in der Kopfleiste (Münze, Medaille) einmal austauschen
   document.querySelectorAll('header .kasten').forEach(el => { if (SYMBOL_MUSTER.test(el.innerHTML)) el.innerHTML = symbole(el.innerHTML); SYMBOL_MUSTER.lastIndex = 0; });
   mitWort('btnStatistik', '📊', T('Statistik', 'Statistics'));
+  // Die Flagge der gerade gewählten Sprache – ein Klick wechselt zur anderen
+  const bs = document.getElementById('btnSprache');
+  bs.innerHTML = flaggeSvg(SPRACHE);
+  bs.title = T('Sprache: Deutsch – klicken für English', 'Language: English – click for Deutsch');
+  bs.setAttribute('aria-label', bs.title);
   mitWort('btnMenue', '☰', T('Menü', 'Menu'));
   setze('logTitel', T('Ereignisse', 'Events'));
   document.querySelectorAll('[data-tempo]').forEach(b => { b.textContent = zahlText(+b.dataset.tempo) + '×'; });
-  const titel = { btnTon: T('Ton an/aus', 'Sound on/off'), btnZoomRein: T('Hineinzoomen', 'Zoom in'),
+  const titel = { btnTon: T('Geräusche an/aus', 'Sound effects on/off'), btnMusik: T('Musik an/aus', 'Music on/off'), btnZoomRein: T('Hineinzoomen', 'Zoom in'),
                   btnZoomRaus: T('Herauszoomen', 'Zoom out'), btnZoomGanz: T('Ganze Karte zeigen', 'Show whole map') };
   for (const id in titel) { const el = document.getElementById(id); el.title = titel[id]; el.setAttribute('aria-label', titel[id]); }
 }
@@ -43,6 +48,18 @@ document.querySelectorAll('[data-tempo]').forEach(b => b.addEventListener('click
 }));
 document.getElementById('btnMenue').addEventListener('click', () => menueOffen ? menueSchliessen(false) : menueOeffnen());
 document.getElementById('btnTon').addEventListener('click', tonUmschalten);
+document.getElementById('btnMusik').addEventListener('click', musikUmschalten);
+// Lautstärke-Regler im Menü
+document.getElementById('menue').addEventListener('input', e => {
+  const art = e.target.dataset && e.target.dataset.laut;
+  if (!art) return;
+  const wert = Math.max(0, Math.min(1, +e.target.value / 100));
+  if (art === 'musik') { musikLautstaerke = wert; einstellungSchreiben('karawane-musik-laut', wert); }
+  else { tonLautstaerke = wert; einstellungSchreiben('karawane-ton-laut', wert); }
+  audioBereit(); lautstaerkenSetzen();
+  if (art === 'ton') ton('muenze');
+});
+document.getElementById('btnSprache').addEventListener('click', () => spracheSetzen(SPRACHE === 'de' ? 'en' : 'de'));
 document.getElementById('btnZoomRein').addEventListener('click', () => zoomen(1.5));
 document.getElementById('btnZoomRaus').addEventListener('click', () => zoomen(1 / 1.5));
 document.getElementById('btnZoomGanz').addEventListener('click', zoomZuruecksetzen);

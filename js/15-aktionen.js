@@ -65,7 +65,7 @@ function reiseStarten(k, ziel) {
 function kaufen(wid, menge) {
   const h = kannHandeln(); if (!h) return;
   const r = handelKaufen(h.k, h.o, wid, menge);
-  if (r.anzahl) ton('muenze');
+  if (r.anzahl) { ton('kaufen'); effektZahl(h.o.x, h.o.y - 30, -r.betrag); }
   if (r.anzahl < menge && h.o.lager[wid] >= 1) {
     log(ladungGewicht(h.k) + 1 > kapazitaet(h.k) ? T(`${h.k.name} ist voll beladen.`, `${h.k.name} is fully loaded.`) : T('Nicht genug Dinar.', 'Not enough dinars.'));
   }
@@ -74,7 +74,8 @@ function kaufen(wid, menge) {
 
 function verkaufen(wid, menge) {
   const h = kannHandeln(); if (!h) return;
-  if (handelVerkaufen(h.k, h.o, wid, menge).anzahl) ton('muenze');
+  const r = handelVerkaufen(h.k, h.o, wid, menge);
+  if (r.anzahl) { ton('verkaufen'); effektZahl(h.o.x, h.o.y - 30, r.betrag); effektMuenzen(h.o.x, h.o.y - 20, Math.min(12, 3 + Math.round(r.betrag / 150))); }
   zeichnePanel();
 }
 
@@ -90,6 +91,7 @@ function tierKaufen(typ) {
   }
   S.gold -= tier.preis;
   k.tiere[typ]++;
+  ton('tier');
   zeichnePanel();
 }
 
@@ -156,7 +158,10 @@ function losziehen() {
   if (!k || !ziel || k.ort == null || tierAnzahl(k) === 0) return;
   if (!ziel.aktiv) { log(T(`${ziel.name} ist versiegt – dort gibt es nichts mehr.`, `${ziel.name} has dried up – there is nothing left there.`)); zeichnePanel(); return; }
   if (k.route.aktiv) { k.route.aktiv = false; log(T(`🔁 ${k.name}: Handelsroute angehalten (Reise von Hand).`, `🔁 ${k.name}: trade route paused (manual journey).`)); }
+  const startOase = oase(k.ort);
   reiseStarten(k, ziel);
+  ton('aufbruch');
+  if (startOase) effektStaub(startOase.x, startOase.y - 10);
   log(T(`${hauptTier(k).icon} ${k.name} bricht nach ${ziel.name} auf.`, `${hauptTier(k).icon} ${k.name} sets out for ${ziel.name}.`));
   S.ziel = null;
   // Wartet keine andere Karawane mehr auf Befehle (z. B. weil es nur diese eine gibt),

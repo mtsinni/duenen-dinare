@@ -39,6 +39,10 @@ und dem Ordner `js`) ins Repository laden.
 | `js/19-abenteuer.js` | Karawansereien, unerforschte Gebiete mit Fundorten, Pilger und Reisende |
 | `js/20-soeldner.js` | Söldner gegen Räuberlager anheuern (ab Rang „Händler“, Lager auf der Karte antippen) |
 | `js/22-pluenderer.js` | Plünderer: Räuberlager schicken Reiter los, die Karawanen jagen oder Oasen überfallen (wird vor 21 geladen) |
+| `js/23-errungenschaften.js` | 25 Errungenschaften – bleiben über alle Spiele erhalten, mit Einblendung und Übersicht |
+| `js/24-sieg.js` | Spielziele (Freies Spiel, Reichtum, Handelsimperium, Freund der Wüste, Wettlauf) und Siegfenster |
+| `js/25-musik.js` | Live erzeugte orientalische Musik (Oud, Ney, Darbuka) – Stimmung je nach Lage: Titel, Tag, Nacht, Gefahr |
+| `js/26-effekte.js` | Kleine Animationen: Gewinne, Münzen, Staub, Kampf, Bauen, glitzerndes Wasser, Kartenrahmen |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien
@@ -73,3 +77,16 @@ Das Spiel nutzt **Amiri** (Überschriften und Ortsnamen) und **Alegreya Sans** (
 Google Fonts. Ohne Internet fällt es auf Georgia und die Systemschrift zurück und funktioniert weiter.
 Wer die Schriften lieber selbst ausliefern möchte, lädt sie bei fonts.google.com herunter, legt sie
 in einen Ordner `fonts/` und ersetzt den Google-Link in `index.html` durch eigene `@font-face`-Regeln.
+
+
+## Eigene Internetadresse
+
+| Datei / Ordner | Wofür? |
+|---|---|
+| `fonts/` | Die Schriften (Alegreya Sans, Amiri) – lokal, damit keine Verbindung zu Google entsteht |
+| `impressum.html` | Impressum – **die gelb markierten Stellen mit deinen Daten ausfüllen** |
+| `datenschutz.html` | Datenschutzerklärung – ebenfalls die gelben Stellen ausfüllen |
+| `seiten.css` | Aussehen der beiden Seiten |
+
+Im Menü gibt es „Alle Spielstände sichern“ und „Alle aus Datei wiederherstellen“ – damit nehmen
+Spieler ihre Spielstände auf eine neue Adresse mit.

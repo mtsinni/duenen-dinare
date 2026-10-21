@@ -11,6 +11,8 @@ function ueberfall(k) {
     log(T(`⚔️ Räuber greifen ${k.name} an – ${k.fuehrer.name} und die Wachen schlagen sie in die Flucht!`,
           `⚔️ Robbers attack ${k.name} – ${k.fuehrer.name} and the guards drive them off!`), 'gut');
     epGeben(k, 30);
+    zaehle('abgewehrt');
+    effektKampf(k.x, k.y, true);
     if (k.wachen > 0 && Math.random() < 0.2) {
       k.wachen--;
       log(T(`${k.name}: Eine Wache ist im Kampf gefallen.`, `${k.name}: A guard fell in the fight.`), 'schlecht');
@@ -25,6 +27,7 @@ function ueberfall(k) {
     k.ladung[w.id] -= menge;
     beute.push(`${menge} ${w.name}`);
   }
+  effektKampf(k.x, k.y, false);
   log(T(`🗡️ Räuber überfallen ${k.name} und erbeuten ${beute.join(', ')}!`, `🗡️ Robbers raid ${k.name} and make off with ${beute.join(', ')}!`), 'schlecht');
   if (Math.random() < 0.15) tierVerlieren(k, T('von den Räubern gestohlen worden', 'was stolen by the robbers'));
 }

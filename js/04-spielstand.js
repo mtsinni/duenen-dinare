@@ -106,7 +106,7 @@ function edelsteinTag() {
   }
 }
 
-function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false) {
+function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sieg = 'frei') {
   S = { tag: 1, zeit: 1.25, gold: SCHWIERIGKEITEN[schwierigkeit].startGold, tempo: 1, pause: false,
         schwierigkeit, slot, tutorial: { schritt: einfuehrung ? 0 : -1 },
         oasen: [], karawanen: [], stuerme: [], regen: [], log: [],
@@ -116,6 +116,7 @@ function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false) {
         gewOase: null, gewKarawane: null, ziel: null };
   for (const d of OASEN_START) S.oasen.push(neueOase(d.name, d.x, d.y, d.produziert, d.bev));
   S.raeuber.push(neuesRaeuberGebiet(), neuesRaeuberGebiet());
+  S.sieg = { art: SIEGE[sieg] ? sieg : 'frei' };
   aufruesten();
   const start = S.oasen.find(o => o.name === 'Agadez');
   const k = neueKarawane(start);
@@ -198,7 +199,9 @@ function aufruesten() {
     if (g.id == null) g.id = S.naechsteId++;
   }
   if (!S.soeldner) S.soeldner = [];
-  if (!S.pluenderer) S.pluenderer = [];   // Räuber-Reiterscharen unterwegs
+  if (!S.pluenderer) S.pluenderer = [];
+  if (!S.zaehler) S.zaehler = {};          // für Errungenschaften (Ankünfte, abgewehrte Überfälle …)
+  if (!S.sieg) S.sieg = { art: 'frei' };   // gewähltes Spielziel   // Räuber-Reiterscharen unterwegs
   if (!S.braende) S.braende = [];         // Rauch über überfallenen Oasen   // angeheuerte Truppen gegen Räuberlager
   // Rang-System: bestes Vermögen, Umsatz der letzten 30 Tage, Zähler für den Sultan
   if (S.rekordVermoegen == null) S.rekordVermoegen = Math.max(RAENGE[S.rang || 0].ab, S.karawanen.length ? vermoegen() : S.gold);

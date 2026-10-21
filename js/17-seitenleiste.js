@@ -9,6 +9,8 @@ function zeichnePanel() {
   const j = jahreszeit();
   document.getElementById('anzeigeJahreszeit').innerHTML = symbole(`${j.icon} ${j.name}, ${T('Jahr', 'year')} ${jahr()}`);
   document.getElementById('btnTon').innerHTML = symbole(tonAn ? '🔊' : '🔇');
+  const bm = document.getElementById('btnMusik');
+  bm.innerHTML = symbole('🎵'); bm.classList.toggle('aus', !musikAn);
   document.getElementById('anzeigeTag').textContent = T('Tag ', 'Day ') + S.tag;
   document.getElementById('anzeigeRang').textContent = RAENGE[S.rang].name;
   // Fortschrittsbalken im Rang-Kästchen: wie weit ist es noch bis zum nächsten Rang?
@@ -623,6 +625,9 @@ const AKTIONEN = {
   tippweiter: () => einfuehrungWeiter(),
   tippende:   () => einfuehrungBeenden(),
   bote:       () => boteSenden(),
+  erfolge:    () => errungenschaftenOeffnen(),
+  siegWeiter: () => { statistikUmschalten(false); fensterArt = 'statistik'; },
+  siegMenue:  () => { statistikUmschalten(false); fensterArt = 'statistik'; menueOeffnen(); },
   lagerhaus:  () => lagerhausBauen(),
   betrieb:    v => betriebBauen(v),
   lager:      (v, n) => lagerAktion(n, v),

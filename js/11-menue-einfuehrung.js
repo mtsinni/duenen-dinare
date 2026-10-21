@@ -61,7 +61,7 @@ let menueOffen = false, pauseVorMenue = false;
 // Direkt nach dem Öffnen der Seite ist der letzte Spielstand gerade erst geladen –
 // dann bleibt das Spiel auch nach „Weiter“ angehalten.
 let geradeGeladen = true;
-const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true };
+const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true, sieg: 'frei' };
 
 function menueOeffnen() {
   if (statistikOffen) statistikUmschalten(false);
@@ -93,16 +93,15 @@ function menueSchliessenMitPause() {
 function zeichneMenue() {
   const laeuft = !!slotLesen(S.slot) && !S.bankrott;
   let h = `<div class="fenster">
-    <div class="sprachwahl">
-      <button data-m="sprache" data-n="de" class="${SPRACHE === 'de' ? 'an' : ''}" lang="de">Deutsch</button>
-      <button data-m="sprache" data-n="en" class="${SPRACHE === 'en' ? 'an' : ''}" lang="en">English</button>
-    </div>
+    <div class="sprachwahl">${htmlFlaggen('data-m="sprache"')}</div>
     <h2 style="margin-top:0; margin-bottom:2px">🐪 ${T('Dünen & Dinare', 'Dunes & Dinars')}</h2>
     <p class="untertitel">${T('Karawanenhandel in der Wüste', 'Caravan trading in the desert')}</p>`;
   if (laeuft) {
     h += `<button class="gross" data-m="weiter">▶ ${T(`Weiterspielen (Platz ${S.slot}, Tag ${S.tag})`, `Continue (slot ${S.slot}, day ${S.tag})`)}</button>`;
   }
 
+  const erreicht = errungenschaftenLesen();
+  h += `<button data-m="erfolge" class="erfolge-knopf">🏆 ${T('Errungenschaften', 'Achievements')} · ${ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length}/${ERRUNGENSCHAFTEN.length}</button>`;
   h += `<h3>${T('Spielstände', 'Saved games')}</h3>`;
   for (let n = 1; n <= SLOT_ANZAHL; n++) {
     const d = slotLesen(n);
@@ -124,6 +123,12 @@ function zeichneMenue() {
           </div>`;
   }
 
+  h += `<div class="alle-staende">
+          <button data-m="exportAlle" ${[1, 2, 3].some(n => slotLesen(n)) ? '' : 'disabled'}>💾 ${T('Alle Spielstände sichern', 'Back up all saved games')}</button>
+          <button data-m="importAlle">📂 ${T('Alle aus Datei wiederherstellen', 'Restore all from file')}</button>
+          <div class="hinweis">${T('Praktisch zum Sichern, für einen Gerätewechsel oder wenn das Spiel umzieht.', 'Handy for backups, switching devices or when the game moves to a new address.')}</div>
+        </div>`;
+
   h += `<h3>${T('Neues Spiel', 'New game')}</h3><div class="info">${T('Schwierigkeit', 'Difficulty')}:</div><div>`;
   for (const id in SCHWIERIGKEITEN) {
     const s = SCHWIERIGKEITEN[id];
@@ -131,6 +136,9 @@ function zeichneMenue() {
   }
   h += `</div><div class="hinweis">${SCHWIERIGKEITEN[menueWahl.schwierigkeit].text}
         ${T('Startgold', 'Starting gold')}: ${SCHWIERIGKEITEN[menueWahl.schwierigkeit].startGold} 🪙.</div>
+        <div class="info" style="margin-top:8px">${T('Spielziel', 'Game goal')}:</div><div>${Object.entries(SIEGE).map(([id, z]) =>
+          `<button data-m="siegwahl" data-n="${id}" class="${menueWahl.sieg === id ? 'an' : ''}">${z.icon} ${T(z.name, z.nameEn)}</button>`).join(' ')}</div>
+        <div class="hinweis">${T(SIEGE[menueWahl.sieg].text, SIEGE[menueWahl.sieg].textEn)}</div>
         <div class="info" style="margin-top:8px">${T('Speicherplatz', 'Save slot')}:</div><div>`;
   for (let n = 1; n <= SLOT_ANZAHL; n++) {
     h += `<button data-m="slot" data-n="${n}" class="${menueWahl.slot === n ? 'an' : ''}">${T('Platz', 'Slot')} ${n}${slotLesen(n) ? T(' (belegt)', ' (in use)') : ''}</button> `;
@@ -140,6 +148,14 @@ function zeichneMenue() {
         </div>
         <button class="gross" data-m="neu" style="margin-top:10px">🐪 ${T('Neues Spiel starten', 'Start new game')}</button>
         <p class="hinweis">${T('Dein Spiel wird jeden Spieltag automatisch auf seinem Platz gespeichert.', 'Your game is saved to its slot automatically every game day.')}</p>
+        <h3>${T('Einstellungen', 'Settings')}</h3>
+        <div class="einstellung"><label>🎵 ${T('Musik', 'Music')}</label>
+          <input type="range" min="0" max="100" value="${Math.round(musikLautstaerke * 100)}" data-laut="musik">
+          <button data-m="musik" class="${musikAn ? 'an' : ''}">${musikAn ? T('an', 'on') : T('aus', 'off')}</button></div>
+        <div class="einstellung"><label>🔊 ${T('Geräusche', 'Sound effects')}</label>
+          <input type="range" min="0" max="100" value="${Math.round(tonLautstaerke * 100)}" data-laut="ton">
+          <button data-m="ton" class="${tonAn ? 'an' : ''}">${tonAn ? T('an', 'on') : T('aus', 'off')}</button></div>
+        ${htmlRechtliches('menue-rechtliches')}
       </div>`;
   document.getElementById('menue').innerHTML = symbole(h);
 }
@@ -157,12 +173,18 @@ function menueAktion(m, n) {
   }
   if (m === 'export') spielstandExportieren(+n);
   if (m === 'import') spielstandImportieren(+n);
+  if (m === 'exportAlle') alleSpielstaendeExportieren();
+  if (m === 'musik') { musikUmschalten(); zeichneMenue(); }
+  if (m === 'ton') { tonUmschalten(); zeichneMenue(); }
+  if (m === 'importAlle') alleSpielstaendeImportieren();
   if (m === 'sw') { menueWahl.schwierigkeit = n; zeichneMenue(); }
+  if (m === 'siegwahl') { menueWahl.sieg = n; zeichneMenue(); }
+  if (m === 'erfolge') errungenschaftenOeffnen();
   if (m === 'slot') { menueWahl.slot = +n; zeichneMenue(); }
   if (m === 'einf') { menueWahl.einfuehrung = !menueWahl.einfuehrung; zeichneMenue(); }
   if (m === 'neu') {
     if (slotLesen(menueWahl.slot) && !confirm(T(`Platz ${menueWahl.slot} ist belegt. Überschreiben?`, `Slot ${menueWahl.slot} is in use. Overwrite it?`))) return;
-    neuesSpiel(menueWahl.schwierigkeit, menueWahl.slot, menueWahl.einfuehrung);
+    neuesSpiel(menueWahl.schwierigkeit, menueWahl.slot, menueWahl.einfuehrung, menueWahl.sieg);
     speichern();
     menueSchliessenMitPause();
   }
@@ -196,8 +218,9 @@ function spielstandImportieren(n) {
     leser.onload = () => {
       let daten;
       try { daten = JSON.parse(leser.result); } catch (e) { daten = null; }
+      if (istSammlung(daten)) daten = Object.values(daten.slots)[0] || null;   // Sammeldatei: den ersten nehmen
       // Kurz prüfen, ob das wirklich ein Karawane-Spielstand ist
-      if (!daten || !Array.isArray(daten.oasen) || !Array.isArray(daten.karawanen) || typeof daten.tag !== 'number') {
+      if (!istSpielstand(daten)) {
         alert(T('Diese Datei ist kein Karawane-Spielstand.', 'This file is not a Caravan saved game.'));
         return;
       }
@@ -213,6 +236,78 @@ function spielstandImportieren(n) {
     leser.readAsText(datei);
   });
   eingabe.click();
+}
+
+
+// --- Alle Spielstände in EINER Datei (z. B. für den Umzug auf eine neue Internetadresse) ---
+// Aufbau: { art: 'duenen-dinare-spielstaende', version: 1, slots: { "1": {...}, "3": {...} } }
+
+function istSpielstand(d) {
+  return !!d && Array.isArray(d.oasen) && Array.isArray(d.karawanen) && typeof d.tag === 'number';
+}
+function istSammlung(d) {
+  return !!d && d.art === 'duenen-dinare-spielstaende' && d.slots && typeof d.slots === 'object';
+}
+
+function dateiHerunterladen(name, inhalt) {
+  const datei = new Blob([inhalt], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(datei);
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+}
+
+function alleSpielstaendeExportieren() {
+  if (slotLesen(S.slot)) speichern();
+  const slots = {};
+  for (let n = 1; n <= SLOT_ANZAHL; n++) { const d = slotLesen(n); if (d) slots[n] = d; }
+  if (!Object.keys(slots).length) return;
+  const heute = new Date().toISOString().slice(0, 10);
+  dateiHerunterladen(T(`duenen-dinare-spielstaende-${heute}.json`, `dunes-dinars-saves-${heute}.json`),
+                     JSON.stringify({ art: 'duenen-dinare-spielstaende', version: 1, slots }));
+}
+
+function alleSpielstaendeImportieren() {
+  const eingabe = document.createElement('input');
+  eingabe.type = 'file';
+  eingabe.accept = '.json,application/json';
+  eingabe.addEventListener('change', () => {
+    const datei = eingabe.files[0];
+    if (!datei) return;
+    const leser = new FileReader();
+    leser.onload = () => {
+      let daten;
+      try { daten = JSON.parse(leser.result); } catch (e) { daten = null; }
+      // Eine einzelne Spielstand-Datei geht auch: sie kommt auf ihren alten Platz (oder Platz 1)
+      if (istSpielstand(daten)) daten = { slots: { [daten.slot || 1]: daten } };
+      if (!daten || !daten.slots) { alert(T('Diese Datei enthält keine Spielstände.', 'This file contains no saved games.')); return; }
+      const plaetze = Object.keys(daten.slots).map(Number).filter(n => n >= 1 && n <= SLOT_ANZAHL && istSpielstand(daten.slots[n]));
+      if (!plaetze.length) { alert(T('Diese Datei enthält keine Spielstände.', 'This file contains no saved games.')); return; }
+      const belegt = plaetze.filter(n => slotLesen(n));
+      if (belegt.length && !confirm(T(`Die Datei enthält ${plaetze.length} Spielstand/-stände. Platz ${belegt.join(', ')} ist schon belegt und wird überschrieben. Fortfahren?`,
+                                       `The file contains ${plaetze.length} saved game(s). Slot ${belegt.join(', ')} is already in use and will be overwritten. Continue?`))) return;
+      for (const n of plaetze) {
+        const d = daten.slots[n]; d.slot = n;
+        try { localStorage.setItem(slotSchluessel(n), JSON.stringify(d)); } catch (e) {}
+      }
+      alert(T(`${plaetze.length} Spielstand/-stände wiederhergestellt (Platz ${plaetze.join(', ')}).`,
+              `${plaetze.length} saved game(s) restored (slot ${plaetze.join(', ')}).`));
+      zeichneMenue();
+    };
+    leser.readAsText(datei);
+  });
+  eingabe.click();
+}
+
+// Links zu Impressum und Datenschutz (öffnen sich in einem neuen Tab – das Spiel läuft weiter)
+function htmlRechtliches(klasse) {
+  return `<div class="${klasse}">
+      <a href="impressum.html" target="_blank" rel="noopener">${T('Impressum', 'Legal notice')}</a> ·
+      <a href="datenschutz.html" target="_blank" rel="noopener">${T('Datenschutz', 'Privacy')}</a>
+    </div>`;
 }
 
 // --- Einführung für Einsteiger ---
@@ -328,10 +423,7 @@ function zeichneStartInhalt() {
                 <small>${T('Platz', 'Slot')} ${S.slot} · ${T('Tag', 'Day')} ${S.tag} · 🏅 ${RAENGE[S.rang].name} · ${s.icon} ${s.name}</small></button>`;
   }
   document.getElementById('startInhalt').innerHTML = symbole(`
-    <div class="start-sprache">
-      <button data-st="sprache" data-n="de" class="${SPRACHE === 'de' ? 'an' : ''}">Deutsch</button>
-      <button data-st="sprache" data-n="en" class="${SPRACHE === 'en' ? 'an' : ''}">English</button>
-    </div>
+    <div class="start-sprache">${htmlFlaggen('data-st="sprache"')}</div>
     <div class="start-mitte">
       <div class="start-zier">✦ ✦ ✦</div>
       <h1 class="start-titel">${T('Dünen <span>&amp;</span> Dinare', 'Dunes <span>&amp;</span> Dinars')}</h1>
@@ -344,7 +436,8 @@ function zeichneStartInhalt() {
           ? T('Neues Spiel · Spielstände', 'New game · Saved games')
           : T('🐪 Neues Spiel beginnen', '🐪 Start a new game')}</button>
       </div>
-    </div>`);
+    </div>
+    ${htmlRechtliches('start-rechtliches')}`);
 }
 
 function startAktion(art, n) {
@@ -645,27 +738,46 @@ function startMilchstrasse(b, horizont, dpr) {
   return bild;
 }
 
-// Eine Sternschnuppe quer über den Himmel – seit = Sekunden seit der Ankunft an der Oase
-const SCHNUPPE = { ab: 1.1, dauer: 1.5 };
-function startSternschnuppe(g, seit, b, horizont) {
-  const p = (seit - SCHNUPPE.ab) / SCHNUPPE.dauer;
-  if (p <= 0 || p >= 1) return;
-  // Flugbahn: links oben los, leicht absinkend nach rechts
+// Sternschnuppen, solange die Karawane an der Oase rastet – seit = Sekunden seit der Ankunft.
+// Die erste zieht groß von links nach rechts über den Himmel, danach folgen kleinere an wechselnden Stellen.
+const SCHNUPPE = { ab: 1.1, dauer: 1.5, abstand: [0.9, 1.6] };
+function startSternschnuppe(g, seit, b, horizont, samen) {
+  if (seit >= START_RAST) return;
+  // Fahrplan der Schnuppen dieser Rast (bei jeder Rast etwas anders, aber ohne Zufall pro Bild)
+  let start = SCHNUPPE.ab, nr = 0;
+  while (start < START_RAST - 0.6) {
+    const z = k => hash01(samen * 13 + nr, 120 + k);
+    const gross = nr === 0;
+    const dauer = gross ? SCHNUPPE.dauer : 0.8 + z(0) * 0.6;
+    if (seit >= start && seit < start + dauer) {
+      const x0 = gross ? 0.06 : 0.05 + z(1) * 0.55, y0 = gross ? 0.12 : 0.04 + z(2) * 0.3;
+      const weit = gross ? 0.84 : 0.25 + z(3) * 0.3;               // wie weit (Anteil der Bildbreite)
+      const fall = gross ? 0.38 : 0.2 + z(4) * 0.5;                // wie steil sie absinkt
+      schnuppeMalen(g, (seit - start) / dauer, b * x0, horizont * y0, b * weit, b * weit * fall * (horizont / b),
+                    Math.min(b * (gross ? 0.28 : 0.16), gross ? 240 : 140), gross ? 1.8 : 1.3);
+    }
+    start += SCHNUPPE.abstand[0] + hash01(samen * 13 + nr, 130) * (SCHNUPPE.abstand[1] - SCHNUPPE.abstand[0]);
+    nr++;
+  }
+}
+
+function schnuppeMalen(g, p, x0, y0, vx, vy, laenge, dicke) {
   const lauf = 1 - Math.pow(1 - p, 1.6);                            // anfangs flott, am Ende langsamer
-  const x = b * (0.06 + 0.84 * lauf), y = horizont * (0.12 + 0.2 * lauf + 0.06 * lauf * lauf);
-  const vx = b * 0.84, vy = horizont * 0.32, vl = Math.hypot(vx, vy);
-  const schweif = Math.min(b * 0.28, 240) * (0.4 + 0.6 * Math.sin(Math.PI * Math.min(1, p * 1.3)));
+  const x = x0 + vx * lauf, y = y0 + vy * lauf;
+  const vl = Math.hypot(vx, vy) || 1;
+  const schweif = laenge * (0.4 + 0.6 * Math.sin(Math.PI * Math.min(1, p * 1.3)));
   const hell = Math.sin(Math.PI * p);                              // blendet ein und wieder aus
   const ex = x - vx / vl * schweif, ey = y - vy / vl * schweif;
   const verlauf = g.createLinearGradient(ex, ey, x, y);
   verlauf.addColorStop(0, 'rgba(255,240,220,0)');
   verlauf.addColorStop(1, `rgba(255,248,235,${(0.9 * hell).toFixed(2)})`);
-  g.strokeStyle = verlauf; g.lineWidth = 1.8; g.lineCap = 'round';
+  g.strokeStyle = verlauf; g.lineWidth = dicke; g.lineCap = 'round';
   g.beginPath(); g.moveTo(ex, ey); g.lineTo(x, y); g.stroke();
   // heller Kopf mit kleinem Glühen
-  const glow = g.createRadialGradient(x, y, 0, x, y, 7);
+  const r = dicke * 4;
+  const glow = g.createRadialGradient(x, y, 0, x, y, r);
   glow.addColorStop(0, `rgba(255,252,240,${hell.toFixed(2)})`); glow.addColorStop(1, 'rgba(255,240,220,0)');
-  g.fillStyle = glow; g.fillRect(x - 7, y - 7, 14, 14);
+  g.fillStyle = glow; g.fillRect(x - r, y - r, r * 2, r * 2);
 }
 
 function startMalen(jetzt) {
@@ -702,7 +814,7 @@ function startMalen(jetzt) {
   const zug = startAblauf(t, b, h, gr);
 
   // Sternschnuppe: während an der Oase das Lager aufgebaut wird, zieht sie von links nach rechts
-  if (zug.lager) startSternschnuppe(g, zug.lager.seit, b, horizont);
+  if (zug.lager) startSternschnuppe(g, zug.lager.seit, b, horizont, Math.floor(t - zug.lager.seit));
 
   // 3. Die tief stehende Sonne mit weichem Glühen – sie sinkt ganz langsam
   const sx = b * 0.7, sy = horizont - h * 0.03 + Math.min(t * 0.6, h * 0.04), sr = Math.min(b, h) * 0.085;
