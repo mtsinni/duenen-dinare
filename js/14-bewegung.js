@@ -26,9 +26,11 @@ function bewegeKarawanen(dt) {
     // Tag und Nacht: Nachtmarsch-Karawanen rasten tagsüber im Schatten
     const nacht = istNacht();
     const rastet = k.nachtmarsch && !nacht;
-    let durstFaktor = (rastet ? 0.15 : nacht ? 0.5 : istMittagshitze() ? 1.6 : 1.1) * jahreszeit().durst;
+    const segel = hatAusruestung(k, 'segel');   // Sonnensegel: weniger Durst am Tag
+    let durstFaktor = (rastet ? 0.15 : nacht ? 0.5 : istMittagshitze() ? (segel ? 1.2 : 1.6) : (segel ? 1.0 : 1.1)) * jahreszeit().durst;
 
     let tempo = rastet ? 0 : reiseTempo(k);
+    if (nacht && hatAusruestung(k, 'laternen')) tempo *= 1.15;   // Laternen: nachts schneller
     if (k.imSturm) tempo *= nurKamele(k) ? 0.6 : 0.3;   // Kamele kennen die Stürme
     if (k.durstig) tempo *= 0.5;
     if (k.verirrt > 0) tempo *= -0.3;                     // Fata Morgana: es geht sogar zurück!

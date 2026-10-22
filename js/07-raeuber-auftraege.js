@@ -6,7 +6,7 @@ function ueberfall(k) {
   if (ladungsWert(k) < 50) return;   // Nichts zu holen – die Räuber lassen sie ziehen
 
   // Abwehrchance: jede Wache 18 %, jede Führerstufe über 1 weitere 8 %, höchstens 90 %
-  const abwehr = Math.min(0.9, 0.18 * k.wachen + 0.08 * (fuehrerStufe(k) - 1));
+  const abwehr = Math.min(0.92, 0.18 * k.wachen + 0.08 * (fuehrerStufe(k) - 1) + 0.08 * talentStufe(k, 'krieger') + (hatAusruestung(k, 'waffen') ? 0.1 : 0));
   if (Math.random() < abwehr) {
     log(T(`⚔️ Räuber greifen ${k.name} an – ${k.fuehrer.name} und die Wachen schlagen sie in die Flucht!`,
           `⚔️ Robbers attack ${k.name} – ${k.fuehrer.name} and the guards drive them off!`), 'gut');
@@ -37,6 +37,7 @@ function epGeben(k, ep) {
   k.fuehrer.ep += ep;
   const nachher = fuehrerStufe(k);
   if (nachher > vorher) {
+    talentGewinnen(k, nachher - vorher);
     log(T(`⭐ ${k.fuehrer.name} (${k.name}) ist jetzt Karawanenführer der Stufe ${nachher}!`,
           `⭐ ${k.fuehrer.name} (${k.name}) is now a level ${nachher} caravan leader!`), 'gut');
   }

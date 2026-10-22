@@ -2,7 +2,6 @@
    23. ERRUNGENSCHAFTEN – Meilensteine, die über alle Spiele hinweg bleiben
    Sie werden im Browser gespeichert (nicht im Spielstand): Was einmal
    erreicht ist, bleibt erreicht – auch nach einem neuen Spiel.
-   Später lassen sie sich 1:1 als Steam-Errungenschaften übernehmen.
    ===================================================================== */
 
 // Zähler für Dinge, die das Spiel sonst nicht festhält (im Spielstand)

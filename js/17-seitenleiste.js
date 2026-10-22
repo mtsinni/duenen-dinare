@@ -49,6 +49,10 @@ function zeichnePanel() {
   const neueste = S.log[0];
   document.getElementById('ticker').innerHTML = neueste
     ? symbole(`<span class="${neueste.art}">${T('Tag', 'Day')} ${neueste.tag}: ${neueste.text}</span>`) : '';
+  // Großer Bildschirm: die letzten Meldungen stehen direkt unter der Karte
+  const unten = document.getElementById('logUnten');
+  if (unten) unten.innerHTML = symbole(`<div class="log-kopf">📰 ${T('Letzte Ereignisse', 'Latest events')}</div>` +
+    S.log.slice(0, 14).map(e => `<div class="log-eintrag ${e.art}"><span class="log-tag">${T('Tag', 'Day')} ${e.tag}</span>${e.text}</div>`).join(''));
   zeichneReiter();
 }
 
@@ -77,11 +81,14 @@ function reiterWaehlen(id) {
 }
 
 function zeichneReiter() {
+  // Großer Bildschirm: Ereignisse stehen schon unter der Karte – der Reiter dafür ist ausgeblendet
+  if (aktiverReiter === 'ereignisse' && typeof window !== 'undefined' && window.innerWidth >= 1000) aktiverReiter = 'oase';
   if (aktiverReiter === 'ereignisse') ungeleseneMeldungen = 0;
   document.getElementById('reiter').innerHTML = symbole(REITER.map(r => {
     const zahl = r.id === 'ereignisse' && ungeleseneMeldungen > 0
       ? `<span class="punkt">${ungeleseneMeldungen > 9 ? '9+' : ungeleseneMeldungen}</span>` : '';
-    return `<button data-reiter="${r.id}" class="${r.id === aktiverReiter ? 'an' : ''}" title="${T(r.de, r.en)}">
+    const taste = { oase: 'O', karawanen: 'K', auftraege: 'A', ziele: 'Z', haeuser: 'H', ereignisse: 'E' }[r.id];
+    return `<button data-reiter="${r.id}" class="${r.id === aktiverReiter ? 'an' : ''}" title="${T(r.de, r.en)} (${taste})">
               <span class="r-icon">${r.icon}</span><small>${T(r.de, r.en)}</small>${zahl}</button>`;
   }).join(''));
   for (const r of REITER) document.getElementById(r.panel).classList.toggle('versteckt', r.id !== aktiverReiter);
@@ -89,7 +96,7 @@ function zeichneReiter() {
 
 // Aufklappbare Abschnitte. Welche offen sind, merken wir uns hier –
 // sonst würden sie beim täglichen Neuzeichnen wieder zuklappen.
-const offeneBereiche = new Set(['markt', 'karawane', 'aufgaben']);
+const offeneBereiche = new Set(['markt', 'karawane', 'aufgaben', 'berater']);
 function bereich(id, titel, inhalt) {
   return `<details data-bereich="${id}" ${offeneBereiche.has(id) ? 'open' : ''}>
             <summary>${titel}</summary>${inhalt}</details>`;
@@ -125,71 +132,52 @@ function htmlOase() {
              <span class="wasser-pille" title="${T('Wasserstand', 'Water level')}">💧 ${Math.round(o.wasser)} %</span></div>
            <div class="bar"><div style="width:${Math.max(0, o.wasser)}%;background:${wasserFarbe(o.wasser)}"></div></div>`;
 
-  // Alle Abschnitte sammeln. Abschnitte ohne Inhalt bekommen keinen Reiter.
+  // Vier Reiter: Markt · Oase (mit Scheich und Reisenden) · Bauen (Gebäude und Tiere) · Dienste
+  // Innerhalb eines Reiters trennen kleine Überschriften die Teile.
   const abschnitte = [];
-  const dazu = (id, icon, de, en, inhalt, zahl = 0) => { if (inhalt) abschnitte.push({ id, icon, name: T(de, en), inhalt, zahl }); };
+  const dazu = (id, icon, de, en, teile, zahl = 0) => {
+    const inhalt = teile.filter(t => t && t.inhalt).map(t => (t.titel ? `<h3 class="teil-titel">${t.titel}</h3>` : '') + `<div class="teil">${t.inhalt}</div>`).join('');
+    if (inhalt) abschnitte.push({ id, icon, name: T(de, en), inhalt, zahl });
+  };
 
-  dazu('markt', '📊', 'Markt', 'Market', htmlMarkt(o, handel) + htmlOasenExtras(o));
+  dazu('markt', '📊', 'Markt', 'Market', [{ inhalt: htmlMarkt(o, handel) }]);
 
-  // Übersicht: Einwohner, Waren, Ansehen
-  dazu('info', 'ℹ️', 'Oase', 'Oasis',
-    `<div class="info">👥 ${Math.round(o.bev)} ${T('Einwohner', 'people')}</div>
-     <div class="info">🏭 ${T('erzeugt', 'produces')} ${o.produziert.map(id => ware(id).icon + ' ' + ware(id).name).join(', ')}</div>
-     <div class="info">🏅 ${T('Ansehen', 'Reputation')}: ${ansehenTitel(ansehen(o))} (${Math.round(ansehen(o))}/100)` +
-       (ansehenVorteil(o) >= 0.005 ? ` · ${Math.round(ansehenVorteil(o) * 100)} % ${T('bessere Preise', 'better prices')}` : '') + `</div>
-     <div class="info">💧 ${T('Wasserstand', 'Water level')} ${Math.round(o.wasser)} %</div>`);
+  // --- Oase: Übersicht, Besonderheiten, Scheich, Reisende ---
+  const ueberblick = `<div class="kennzahlen">
+       <div><span>👥</span><b>${Math.round(o.bev)}</b><small>${T('Einwohner', 'people')}</small></div>
+       <div><span>💧</span><b>${Math.round(o.wasser)} %</b><small>${T('Wasser', 'water')}</small></div>
+       <div><span>🏅</span><b>${Math.round(ansehen(o))}</b><small>${ansehenTitel(ansehen(o))}</small></div>
+     </div>
+     <div class="info">🏭 ${T('Erzeugt', 'Produces')}: ${o.produziert.map(id => ware(id).icon + ' ' + ware(id).name).join(', ')}</div>` +
+     (ansehenVorteil(o) >= 0.005 ? `<div class="hinweis">${T(`Dein Ansehen bringt dir ${Math.round(ansehenVorteil(o) * 100)} % bessere Preise.`, `Your reputation gets you ${Math.round(ansehenVorteil(o) * 100)}% better prices.`)}</div>` : '') +
+     htmlOasenExtras(o);
 
-  // Der Scheich: Angebote annehmen und eigene Aufträge hier abliefern
   const angebote = S.angebote.filter(a => a.oase === o.id);
   const auftraege = S.auftraege.filter(a => a.oase === o.id);
-  if (angebote.length || auftraege.length) {
-    let s = '';
-    for (const a of angebote) {
-      const w = ware(a.ware);
-      s += `<div class="info">${T('Sucht', 'Wants')} <b>${a.menge} ${w.icon} ${w.name}</b> · ${T('Lohn', 'pay')} ${a.lohn} 🪙 · ${T(`Frist ${a.frist} Tage`, `${a.frist} days`)}
-            <button data-a="annehmen" data-v="${a.id}" ${S.auftraege.length >= 3 ? 'disabled' : ''}>${T('Annehmen', 'Accept')}</button></div>`;
-    }
-    if (angebote.length && S.auftraege.length >= 3) s += `<p class="hinweis">${T('Du hast schon 3 offene Aufträge.', 'You already have 3 open contracts.')}</p>`;
-    for (const a of auftraege) {
-      const w = ware(a.ware);
-      const kannLiefern = handel && handel.k.ladung[w.id] >= a.menge;
-      s += `<div class="info">${T('Dein Auftrag', 'Your contract')}: <b>${a.menge} ${w.icon} ${w.name}</b> · ${a.lohn} 🪙 · ${T(`noch ${a.bisTag - S.tag} Tage`, `${a.bisTag - S.tag} days left`)}
-            <button data-a="erfuellen" data-v="${a.id}" ${kannLiefern ? '' : 'disabled'}>${T('Abliefern', 'Deliver')}</button></div>`;
-    }
-    dazu('scheich', '📜', 'Scheich', 'Sheikh', `<h3>${T(`Der Scheich von ${o.name}`, `The sheikh of ${o.name}`)}</h3>` + s, angebote.length + auftraege.length);
+  let scheich = '';
+  for (const a of angebote) {
+    const w = ware(a.ware);
+    scheich += `<div class="zeile-karte"><div>${T('Sucht', 'Wants')} <b>${a.menge} ${w.icon} ${w.name}</b><div class="hinweis">${T('Lohn', 'Pay')} ${a.lohn} 🪙 · ${T(`Frist ${a.frist} Tage`, `${a.frist} days`)}</div></div>
+          <button data-a="annehmen" data-v="${a.id}" ${S.auftraege.length >= 3 ? 'disabled' : ''}>${T('Annehmen', 'Accept')}</button></div>`;
   }
-
+  if (angebote.length && S.auftraege.length >= 3) scheich += `<p class="hinweis">${T('Du hast schon 3 offene Aufträge.', 'You already have 3 open contracts.')}</p>`;
+  for (const a of auftraege) {
+    const w = ware(a.ware);
+    const kannLiefern = handel && handel.k.ladung[w.id] >= a.menge;
+    scheich += `<div class="zeile-karte"><div>${T('Dein Auftrag', 'Your contract')}: <b>${a.menge} ${w.icon} ${w.name}</b><div class="hinweis">${a.lohn} 🪙 · ${T(`noch ${a.bisTag - S.tag} Tage`, `${a.bisTag - S.tag} days left`)}</div></div>
+          <button data-a="erfuellen" data-v="${a.id}" ${kannLiefern ? '' : 'disabled'}>${T('Abliefern', 'Deliver')}</button></div>`;
+  }
   const reisende = S.reisende.filter(r => r.von === o.id).length;
-  dazu('reisende', '🧕', 'Reisende', 'Travellers',
-       reisende ? `<h3>${T('Reisende suchen eine Karawane', 'Travellers looking for a caravan')}</h3>` + htmlReisende(o, handel) : '', reisende);
+  dazu('info', 'ℹ️', 'Oase', 'Oasis', [
+    { inhalt: ueberblick },
+    { titel: `📜 ${T(`Der Scheich von ${o.name}`, `The sheikh of ${o.name}`)}`, inhalt: scheich },
+    { titel: `🧕 ${T('Reisende suchen eine Karawane', 'Travellers looking for a caravan')}`, inhalt: reisende ? htmlReisende(o, handel) : '' },
+  ], angebote.length + auftraege.length + reisende);
 
-  if (augenVorOrt(o)) {
-    dazu('kundschafter', '🔭', 'Kundschafter', 'Scouts',
-      `<div class="info">${T('Kundschafter kartieren unbekannte Wüste in der Nähe – vielleicht finden sie etwas.', 'Scouts map unknown desert nearby – maybe they find something.')}</div>
-       <button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} 🪙)</button>`);
-  }
-  dazu('gebaeude', '🏛️', 'Gebäude', 'Buildings', htmlGebaeude(o));
-  dazu('dienste', '🏗️', 'Dienste', 'Services', htmlDienste(o, handel));
-
-  // Geldverleiher (nur in größeren Oasen)
-  if (o.bev >= VERLEIHER_AB_BEV) {
-    const rest = KREDIT_RAHMEN - S.schulden;
-    dazu('verleiher', '💰', 'Geldverleiher', 'Moneylender', `
-          <div class="info">${T('Deine Schulden', 'Your debt')}: <b>${Math.round(S.schulden)} 🪙</b> · ${T('Zinsen', 'interest')} ${zahlText(zinsSatz() * 100)} % ${T('pro Tag', 'per day')}
-            (≈ ${Math.round(S.schulden * zinsSatz())} 🪙 ${T('täglich', 'daily')})</div>
-          <div class="info">
-            <button data-a="leihen" data-v="500" ${rest < 500 ? 'disabled' : ''}>${T('500 leihen', 'Borrow 500')}</button>
-            <button data-a="leihen" data-v="1000" ${rest < 1000 ? 'disabled' : ''}>${T('1000 leihen', 'Borrow 1000')}</button>
-            <button data-a="tilgen" data-v="500" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('500 zurück', 'Repay 500')}</button>
-            <button data-a="tilgen" data-v="999999" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('alles zurück', 'Repay all')}</button>
-          </div>
-          <div class="hinweis">${T(`Kreditrahmen ${KREDIT_RAHMEN} 🪙. Über ${PFAENDUNG_AB} 🪙 Schulden wird gepfändet.`, `Credit limit ${KREDIT_RAHMEN} 🪙. Debts above ${PFAENDUNG_AB} 🪙 lead to seizure.`)}</div>`);
-  }
-
-  // Tiermarkt
+  // --- Bauen: Gebäude und Tiermarkt ---
   const k = karawane(S.gewKarawane);
   const fuer = (k && k.ort === o.id) ? T(`Kauf für ${k.name}`, `Buying for ${k.name}`) : T('Kauf gründet eine neue Karawane', 'Buying founds a new caravan');
-  let t = `<div class="hinweis">${fuer}</div><table>
+  let t = `<div class="hinweis">${fuer}</div><table class="ruhig">
         <tr><th>${T('Tier', 'Animal')}</th><th>${T('Last', 'Load')}</th><th>${T('Tempo', 'Speed')}</th><th>${T('Durst', 'Thirst')}</th><th></th></tr>`;
   for (const typ in TIERE) {
     const tier = TIERE[typ];
@@ -199,7 +187,39 @@ function htmlOase() {
               ? `<button data-a="tier" data-v="${typ}" ${S.gold < tier.preis ? 'disabled' : ''}>${tier.preis} 🪙</button>`
               : `<small>${T('nur in Städten', 'cities only')}</small>`}</td></tr>`;
   }
-  dazu('tiere', '🐾', 'Tiermarkt', 'Animals', t + '</table>');
+  dazu('bauen', '🏛️', 'Bauen & Ausrüsten', 'Build & equip', [
+    { titel: `🏛️ ${T('Deine Gebäude', 'Your buildings')}`, inhalt: htmlGebaeude(o) },
+    { titel: `🐾 ${T('Tiermarkt', 'Animal market')}`, inhalt: t + '</table>' },
+    { titel: `🎒 ${T('Ausrüstung', 'Equipment')}`, inhalt: htmlAusruestung(o) },
+  ]);
+
+  // --- Dienste: Brunnen/Karawanserei, Kundschafter, Geldverleiher ---
+  let verleiher = '';
+  if (o.bev >= VERLEIHER_AB_BEV) {
+    const rest = KREDIT_RAHMEN - S.schulden;
+    verleiher = `
+          <div class="info">${T('Deine Schulden', 'Your debt')}: <b>${Math.round(S.schulden)} 🪙</b> · ${T('Zinsen', 'interest')} ${zahlText(zinsSatz() * 100)} % ${T('pro Tag', 'per day')}
+            (≈ ${Math.round(S.schulden * zinsSatz())} 🪙 ${T('täglich', 'daily')})</div>
+          <div class="knopfreihe">
+            <button data-a="leihen" data-v="500" ${rest < 500 ? 'disabled' : ''}>${T('500 leihen', 'Borrow 500')}</button>
+            <button data-a="leihen" data-v="1000" ${rest < 1000 ? 'disabled' : ''}>${T('1000 leihen', 'Borrow 1000')}</button>
+            <button data-a="tilgen" data-v="500" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('500 zurück', 'Repay 500')}</button>
+            <button data-a="tilgen" data-v="999999" ${S.schulden <= 0 || S.gold < 1 ? 'disabled' : ''}>${T('alles zurück', 'Repay all')}</button>
+          </div>
+          <div class="hinweis">${T(`Kreditrahmen ${KREDIT_RAHMEN} 🪙. Über ${PFAENDUNG_AB} 🪙 Schulden wird gepfändet.`, `Credit limit ${KREDIT_RAHMEN} 🪙. Debts above ${PFAENDUNG_AB} 🪙 lead to seizure.`)}</div>`;
+  }
+  const kundschafter = augenVorOrt(o)
+    ? `<div class="info">${T('Kundschafter kartieren unbekannte Wüste in der Nähe – vielleicht finden sie etwas.', 'Scouts map unknown desert nearby – maybe they find something.')}</div>
+       <button data-a="kundschafter" ${S.gold < KUNDSCHAFTER_PREIS ? 'disabled' : ''}>🔭 ${T('Kundschafter aussenden', 'Send out scouts')} (${KUNDSCHAFTER_PREIS} 🪙)</button>` : '';
+  dazu('dienste', '🏗️', 'Dienste', 'Services', [
+    { titel: `🏗️ ${T('Brunnen & Karawanserei', 'Well & caravanserai')}`, inhalt: htmlDienste(o, handel) },
+    { titel: `🔭 ${T('Kundschafter', 'Scouts')}`, inhalt: kundschafter },
+    { titel: `💰 ${T('Geldverleiher', 'Moneylender')}`, inhalt: verleiher },
+  ]);
+
+  // Alte Reiter-Namen (frühere Version) auf die neuen abbilden
+  const ALT = { scheich: 'info', reisende: 'info', gebaeude: 'bauen', tiere: 'bauen', kundschafter: 'dienste', verleiher: 'dienste' };
+  if (ALT[aktiverOasenReiter]) aktiverOasenReiter = ALT[aktiverOasenReiter];
 
   // Gewählten Reiter zeigen – gibt es ihn in dieser Oase nicht, dann den Markt
   const aktiv = abschnitte.find(a => a.id === aktiverOasenReiter) || abschnitte[0];
@@ -231,13 +251,13 @@ function handelVorschau(k, o, wid, menge) {
     let gold = S.gold, platz = kapazitaet(k) - ladungGewicht(k);
     for (let i = 0; i < menge; i++) {
       if (o.lager[wid] < 1 || platz < 1) break;
-      const preis = kaufPreis(o, w);
+      const preis = kaufPreisFuer(k, o, w);
       if (gold < preis) break;
       gold -= preis; platz--; o.lager[wid]--; anzahl++; betrag += preis;
     }
   } else {
     for (let i = 0; i < -menge && i < Math.floor(k.ladung[wid]); i++) {
-      const preis = verkaufPreis(o, w);
+      const preis = verkaufPreisFuer(k, o, w);
       o.lager[wid]++; anzahl++; betrag += preis;
     }
   }
@@ -318,43 +338,48 @@ function htmlMarkt(o, handel) {
   if (live) merkePreise(o);
   const p = S.wissen[o.id];
   const bote = `<button data-a="bote" ${S.gold < BOTE_PREIS ? 'disabled' : ''}>🏃 ${T('Boten schicken', 'Send a messenger')} (${BOTE_PREIS} 🪙)</button>`;
-  // Was stellt die Oase selbst her? Diese Waren sind hier meist günstig.
-  const prodZeile = `<div class="produktion">🏭 ${T('Hier hergestellt', 'Made here')}: ` +
-    o.produziert.map(id => `<span class="prod-ware">${ware(id).icon} ${ware(id).name}</span>`).join(' ') + '</div>';
-  if (!p) return prodZeile + `<p class="hinweis">${T('Die Preise hier kennst du noch nicht – du warst noch nie hier.', 'You do not know the prices here yet – you have never been here.')}</p>${bote}`;
+  if (!p) return `<p class="hinweis">${T('Die Preise hier kennst du noch nicht – du warst noch nie hier.', 'You do not know the prices here yet – you have never been here.')}</p>${bote}`;
 
-  let h = prodZeile;
+  let h = '';
   if (!live) {
     const alter = S.tag - p.tag;
-    h += `<div class="hinweis">${T(`Preise von Tag ${p.tag} (${alter === 0 ? 'heute' : 'vor ' + alter + ' Tagen'}) – können sich geändert haben.`,
+    h += `<div class="hinweis markt-alt">${T(`Preise von Tag ${p.tag} (${alter === 0 ? 'heute' : 'vor ' + alter + ' Tagen'}) – können sich geändert haben.`,
                                   `Prices from day ${p.tag} (${alter === 0 ? 'today' : alter + ' days ago'}) – they may have changed.`)} ${bote}</div>`;
   }
-  h += `<table class="${schmal() ? 'markt-schmal' : ''}"><tr><th>${T('Ware', 'Goods')}</th><th>${T('Lager', 'Stock')}</th><th>${T('Kauf', 'Buy')}</th><th>${T('Verk.', 'Sell')}</th>` +
-       (handel ? `<th>${T('Dabei', 'Carried')}</th>` + (schmal() ? '' : '<th></th>') : '') + '</tr>';
+  // Eine Zeile pro Ware. Tippt man eine Zeile an, klappt darunter der Handel auf.
+  h += `<table class="markt${handel ? ' handelbar' : ''}"><tr><th>${T('Ware', 'Goods')}</th>
+        <th title="${T('So viel hat die Oase vorrätig – viel Vorrat heißt niedrige Preise', 'How much the oasis has in stock – lots of stock means low prices')}">${T('Lager', 'Stock')}</th>
+        <th title="${T('Das zahlst du beim Kaufen (pro Stück)', 'What you pay when buying (per unit)')}">${T('Kauf', 'Buy')}${DINAR}</th>
+        <th title="${T('Das bekommst du beim Verkaufen (pro Stück)', 'What you get when selling (per unit)')}">${T('Verk.', 'Sell')}${DINAR}</th>
+        ${handel ? `<th title="${T('So viel trägt deine Karawane davon', 'How much of it your caravan carries')}">${T('Dabei', 'Carried')}</th>` : ''}</tr>`;
   for (const w of WAREN) {
     if (!wareZeigen(w, p.lager[w.id], o)) continue;   // seltene Waren nur, wenn es sie gibt
     const fest = festFaktor(o, w) > 1 ? ' 🎉' : '';
     const hier = o.produziert.includes(w.id);
-    h += `<tr class="${hier ? 'hergestellt' : ''}"><td>${w.icon} ${w.name}${hier ? ' <span class="prod-marke" title="' + T('wird hier hergestellt', 'made here') + '">🏭</span>' : ''}${w.verderb ? ' ⏳' : ''}${fest}</td><td>${p.lager[w.id]}</td>
-          <td>${p.kauf[w.id]}${DINAR}</td><td>${p.verk[w.id]}${DINAR}</td>`;
-    if (handel) {
-      const dabei = Math.floor(handel.k.ladung[w.id]);
-      const offen = schieber.ware === w.id;
-      const knoepfe = `<button data-a="schieber" data-v="${w.id}" class="${offen ? 'an' : ''}" title="${T('Menge frei wählen', 'Choose any amount')}">⚖️</button>
+    const offen = handel && schieber.ware === w.id;
+    const dabei = handel ? Math.floor(handel.k.ladung[w.id]) : 0;
+    h += `<tr class="markt-zeile${hier ? ' hergestellt' : ''}${offen ? ' offen' : ''}" ${handel ? `data-a="schieber" data-v="${w.id}"` : ''}>
+          <td>${w.icon} ${w.name}${hier ? ' <span class="prod-marke" title="' + T('wird hier hergestellt', 'made here') + '">🏭</span>' : ''}${w.verderb ? ' ⏳' : ''}${fest}</td>
+          <td>${p.lager[w.id]}</td><td>${p.kauf[w.id]}</td><td>${p.verk[w.id]}</td>
+          ${handel ? `<td class="${dabei ? 'dabei' : 'leer'}">${dabei || '·'}</td>` : ''}</tr>`;
+    if (offen) {
+      h += `<tr class="handelszeile"><td colspan="5">
+          <div class="schnell">
+            <span class="schnell-gruppe">${T('Kaufen', 'Buy')}
               <button data-a="kauf" data-v="${w.id}" data-n="1">+1</button>
-              <button data-a="kauf" data-v="${w.id}" data-n="10">+10</button>
+              <button data-a="kauf" data-v="${w.id}" data-n="10">+10</button></span>
+            <span class="schnell-gruppe">${T('Verkaufen', 'Sell')}
               <button data-a="verk" data-v="${w.id}" data-n="1" ${dabei < 1 ? 'disabled' : ''}>−1</button>
-              <button data-a="verk" data-v="${w.id}" data-n="9999" ${dabei < 1 ? 'disabled' : ''}>${T('alle', 'all')}</button>`;
-      // Auf dem Handy kommen die Knöpfe in eine eigene Zeile darunter
-      h += schmal() ? `<td>${dabei}</td></tr><tr class="knopfzeile"><td colspan="5">${knoepfe}</td>`
-                    : `<td>${dabei}</td><td style="white-space:nowrap">${knoepfe}</td>`;
-      if (offen) h += `</tr><tr class="schieberzeile"><td colspan="${schmal() ? 5 : 6}">${htmlSchieber(handel.k, o, w)}</td>`;
+              <button data-a="verk" data-v="${w.id}" data-n="9999" ${dabei < 1 ? 'disabled' : ''}>${T('alle', 'all')}</button></span>
+          </div>
+          ${htmlSchieber(handel.k, o, w)}
+          ${htmlPreisVerlauf(o, w)}</td></tr>`;
     }
-    h += '</tr>';
   }
   h += '</table>';
-  h += `<div class="hinweis">${T('🏭 = wird hier hergestellt, meist günstig', '🏭 = made here, usually cheap')} · ${T('⏳ = verdirbt mit der Zeit (3 % pro Tag)', '⏳ = spoils over time (3% per day)')}</div>`;
+  h += `<div class="hinweis markt-legende">🏭 ${T('hier hergestellt, meist günstig', 'made here, usually cheap')} · ⏳ ${T('verdirbt (3 % pro Tag)', 'spoils (3% per day)')}${handel ? ' · ' + T('Ware antippen zum Handeln', 'tap a good to trade') : ''}</div>`;
   if (!handel) h += `<p class="hinweis">${T('Zum Handeln muss die ausgewählte Karawane hier stehen.', 'To trade, the selected caravan must be here.')}</p>`;
+  h += bereich('berater', `💡 ${T('Handelsberater', 'Trade adviser')}`, htmlBerater(o, handel));
   return h;
 }
 
@@ -468,6 +493,7 @@ function htmlKarawanen() {
   if (stufe > 1) {
     d += `<div class="hinweis">${T(`+${(stufe - 1) * 5} % Tempo · −${(stufe - 1) * 7} % Durst · bessere Abwehr`, `+${(stufe - 1) * 5}% speed · −${(stufe - 1) * 7}% thirst · better defence`)}</div>`;
   }
+  d += htmlKarawanenExtras(k);
   d += htmlKarawanenZustand(k);
 
   const anOase = k.ort != null && oase(k.ort).aktiv;
@@ -502,7 +528,7 @@ function htmlKarawanen() {
         d += `<div class="warnung">${T('⚔️ Die Route führt durch Räubergebiet!', '⚔️ The route passes through robber territory!')}${k.wachen === 0 ? T(' Wachen wären klug.', ' Guards would be wise.') : ''}</div>`;
       }
       d += htmlKarawansereiBau(k);
-      d += `<button data-a="los">🚶 ${T(`Nach ${ziel.name} aufbrechen`, `Set out for ${ziel.name}`)}</button>`;
+      d += `<button data-a="los" title="${T('Taste G', 'Key G')}">🚶 ${T(`Nach ${ziel.name} aufbrechen`, `Set out for ${ziel.name}`)}</button>`;
     } else if (!k.route.aktiv) {
       d += `<p class="hinweis">${T('Tippe auf der Karte auf eine andere Oase, um ein Reiseziel zu wählen.', 'Tap another oasis on the map to choose a destination.')}</p>`;
     }
@@ -626,6 +652,12 @@ const AKTIONEN = {
   tippende:   () => einfuehrungBeenden(),
   bote:       () => boteSenden(),
   erfolge:    () => errungenschaftenOeffnen(),
+  talentWahl: v => talentWaehlen(v),
+  entscheidungWahl: v => entscheidungWaehlen(v),
+  entscheidungOk: () => entscheidungFertig(),
+  talentFenster: v => talentFensterOeffnen(+v),
+  ausruestung: v => ausruestungKaufen(v),
+  beraterZiel: v => { S.ziel = +v; reiterWaehlen('karawanen'); zeichnePanel(); },
   siegWeiter: () => { statistikUmschalten(false); fensterArt = 'statistik'; },
   siegMenue:  () => { statistikUmschalten(false); fensterArt = 'statistik'; menueOeffnen(); },
   lagerhaus:  () => lagerhausBauen(),

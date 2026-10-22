@@ -12,6 +12,7 @@ function merkePreise(o) {
     p.lager[w.id] = Math.floor(o.lager[w.id]);
   }
   S.wissen[o.id] = p;
+  preisVerlaufMerken(o);
 }
 
 // Eine eigene Karawane oder ein eigenes Gebäude vor Ort = man sieht die Preise live

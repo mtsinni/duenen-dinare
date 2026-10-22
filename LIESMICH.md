@@ -43,6 +43,11 @@ und dem Ordner `js`) ins Repository laden.
 | `js/24-sieg.js` | Spielziele (Freies Spiel, Reichtum, Handelsimperium, Freund der Wüste, Wettlauf) und Siegfenster |
 | `js/25-musik.js` | Live erzeugte orientalische Musik (Oud, Ney, Darbuka) – Stimmung je nach Lage: Titel, Tag, Nacht, Gefahr |
 | `js/26-effekte.js` | Kleine Animationen: Gewinne, Münzen, Staub, Kampf, Bauen, glitzerndes Wasser, Kartenrahmen |
+| `js/27-zufallskarte.js` | Zufällige Wüsten aus einer Kartennummer (Oasen, Waren, Gebirge) – oder die klassische Karte |
+| `js/28-talente-ausruestung.js` | Talente der Karawanenführer (Feilscher, Spurenleser, Krieger, Wasserkundiger) und Ausrüstung |
+| `js/29-entscheidungen.js` | Ereignisse mit Entscheidungen und ihre späteren Folgen |
+| `js/30-berater.js` | Handelsberater (lohnende Geschäfte) und Preisverlauf je Ware |
+| `js/31-hilfe-tasten.js` | Tastenkürzel (Taste ? zeigt alle) und Erklärungen beim Drüberfahren |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien

@@ -32,6 +32,7 @@ function ladeSlot(n) {
   S.slot = n;
   aufruesten();
   namenUebersetzen();   // "Karawane 2" ↔ "Caravan 2" passend zur gewählten Sprache
+  kartenGelaendeAktualisieren();
   return true;
 }
 
@@ -61,7 +62,7 @@ let menueOffen = false, pauseVorMenue = false;
 // Direkt nach dem Öffnen der Seite ist der letzte Spielstand gerade erst geladen –
 // dann bleibt das Spiel auch nach „Weiter“ angehalten.
 let geradeGeladen = true;
-const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true, sieg: 'frei' };
+const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true, sieg: 'frei', karte: 'klassisch', kartenNr: '' };
 
 function menueOeffnen() {
   if (statistikOffen) statistikUmschalten(false);
@@ -101,7 +102,8 @@ function zeichneMenue() {
   }
 
   const erreicht = errungenschaftenLesen();
-  h += `<button data-m="erfolge" class="erfolge-knopf">🏆 ${T('Errungenschaften', 'Achievements')} · ${ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length}/${ERRUNGENSCHAFTEN.length}</button>`;
+  h += `<div class="menue-zeile"><button data-m="erfolge" class="erfolge-knopf">🏆 ${T('Errungenschaften', 'Achievements')} · ${ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length}/${ERRUNGENSCHAFTEN.length}</button>
+          <button data-m="hilfe" class="erfolge-knopf">⌨️ ${T('Tastenkürzel', 'Shortcuts')}</button></div>`;
   h += `<h3>${T('Spielstände', 'Saved games')}</h3>`;
   for (let n = 1; n <= SLOT_ANZAHL; n++) {
     const d = slotLesen(n);
@@ -113,7 +115,7 @@ function zeichneMenue() {
     const z = d.zusammenfassung || {};
     const s = SCHWIERIGKEITEN[d.schwierigkeit] || SCHWIERIGKEITEN.normal;
     h += `<div class="slot ${n === S.slot ? 'aktuell' : ''}">
-            <b>${T('Platz', 'Slot')} ${n}</b> · ${s.icon} ${s.name} · ${T('Tag', 'Day')} ${d.tag}${RAENGE[d.rang] ? ' · 🏅 ' + RAENGE[d.rang].name : ''}${z.vermoegen != null ? ' · ' + zahl(z.vermoegen) + ' 🪙' : ''}${d.bankrott ? ' · 💀 ' + T('bankrott', 'bankrupt') : ''}
+            <b>${T('Platz', 'Slot')} ${n}</b> · ${s.icon} ${s.name} · ${d.karte && d.karte.art === 'zufall' ? '🎲 ' + d.karte.nr + ' · ' : ''}${T('Tag', 'Day')} ${d.tag}${RAENGE[d.rang] ? ' · 🏅 ' + RAENGE[d.rang].name : ''}${z.vermoegen != null ? ' · ' + zahl(z.vermoegen) + ' 🪙' : ''}${d.bankrott ? ' · 💀 ' + T('bankrott', 'bankrupt') : ''}
             <div style="margin-top:4px">
               <button data-m="laden" data-n="${n}">${T('Laden', 'Load')}</button>
               <button data-m="export" data-n="${n}">💾 ${T('Als Datei sichern', 'Save as file')}</button>
@@ -136,6 +138,13 @@ function zeichneMenue() {
   }
   h += `</div><div class="hinweis">${SCHWIERIGKEITEN[menueWahl.schwierigkeit].text}
         ${T('Startgold', 'Starting gold')}: ${SCHWIERIGKEITEN[menueWahl.schwierigkeit].startGold} 🪙.</div>
+        <div class="info" style="margin-top:8px">${T('Karte', 'Map')}:</div><div>
+          <button data-m="kartewahl" data-n="klassisch" class="${menueWahl.karte === 'klassisch' ? 'an' : ''}">🗺 ${T('Klassisch', 'Classic')}</button>
+          <button data-m="kartewahl" data-n="zufall" class="${menueWahl.karte === 'zufall' ? 'an' : ''}">🎲 ${T('Zufällige Wüste', 'Random desert')}</button></div>
+        ${menueWahl.karte === 'zufall' ? `<div class="kartennr"><label>${T('Kartennummer', 'Map number')}:</label>
+          <input type="text" inputmode="numeric" maxlength="6" placeholder="${T('leer = zufällig', 'empty = random')}" value="${menueWahl.kartenNr}" data-kartennr="1">
+          <span class="hinweis">${T('Gleiche Nummer = gleiche Karte – zum Teilen mit Freunden.', 'Same number = same map – share it with friends.')}</span></div>`
+          : `<div class="hinweis">${T('Die bekannte Wüste von Timbuktu bis Suakin.', 'The familiar desert from Timbuktu to Suakin.')}</div>`}
         <div class="info" style="margin-top:8px">${T('Spielziel', 'Game goal')}:</div><div>${Object.entries(SIEGE).map(([id, z]) =>
           `<button data-m="siegwahl" data-n="${id}" class="${menueWahl.sieg === id ? 'an' : ''}">${z.icon} ${T(z.name, z.nameEn)}</button>`).join(' ')}</div>
         <div class="hinweis">${T(SIEGE[menueWahl.sieg].text, SIEGE[menueWahl.sieg].textEn)}</div>
@@ -179,12 +188,15 @@ function menueAktion(m, n) {
   if (m === 'importAlle') alleSpielstaendeImportieren();
   if (m === 'sw') { menueWahl.schwierigkeit = n; zeichneMenue(); }
   if (m === 'siegwahl') { menueWahl.sieg = n; zeichneMenue(); }
+  if (m === 'kartewahl') { menueWahl.karte = n; zeichneMenue(); }
   if (m === 'erfolge') errungenschaftenOeffnen();
+  if (m === 'hilfe') hilfeOeffnen();
   if (m === 'slot') { menueWahl.slot = +n; zeichneMenue(); }
   if (m === 'einf') { menueWahl.einfuehrung = !menueWahl.einfuehrung; zeichneMenue(); }
   if (m === 'neu') {
     if (slotLesen(menueWahl.slot) && !confirm(T(`Platz ${menueWahl.slot} ist belegt. Überschreiben?`, `Slot ${menueWahl.slot} is in use. Overwrite it?`))) return;
-    neuesSpiel(menueWahl.schwierigkeit, menueWahl.slot, menueWahl.einfuehrung, menueWahl.sieg);
+    neuesSpiel(menueWahl.schwierigkeit, menueWahl.slot, menueWahl.einfuehrung, menueWahl.sieg,
+               { art: menueWahl.karte, nr: parseInt(menueWahl.kartenNr, 10) || null });
     speichern();
     menueSchliessenMitPause();
   }
@@ -387,7 +399,7 @@ function htmlTipp() {
   const schritt = EINFUEHRUNG[t.schritt];
   return `<div class="tipp">
     <div class="tipp-kopf">💡 ${T('Einführung', 'Tutorial')} · ${T('Schritt', 'Step')} ${t.schritt + 1} ${T('von', 'of')} ${EINFUEHRUNG.length}</div>
-    <div>${schritt.text}</div>
+    <div>${schritt.text.replace(/Agadez/g, (oase(S.startOase) || { name: 'Agadez' }).name)}</div>
     <div style="margin-top:6px">
       ${schritt.weiter ? `<button data-a="tippweiter" class="an">${T('Weiter', 'Next')}</button>` : ''}
       <button data-a="tippende">${T('Einführung beenden', 'End tutorial')}</button>
@@ -761,6 +773,20 @@ function startSternschnuppe(g, seit, b, horizont, samen) {
   }
 }
 
+// Außerhalb der Rast: etwa alle 7 Sekunden zieht eine einzelne Sternschnuppe vorbei
+const EINZEL_SCHNUPPE = { abstand: 7, dauer: [0.9, 1.4] };
+function einzelneSternschnuppe(g, t, b, horizont) {
+  const nr = Math.floor(t / EINZEL_SCHNUPPE.abstand);
+  const z = k => hash01(nr, 150 + k);
+  const start = nr * EINZEL_SCHNUPPE.abstand + z(0) * (EINZEL_SCHNUPPE.abstand - 2);   // zufälliger Moment im Abschnitt
+  const dauer = EINZEL_SCHNUPPE.dauer[0] + z(1) * (EINZEL_SCHNUPPE.dauer[1] - EINZEL_SCHNUPPE.dauer[0]);
+  const p = (t - start) / dauer;
+  if (p <= 0 || p >= 1) return;
+  const weit = 0.22 + z(2) * 0.3, fall = 0.25 + z(3) * 0.5;
+  schnuppeMalen(g, p, b * (0.05 + z(4) * 0.6), horizont * (0.04 + z(5) * 0.28), b * weit, b * weit * fall * (horizont / b),
+                Math.min(b * 0.15, 130), 1.2);
+}
+
 function schnuppeMalen(g, p, x0, y0, vx, vy, laenge, dicke) {
   const lauf = 1 - Math.pow(1 - p, 1.6);                            // anfangs flott, am Ende langsamer
   const x = x0 + vx * lauf, y = y0 + vy * lauf;
@@ -814,7 +840,9 @@ function startMalen(jetzt) {
   const zug = startAblauf(t, b, h, gr);
 
   // Sternschnuppe: während an der Oase das Lager aufgebaut wird, zieht sie von links nach rechts
-  if (zug.lager) startSternschnuppe(g, zug.lager.seit, b, horizont, Math.floor(t - zug.lager.seit));
+  const rastet = zug.lager && zug.lager.seit >= 0 && zug.lager.seit < START_RAST;
+  if (rastet) startSternschnuppe(g, zug.lager.seit, b, horizont, Math.floor(t - zug.lager.seit));
+  else if (sternLicht > 0.6) einzelneSternschnuppe(g, t, b, horizont);   // sonst ab und zu eine einzelne
 
   // 3. Die tief stehende Sonne mit weichem Glühen – sie sinkt ganz langsam
   const sx = b * 0.7, sy = horizont - h * 0.03 + Math.min(t * 0.6, h * 0.04), sr = Math.min(b, h) * 0.085;

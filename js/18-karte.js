@@ -64,17 +64,25 @@ function neuesCanvas(b, h) {
 // Wo beginnt das Meer? (x-Wert der Küste für eine bestimmte Höhe y)
 function kuesteX(y) { return 1300 + 14 * Math.sin(y / 45) + 8 * Math.sin(y / 17); }
 
-const GEBIRGE = [
+// Gebirge, Salzpfanne und Sandmeere – bei zufälligen Karten werden sie für jedes Spiel neu gesetzt
+let GEBIRGE = [
   { name: 'Hoggar',  x: 255, y: 405, breite: 115, huegel: 11 },
   { name: 'Tibesti', x: 765, y: 300, breite: 95,  huegel: 7 },
   { name: 'Aïr',     x: 520, y: 455, breite: 55,  huegel: 4 },
 ];
-const SALZPFANNE = { x: 215, y: 300, rx: 52, ry: 24 };
+let SALZPFANNE = { x: 215, y: 300, rx: 52, ry: 24 };
+let SANDMEERE = [[620, 150, 210], [930, 340, 200], [120, 120, 150], [720, 610, 230], [360, 650, 160], [1140, 130, 140], [1160, 640, 130]];
+let GELAENDE_SAMEN = 1923, gelaendeSchluessel = '';
+// Die klassische Karte – zum Zurücksetzen merken
+const KLASSISCH_GELAENDE = { gebirge: GEBIRGE.map(g => ({ ...g })), salz: { ...SALZPFANNE }, sandmeere: SANDMEERE.map(e => [...e]), samen: 1923 };
 
 const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
 
-(function maleGelaende() {
-  const g = hg, rnd = zufallsFolge(1923);
+function maleGelaende() {
+  const g = hg, rnd = zufallsFolge(GELAENDE_SAMEN);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, hintergrund.width, hintergrund.height);
+  if (typeof DPR !== 'undefined') g.setTransform(hintergrund.width / KARTE_B, 0, 0, hintergrund.height / KARTE_H, 0, 0);
 
   // 1. Grundfarbe: Licht kommt von links oben
   const grund = g.createLinearGradient(0, 0, KARTE_B, KARTE_H);
@@ -103,7 +111,7 @@ const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
     g.fillRect(rnd() * KARTE_B, rnd() * KARTE_H, 1, 1);
   }
 
-  // 4. Salzpfanne bei Taoudenni: weißliche Kruste mit Rissen
+  // 4. Salzpfanne: weißliche Kruste mit Rissen
   const sp = SALZPFANNE;
   const salz = g.createRadialGradient(sp.x, sp.y, 2, sp.x, sp.y, sp.rx);
   salz.addColorStop(0, 'rgba(250,246,236,.85)'); salz.addColorStop(1, 'rgba(250,246,236,0)');
@@ -119,7 +127,7 @@ const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
 
   // 5. Dünen in mehreren "Sandmeeren" (Ergs): lange, flache Kämme, die sich überlagern.
   //    Von oben nach unten gemalt, damit vordere Dünen die hinteren überdecken.
-  const ergs = [[620, 150, 210], [930, 340, 200], [120, 120, 150], [720, 610, 230], [360, 650, 160], [1140, 130, 140], [1160, 640, 130]];
+  const ergs = SANDMEERE;
   const duenen = [];
   for (const [ex, ey, er] of ergs) {
     for (let i = 0; i < er / 5; i++) {
@@ -283,7 +291,22 @@ const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
   rand.addColorStop(0, 'rgba(60,35,15,0)'); rand.addColorStop(1, 'rgba(60,35,15,.32)');
   g.fillStyle = rand;
   g.fillRect(0, 0, KARTE_B, KARTE_H);
-})();
+}
+maleGelaende();
+
+// Gelände passend zum Spielstand malen (nur wenn sich die Karte geändert hat)
+function gelaendeSetzen(plan) {
+  const p = plan || KLASSISCH_GELAENDE;
+  const schluessel = String(p.samen);
+  if (schluessel === gelaendeSchluessel) return;
+  gelaendeSchluessel = schluessel;
+  GEBIRGE.length = 0; p.gebirge.forEach(x => GEBIRGE.push({ ...x }));
+  SALZPFANNE = { ...p.salz };
+  SANDMEERE = p.sandmeere.map(e => [...e]);
+  GELAENDE_SAMEN = p.samen;
+  if (typeof datenUebersetzen === 'function') datenUebersetzen();
+  maleGelaende();
+}
 
 /* ---------------------------------------------------------------------
    B) OASEN – jede Oase wird als kleines Bild gemalt und zwischengespeichert.

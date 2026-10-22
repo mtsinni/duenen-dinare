@@ -15,7 +15,7 @@ function handelKaufen(k, o, wid, menge, hoechstPreis = Infinity) {
   let anzahl = 0, kosten = 0;
   for (let i = 0; i < menge; i++) {
     if (o.lager[wid] < 1 || ladungGewicht(k) + 1 > kapazitaet(k)) break;
-    const preis = kaufPreis(o, w);         // Preis jedes Mal neu – er steigt beim Kaufen
+    const preis = kaufPreisFuer(k, o, w);  // Preis jedes Mal neu – er steigt beim Kaufen (Feilscher: billiger)
     if (S.gold < preis || preis > hoechstPreis) break;
     // Durchschnittlicher Einkaufspreis ("Einstand") – damit wir später den Gewinn kennen
     const vorher = k.ladung[wid];
@@ -37,7 +37,7 @@ function handelVerkaufen(k, o, wid, menge, mindestPreis = 0) {
   const w = ware(wid);
   let anzahl = 0, erloes = 0, gewinn = 0;
   for (let i = 0; i < menge && k.ladung[wid] >= 1; i++) {
-    const preis = verkaufPreis(o, w);       // Preis sinkt mit jeder verkauften Einheit
+    const preis = verkaufPreisFuer(k, o, w); // Preis sinkt mit jeder verkauften Einheit (Feilscher: teurer)
     if (preis < mindestPreis) break;
     S.gold += preis; o.lager[wid] += 1; k.ladung[wid] -= 1;
     anzahl++; erloes += preis; gewinn += preis - (k.einstand[wid] || 0);

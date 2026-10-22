@@ -11,7 +11,7 @@ function lagerInReichweite(k) {
   return aktiveRaeuber().find(g => entfernung(o, g) < g.r + 180) || null;
 }
 
-function angriffsChance(k) { return Math.min(0.9, 0.12 * k.wachen + 0.06 * (fuehrerStufe(k) - 1)); }
+function angriffsChance(k) { return Math.min(0.9, 0.12 * k.wachen + 0.06 * (fuehrerStufe(k) - 1) + 0.06 * talentStufe(k, 'krieger') + (hatAusruestung(k, 'waffen') ? 0.08 : 0)); }
 
 function lagerAngreifen() {
   const k = karawane(S.gewKarawane);
@@ -297,6 +297,9 @@ function buchungsart(a) { return T(a, BUCHUNGSARTEN_EN[a] || a); }
 function zeichneStatistik() {
   if (fensterArt === 'lager') { document.getElementById('statistik').innerHTML = symbole(htmlLagerFenster()); return; }
   if (fensterArt === 'erfolge') { document.getElementById('statistik').innerHTML = symbole(htmlErrungenschaften()); return; }
+  if (fensterArt === 'hilfe') { document.getElementById('statistik').innerHTML = symbole(htmlHilfe()); return; }
+  if (fensterArt === 'entscheidung') { document.getElementById('statistik').innerHTML = symbole(htmlEntscheidung()); return; }
+  if (fensterArt === 'talent') { document.getElementById('statistik').innerHTML = symbole(htmlTalentFenster()); return; }
   if (fensterArt === 'sieg') { document.getElementById('statistik').innerHTML = symbole(htmlSiegFenster()); return; }
   const ich = vermoegen();
   const rangliste = [{ name: T('Du', 'You'), du: true, wert: ich, farbe: '#b5651d' },
@@ -306,6 +309,7 @@ function zeichneStatistik() {
   let h = `<div class="fenster">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <h2 style="margin:0">📊 ${T('Statistik', 'Statistics')} – ${T('Tag', 'Day')} ${S.tag}</h2>
+      <span class="hinweis">${S.karte && S.karte.art === 'zufall' ? '🎲 ' : '🗺 '}${kartenText(S.karte)}</span>
       <button data-s="zu">✕ ${T('Schließen', 'Close')}</button>
     </div>
     <p class="info">🏅 <b>${RAENGE[S.rang].name}</b> · ${T('Vermögen', 'Fortune')} <b>${zahl(ich)} 🪙</b>

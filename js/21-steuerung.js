@@ -23,6 +23,7 @@ function statischeTexte() {
   const titel = { btnTon: T('Geräusche an/aus', 'Sound effects on/off'), btnMusik: T('Musik an/aus', 'Music on/off'), btnZoomRein: T('Hineinzoomen', 'Zoom in'),
                   btnZoomRaus: T('Herauszoomen', 'Zoom out'), btnZoomGanz: T('Ganze Karte zeigen', 'Show whole map') };
   for (const id in titel) { const el = document.getElementById(id); el.title = titel[id]; el.setAttribute('aria-label', titel[id]); }
+  tooltipsSetzen();
 }
 
 document.getElementById('reiter').addEventListener('click', e => {
@@ -37,6 +38,8 @@ document.getElementById('btnStatistik').addEventListener('click', () => {
 });
 document.getElementById('statistik').addEventListener('click', e => {
   // Schließen über den Knopf oder einen Klick auf den dunklen Hintergrund
+  // Eine offene Entscheidung muss man treffen – Klick daneben schließt sie nicht
+  if (fensterArt === 'entscheidung' && e.target.id === 'statistik') return;
   if (e.target.id === 'statistik' || e.target.closest('[data-s="zu"]')) { statistikUmschalten(false); return; }
   const b = e.target.closest('[data-a]');
   if (b && !b.disabled && AKTIONEN[b.dataset.a]) AKTIONEN[b.dataset.a](b.dataset.v, b.dataset.n);
@@ -51,6 +54,7 @@ document.getElementById('btnTon').addEventListener('click', tonUmschalten);
 document.getElementById('btnMusik').addEventListener('click', musikUmschalten);
 // Lautstärke-Regler im Menü
 document.getElementById('menue').addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.kartennr) { menueWahl.kartenNr = e.target.value.replace(/\D/g, '').slice(0, 6); return; }
   const art = e.target.dataset && e.target.dataset.laut;
   if (!art) return;
   const wert = Math.max(0, Math.min(1, +e.target.value / 100));

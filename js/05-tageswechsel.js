@@ -51,7 +51,7 @@ function tagesWechsel() {
     if (k.verirrt > 0) {
       k.verirrt--;
       if (k.verirrt === 0) log(T(`🧭 ${k.name} hat den richtigen Weg wiedergefunden.`, `🧭 ${k.name} has found the right path again.`));
-    } else if (Math.random() < 0.012 * (1 - 0.15 * (fuehrerStufe(k) - 1))) {
+    } else if (Math.random() < 0.012 * (1 - 0.15 * (fuehrerStufe(k) - 1)) * (1 - 0.3 * talentStufe(k, 'spurenleser'))) {
       k.verirrt = zufallInt(1, 3);
       log(T(`🌫️ ${k.name} folgt einer Fata Morgana und verirrt sich!`, `🌫️ ${k.name} follows a mirage and gets lost!`), 'schlecht');
     }
@@ -72,6 +72,7 @@ function tagesWechsel() {
   pruefeAuftraege();
   errungenschaftenPruefen();
   siegPruefen();
+  entscheidungenTag();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }
 

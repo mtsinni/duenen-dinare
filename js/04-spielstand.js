@@ -39,6 +39,8 @@ function karawaneAufruesten(k) {
   if (!k.herkunft) k.herkunft = {};     // wo die Ware zuletzt gekauft wurde
   if (k.bilanz == null) k.bilanz = 0;   // Gewinn/Verlust dieser Karawane
   if (k.krank == null) k.krank = 0;     // Tage, die die Krankheit noch dauert
+  if (!k.ausruestung) k.ausruestung = {};
+  if (k.fuehrer && !k.fuehrer.talente) k.fuehrer.talente = {};
   if (k.verirrt == null) k.verirrt = 0; // Tage, die sie noch einer Fata Morgana folgt
   if (k.nachtmarsch == null) k.nachtmarsch = false;
   if (!k.passagiere) k.passagiere = [];
@@ -106,7 +108,7 @@ function edelsteinTag() {
   }
 }
 
-function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sieg = 'frei') {
+function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sieg = 'frei', karte = { art: 'klassisch' }) {
   S = { tag: 1, zeit: 1.25, gold: SCHWIERIGKEITEN[schwierigkeit].startGold, tempo: 1, pause: false,
         schwierigkeit, slot, tutorial: { schritt: einfuehrung ? 0 : -1 },
         oasen: [], karawanen: [], stuerme: [], regen: [], log: [],
@@ -114,11 +116,15 @@ function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sie
         schulden: 0, ueberzogen: false, schuldenWarnung: false, bankrott: false,
         naechsteId: 1, karawanenZaehler: 0,
         gewOase: null, gewKarawane: null, ziel: null };
-  for (const d of OASEN_START) S.oasen.push(neueOase(d.name, d.x, d.y, d.produziert, d.bev));
+  // Die Wüste: klassisch oder zufällig aus einer Kartennummer
+  S.karte = karte && karte.art === 'zufall' ? { art: 'zufall', nr: karte.nr || neueKartennummer() } : { art: 'klassisch' };
+  const startOase = kartenOasenAnlegen(kartenPlanVon(S.karte));
+  S.startOase = startOase.id;
+  kartenGelaendeAktualisieren();
   S.raeuber.push(neuesRaeuberGebiet(), neuesRaeuberGebiet());
   S.sieg = { art: SIEGE[sieg] ? sieg : 'frei' };
   aufruesten();
-  const start = S.oasen.find(o => o.name === 'Agadez');
+  const start = oase(S.startOase);
   const k = neueKarawane(start);
   k.tiere.kamel = 3;
   k.ladung.wasser = 20;
@@ -126,8 +132,8 @@ function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sie
   S.gewKarawane = k.id;
   merkePreise(start);
   if (einfuehrung) S.pause = true;   // in Ruhe umschauen
-  log(T(`Willkommen, Händler! Deine erste Karawane wartet in Agadez. Vergiss das Wasser nicht!`,
-        `Welcome, merchant! Your first caravan is waiting in Agadez. Don't forget the water!`) +
+  log(T(`Willkommen, Händler! Deine erste Karawane wartet in ${start.name}. Vergiss das Wasser nicht!`,
+        `Welcome, merchant! Your first caravan is waiting in ${start.name}. Don't forget the water!`) +
       ` (${SCHWIERIGKEITEN[schwierigkeit].icon} ${SCHWIERIGKEITEN[schwierigkeit].name})`, 'info');
 }
 
@@ -171,14 +177,16 @@ function aufruesten() {
     for (const id in S.gebaeude) if (S.gebaeude[id].lager[w.id] == null) S.gebaeude[id].lager[w.id] = 0;
     for (const id in S.wissen) for (const teil of ['kauf', 'verk', 'lager']) if (S.wissen[id][teil][w.id] == null) S.wissen[id][teil][w.id] = '?';
   }
-  if (!S.oasen.some(o => o.name === 'Suakin')) {
+  if (!S.karte) S.karte = { art: 'klassisch' };   // ältere Spielstände: die klassische Karte
+  if (S.startOase == null) { const a = S.oasen.find(o => o.name === 'Agadez'); S.startOase = a ? a.id : S.oasen[0].id; }
+  if (S.karte.art === 'klassisch' && !S.oasen.some(o => o.name === 'Suakin')) {
     ostenHinzufuegen();
     if (S.tag > 1) log(T('🗺️ Kundschafter haben den Osten erkundet: Hinter Dakhla und Selima liegt die Hafenstadt Suakin am Meer!',
                        '🗺️ Scouts have explored the east: beyond Dakhla and Selima lies the port of Suakin on the sea!'), 'gut');
   }
   // Indigo wächst seit v9 in Agadez und Timbuktu
   for (const o of S.oasen) {
-    if (['Agadez', 'Timbuktu'].includes(o.name) && !o.produziert.includes('indigo')) {
+    if (S.karte.art === 'klassisch' && ['Agadez', 'Timbuktu'].includes(o.name) && !o.produziert.includes('indigo')) {
       o.produziert.push('indigo');
       o.lager.indigo = normBestand(o, ware('indigo')) * 3;
     }

@@ -14,7 +14,8 @@ function kapazitaet(k) { let s = 0; for (const t in k.tiere) s += k.tiere[t] * T
 function karawanenDurst(k) {
   let s = 0; for (const t in k.tiere) s += k.tiere[t] * TIERE[t].durst;
   s += 0.25 * passagierAnzahl(k);                    // Reisende trinken mit
-  return s * (1 - 0.07 * (fuehrerStufe(k) - 1));   // erfahrene Führer kennen jede Wasserstelle
+  return s * (1 - 0.07 * (fuehrerStufe(k) - 1))    // erfahrene Führer kennen jede Wasserstelle
+           * (1 - 0.08 * talentStufe(k, 'wasserkundig'));
 }
 
 // Stufe des Führers aus seinen Erfahrungspunkten
@@ -26,7 +27,7 @@ function fuehrerStufe(k) {
 
 // Grundtempo der Tiere + Bonus des Führers (5 % pro Stufe)
 function reiseTempo(k) {
-  return karawanenTempo(k) * (1 + 0.05 * (fuehrerStufe(k) - 1)) * (k.krank ? 0.7 : 1);
+  return karawanenTempo(k) * (1 + 0.05 * (fuehrerStufe(k) - 1)) * (1 + 0.06 * talentStufe(k, 'spurenleser')) * (k.krank ? 0.7 : 1);
 }
 
 function unterhaltKosten(k) {
@@ -48,7 +49,10 @@ function abstandPunktStrecke(p, a, b) {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 // Ladung + Reisende (jeder Reisende braucht 2 Lastplätze)
-function ladungGewicht(k) { return Object.values(k.ladung).reduce((a, b) => a + b, 0) + 2 * passagierAnzahl(k); }
+function ladungGewicht(k) {
+  const wasserRabatt = hatAusruestung(k, 'schlaeuche') ? k.ladung.wasser * 0.5 : 0;   // Wasserschläuche: Wasser wiegt halb
+  return Object.values(k.ladung).reduce((a, b) => a + b, 0) - wasserRabatt + 2 * passagierAnzahl(k);
+}
 function nurKamele(k) { return tierAnzahl(k) > 0 && tierAnzahl(k) === k.tiere.kamel; }
 
 // Eine Karawane ist nur so schnell wie ihr langsamstes Tier
