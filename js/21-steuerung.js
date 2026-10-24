@@ -49,6 +49,12 @@ document.getElementById('btnPause').addEventListener('click', () => { S.pause = 
 document.querySelectorAll('[data-tempo]').forEach(b => b.addEventListener('click', () => {
   S.tempo = +b.dataset.tempo; S.pause = false; zeichnePanel();
 }));
+// Handy: ein einziger Tempo-Knopf, der reihum 0,5× → 1× → 1,5× → 3× → 5× schaltet
+document.getElementById('btnTempo').addEventListener('click', () => {
+  const stufen = [0.5, 1, 1.5, 3, 5];
+  S.tempo = stufen[(stufen.indexOf(S.tempo) + 1) % stufen.length];
+  zeichnePanel();
+});
 document.getElementById('btnMenue').addEventListener('click', () => menueOffen ? menueSchliessen(false) : menueOeffnen());
 document.getElementById('btnTon').addEventListener('click', tonUmschalten);
 document.getElementById('btnMusik').addEventListener('click', musikUmschalten);

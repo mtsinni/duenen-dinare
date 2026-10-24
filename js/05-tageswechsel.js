@@ -73,6 +73,7 @@ function tagesWechsel() {
   errungenschaftenPruefen();
   siegPruefen();
   entscheidungenTag();
+  meldungenTag();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }
 
@@ -126,6 +127,7 @@ function tierVerlieren(k, grund) {
     S.karawanen = S.karawanen.filter(x => x !== k);
     if (S.gewKarawane === k.id) S.gewKarawane = null;
     log(T(`💀 ${k.name} ist in der Wüste verschollen.`, `💀 ${k.name} has been lost in the desert.`), 'schlecht');
+    melden('💀', T(`${k.name} ist in der Wüste verschollen.`, `${k.name} has been lost in the desert.`), 'schlecht');
   } else {
     ueberladungAbwerfen(k);
   }

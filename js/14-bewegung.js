@@ -54,6 +54,7 @@ function bewegeKarawanen(dt) {
       if (!k.durstig) {
         k.durstig = true;
         log(T(`💧 ${k.name} hat kein Wasser mehr! Die Tiere leiden.`, `💧 ${k.name} has run out of water! The animals are suffering.`), 'schlecht');
+        melden('💧', T(`${k.name} hat kein Wasser mehr!`, `${k.name} has run out of water!`), 'schlecht', { karawane: k.id });
       }
     }
 
@@ -85,6 +86,7 @@ function ankunft(k, ziel) {
   // Von Hand geschickte Karawane angekommen: Spiel anhalten und den Markt der Oase zeigen.
   // Karawanen auf einer Handelsroute fahren von selbst weiter – die halten nicht an.
   if (!k.route.aktiv) {
+    melden('🐪', T(`${k.name} ist in ${ziel.name} angekommen.`, `${k.name} has arrived in ${ziel.name}.`), 'gut', { karawane: k.id });
     S.pause = true;
     S.gewKarawane = k.id; S.gewOase = ziel.id; S.ziel = null;
     if (typeof aktiverReiter !== 'undefined') { aktiverReiter = 'oase'; aktiverOasenReiter = 'markt'; }

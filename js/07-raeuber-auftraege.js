@@ -29,6 +29,7 @@ function ueberfall(k) {
   }
   effektKampf(k.x, k.y, false);
   log(T(`🗡️ Räuber überfallen ${k.name} und erbeuten ${beute.join(', ')}!`, `🗡️ Robbers raid ${k.name} and make off with ${beute.join(', ')}!`), 'schlecht');
+  melden('🗡', T(`Räuber haben ${k.name} überfallen!`, `Robbers have raided ${k.name}!`), 'schlecht', { karawane: k.id });
   if (Math.random() < 0.15) tierVerlieren(k, T('von den Räubern gestohlen worden', 'was stolen by the robbers'));
 }
 

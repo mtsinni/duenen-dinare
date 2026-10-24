@@ -2,11 +2,19 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dünen &amp; Dinare – Karawanenhandel in der Wüste</title>
 <!-- Schriften liegen im Ordner fonts/ (siehe style.css) – keine Verbindung zu Google -->
 <link rel="stylesheet" href="style.css">
 <meta name="theme-color" content="#10142b">
+<!-- Als App installierbar: Manifest, Symbole, Vollbild auf dem iPhone -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dünen &amp; Dinare">
 </head>
 <body>
 
@@ -23,6 +31,7 @@
   <div class="knoepfe">
   <button id="btnStatistik">📊 Statistik</button>
   <button id="btnPause">⏸ Pause</button>
+  <button id="btnTempo" title="Tempo">1×</button>
   <button data-tempo="0.5">0,5×</button>
   <button data-tempo="1">1×</button>
   <button data-tempo="1.5">1,5×</button>
@@ -99,6 +108,8 @@
 <script src="js/29-entscheidungen.js"></script>
 <script src="js/30-berater.js"></script>
 <script src="js/31-hilfe-tasten.js"></script>
+<script src="js/32-benachrichtigungen.js"></script>
+<script src="js/33-app.js"></script>
 <script src="js/21-steuerung.js"></script>   <!-- startet das Spiel, darum als Letztes -->
 </body>
 </html>

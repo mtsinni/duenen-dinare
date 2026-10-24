@@ -164,6 +164,11 @@ function zeichneMenue() {
         <div class="einstellung"><label>🔊 ${T('Geräusche', 'Sound effects')}</label>
           <input type="range" min="0" max="100" value="${Math.round(tonLautstaerke * 100)}" data-laut="ton">
           <button data-m="ton" class="${tonAn ? 'an' : ''}">${tonAn ? T('an', 'on') : T('aus', 'off')}</button></div>
+        <div class="einstellung"><label>🔔 ${T('Meldungen im Spiel', 'In-game alerts')}</label><span style="flex:1"></span>
+          <button data-m="meldungen" class="${meldungenAn ? 'an' : ''}">${meldungenAn ? T('an', 'on') : T('aus', 'off')}</button></div>
+        <div class="einstellung"><label>📣 ${T('Auch im Hintergrund', 'Also in background')}</label><span class="hinweis" style="flex:1">${T('wenn der Tab nicht sichtbar ist', 'when the tab is not visible')}</span>
+          <button data-m="systemmeldungen" class="${systemMeldungen ? 'an' : ''}">${systemMeldungen ? T('an', 'on') : T('aus', 'off')}</button></div>
+        ${htmlApp()}
         ${htmlRechtliches('menue-rechtliches')}
       </div>`;
   document.getElementById('menue').innerHTML = symbole(h);
@@ -191,6 +196,9 @@ function menueAktion(m, n) {
   if (m === 'kartewahl') { menueWahl.karte = n; zeichneMenue(); }
   if (m === 'erfolge') errungenschaftenOeffnen();
   if (m === 'hilfe') hilfeOeffnen();
+  if (m === 'meldungen') meldungenUmschalten();
+  if (m === 'systemmeldungen') systemMeldungenUmschalten();
+  if (m === 'installieren') appInstallieren();
   if (m === 'slot') { menueWahl.slot = +n; zeichneMenue(); }
   if (m === 'einf') { menueWahl.einfuehrung = !menueWahl.einfuehrung; zeichneMenue(); }
   if (m === 'neu') {

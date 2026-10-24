@@ -48,6 +48,8 @@ und dem Ordner `js`) ins Repository laden.
 | `js/29-entscheidungen.js` | Ereignisse mit Entscheidungen und ihre späteren Folgen |
 | `js/30-berater.js` | Handelsberater (lohnende Geschäfte) und Preisverlauf je Ware |
 | `js/31-hilfe-tasten.js` | Tastenkürzel (Taste ? zeigt alle) und Erklärungen beim Drüberfahren |
+| `js/32-benachrichtigungen.js` | Kleine Meldungen am Rand (Ankunft, Plünderer, Wasser leer, Auftrag läuft ab) – auf Wunsch auch im Hintergrund |
+| `js/33-app.js` | „Als App installieren“: Knopf im Menü, Anmeldung des Service Workers |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien
@@ -95,3 +97,13 @@ in einen Ordner `fonts/` und ersetzt den Google-Link in `index.html` durch eigen
 
 Im Menü gibt es „Alle Spielstände sichern“ und „Alle aus Datei wiederherstellen“ – damit nehmen
 Spieler ihre Spielstände auf eine neue Adresse mit.
+
+## Als App installieren
+
+| Datei / Ordner | Wofür? |
+|---|---|
+| `manifest.webmanifest` | Name, Farben und Symbole der App |
+| `icons/` | App-Symbole (Startbildschirm) |
+| `sw.js` | Service Worker: speichert alle Dateien, damit das Spiel offline läuft. **Kommt eine neue Datei dazu, gehört sie in die Liste `DATEIEN`.** |
+
+Das funktioniert nur über `https://` (z. B. GitHub Pages oder eigene Domain), nicht beim Öffnen der Datei direkt vom PC.

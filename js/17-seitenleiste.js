@@ -7,7 +7,7 @@ function zeichnePanel() {
   einfuehrungPruefen();
   document.getElementById('panelTipp').innerHTML = symbole(htmlTipp());
   const j = jahreszeit();
-  document.getElementById('anzeigeJahreszeit').innerHTML = symbole(`${j.icon} ${j.name}, ${T('Jahr', 'year')} ${jahr()}`);
+  document.getElementById('anzeigeJahreszeit').innerHTML = symbole(`${j.icon}<span class="lang"> ${j.name}, ${T('Jahr', 'year')} ${jahr()}</span><span class="kurz"> ${T('J', 'Y')}${jahr()}</span>`);
   document.getElementById('btnTon').innerHTML = symbole(tonAn ? '🔊' : '🔇');
   const bm = document.getElementById('btnMusik');
   bm.innerHTML = symbole('🎵'); bm.classList.toggle('aus', !musikAn);
@@ -32,6 +32,8 @@ function zeichnePanel() {
   const pk = document.getElementById('btnPause');
   pk.classList.toggle('an', S.pause);
   pk.innerHTML = symbole(S.pause ? `▶<span class="txt"> ${T('Weiter', 'Resume')}</span>` : `⏸<span class="txt"> ${T('Pause', 'Pause')}</span>`);
+  const bt = document.getElementById('btnTempo');
+  if (bt) { bt.textContent = zahlText(S.tempo) + '×'; bt.classList.toggle('gemerkt', S.pause); }
   document.querySelectorAll('[data-tempo]').forEach(b => {
     b.classList.toggle('an', !S.pause && +b.dataset.tempo === S.tempo);
     b.classList.toggle('gemerkt', S.pause && +b.dataset.tempo === S.tempo);
@@ -135,6 +137,7 @@ function htmlOase() {
   // Vier Reiter: Markt · Oase (mit Scheich und Reisenden) · Bauen (Gebäude und Tiere) · Dienste
   // Innerhalb eines Reiters trennen kleine Überschriften die Teile.
   const abschnitte = [];
+  const KURZ = { bauen: T('Bauen', 'Build') };
   const dazu = (id, icon, de, en, teile, zahl = 0) => {
     const inhalt = teile.filter(t => t && t.inhalt).map(t => (t.titel ? `<h3 class="teil-titel">${t.titel}</h3>` : '') + `<div class="teil">${t.inhalt}</div>`).join('');
     if (inhalt) abschnitte.push({ id, icon, name: T(de, en), inhalt, zahl });
@@ -224,7 +227,7 @@ function htmlOase() {
   // Gewählten Reiter zeigen – gibt es ihn in dieser Oase nicht, dann den Markt
   const aktiv = abschnitte.find(a => a.id === aktiverOasenReiter) || abschnitte[0];
   h += '<div class="oasen-reiter">' + abschnitte.map(a =>
-    `<button data-a="oasenreiter" data-v="${a.id}" class="${a === aktiv ? 'an' : ''}">${a.icon} ${a.name}` +
+    `<button data-a="oasenreiter" data-v="${a.id}" class="${a === aktiv ? 'an' : ''}">${a.icon} ${KURZ[a.id] ? `<span class="lang">${a.name}</span><span class="kurz">${KURZ[a.id]}</span>` : a.name}` +
     (a.zahl ? ` <span class="zahl">${a.zahl}</span>` : '') + '</button>').join('') + '</div>';
   h += `<div class="oasen-inhalt">${aktiv.inhalt}</div>`;
   return h;

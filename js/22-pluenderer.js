@@ -71,10 +71,12 @@ function pluendererLosschicken(g) {
   const lagerOase = lagerNaechsteOase(g), bei = lagerOase ? lagerOase.name : '?';
   if (ziel.art === 'karawane') {
     const k = karawane(ziel.id);
+    melden('🐎', T(`Plünderer jagen ${k.name}! Schnell zur nächsten Oase?`, `Raiders are hunting ${k.name}! Make for the nearest oasis?`), 'schlecht', { karawane: k.id });
     log(T(`🐎 Aus dem Räuberlager bei ${bei} brechen Plünderer auf – sie jagen deine Karawane ${k.name}!`,
           `🐎 Raiders ride out from the robber camp near ${bei} – they are hunting your caravan ${k.name}!`), 'schlecht');
   } else if (ziel.art === 'oase') {
     const o = oase(ziel.id), betroffen = S.gebaeude[o.id] || S.karawanen.some(k => k.ort === o.id && k.nach == null);
+    if (betroffen) melden('🐎', T(`Plünderer reiten auf ${o.name} zu – dort sind deine Leute!`, `Raiders are riding towards ${o.name} – your people are there!`), 'schlecht', { oase: o.id });
     log(T(`🐎 Plünderer aus dem Lager bei ${bei} reiten auf ${o.name} zu!`,
           `🐎 Raiders from the camp near ${bei} are riding towards ${o.name}!`), betroffen ? 'schlecht' : 'info');
   }

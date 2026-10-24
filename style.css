@@ -560,3 +560,63 @@ table.markt tr.handelszeile td { text-align: left; background: rgba(200,160,74,.
 .menue-zeile { display: flex; gap: 8px; } .menue-zeile .erfolge-knopf { flex: 1; }
 table.tasten td { text-align: left; padding: 6px; } table.tasten td:first-child { width: 11em; }
 kbd { display: inline-block; padding: 2px 7px; border: 1px solid rgba(42,34,56,.4); border-bottom-width: 2px; border-radius: 4px; background: #fffaf0; font: 600 .85rem/1.3 "Alegreya Sans", sans-serif; }
+
+/* ===================== Handy: aufgeräumt ===================== */
+#btnTempo, .kurz { display: none; }
+@media (max-width: 600px) {
+  .lang { display: none; } .kurz { display: inline; }
+  /* Kopfleiste in zwei Zeilen: oben Tag · Uhr · Jahreszeit · Gold, unten Rang + 4 Knöpfe */
+  header { padding: 6px 8px 12px; gap: 5px 6px; }
+  header .anzeige { display: contents; }
+  header .kasten { padding: 3px 4px; font-size: .82rem; }
+  header .k-tag { order: 1; flex: 1 1 0; width: auto; }
+  header .k-uhr { order: 2; flex: 1 1 0; width: auto; }
+  header .k-jahr { order: 3; flex: 0 0 auto; width: auto; min-width: 0; }
+  header .k-gold { order: 4; flex: 1.3 1 0; width: auto; }
+  header #anzeigeSchulden { order: 5; flex: 1 1 100%; font-size: .8rem; }
+  header #anzeigeSchulden:empty { display: none; }
+  header .k-rang { order: 6; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  header .knoepfe { order: 7; width: auto; flex: 0 0 auto; gap: 4px; }
+  header .knoepfe button { flex: 0 0 auto; min-width: 40px; padding: 5px 7px; }
+  header .knoepfe [data-tempo], #btnSprache, #btnMusik, #btnTon { display: none; }
+  #btnTempo { display: inline-block; min-width: 46px; font-weight: 700; }
+  /* Reiterleiste fest am unteren Rand – wie bei einer App */
+  #reiter { position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 0; border-width: 1px 0 0;
+            padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 14px rgba(0,0,0,.45); }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  #reiter small { font-size: .62rem; }
+  /* Ruhigere Kästen */
+  .box { padding: 10px; background: var(--tuch); }
+  #panelOase { border-top-width: 2px; }
+  .box h2, #panelOase h2 { font-size: 1.2rem; }
+  .oasen-reiter { gap: 4px; margin: 8px 0 10px; flex-wrap: nowrap; }
+  .oasen-reiter button { padding: 5px 4px; font-size: .82rem; }
+  #ticker { font-size: .82rem; padding: 5px 8px; min-height: 0; }
+  .tipp { padding: 10px; font-size: .88rem; }
+  .tipp-kopf { font-size: 1rem; }
+  table.markt { font-size: .88rem; }
+  table.markt th { font-size: .68rem; }
+  .kennzahlen > div { padding: 6px 2px; }
+  .schnell { gap: 6px; }
+  .schnell-gruppe button { min-width: 2.5em; padding: 5px 6px; }
+}
+@media (max-width: 600px) {
+  /* feste Anteile, damit oben genau vier Kästchen stehen und der Rang in die zweite Zeile rutscht */
+  header .k-tag { flex: 1 1 21%; } header .k-uhr { flex: 1 1 21%; } header .k-jahr { flex: 0 1 13%; } header .k-gold { flex: 1 1 26%; }
+  header .k-rang { flex: 1 1 30%; text-align: left; }
+}
+@media (max-width: 600px) { #statistik { z-index: 14; padding-bottom: 80px; } }
+
+/* Benachrichtigungen am Rand */
+#meldungen { position: fixed; right: 14px; top: 84px; z-index: 60; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100vw - 28px)); pointer-events: none; }
+.meldung { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 12px;
+  background: linear-gradient(180deg, #262e5c, #181d3e); color: var(--sand); border: 1px solid var(--naht); border-left: 4px solid var(--messing);
+  border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.45); font-size: .9rem; line-height: 1.3;
+  transform: translateX(120%); opacity: 0; transition: transform .35s cubic-bezier(.2,1.2,.4,1), opacity .3s; }
+.meldung.da { transform: none; opacity: 1; }
+.meldung.gut { border-left-color: var(--gruen); } .meldung.schlecht { border-left-color: var(--henna); }
+.meldung-icon { font-size: 1.3rem; flex: none; } .meldung-icon svg.sym { width: 22px; height: 22px; }
+@media (max-width: 600px) { #meldungen { top: auto; bottom: calc(70px + env(safe-area-inset-bottom)); right: 8px; width: calc(100vw - 16px); flex-direction: column-reverse; } .meldung { transform: translateY(140%); } }
+/* Installierte App (iPhone mit durchscheinender Statusleiste): Platz für Uhr und Kamera lassen */
+header { padding-top: max(10px, env(safe-area-inset-top)); }
+@media (max-width: 600px) { header { padding-top: max(6px, env(safe-area-inset-top)); } }
