@@ -32,6 +32,7 @@ function bewegeKarawanen(dt) {
     let tempo = rastet ? 0 : reiseTempo(k);
     if (nacht && hatAusruestung(k, 'laternen')) tempo *= 1.15;   // Laternen: nachts schneller
     if (k.imSturm) tempo *= nurKamele(k) ? 0.6 : 0.3;   // Kamele kennen die Stürme
+    if (inWanderduene(k)) tempo *= WANDERDUENE.tempo;    // durch eine Wanderdüne geht es nur langsam
     if (k.durstig) tempo *= 0.5;
     if (k.verirrt > 0) tempo *= -0.3;                     // Fata Morgana: es geht sogar zurück!
     k.gereist = Math.max(0, k.gereist + tempo * dt);

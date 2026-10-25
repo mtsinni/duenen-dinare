@@ -429,7 +429,8 @@ function oasenBild(o) {
   // Größenstufe: 0 Weiler, 1 Dorf, 2 Stadt, 3 große Stadt
   const groesse = o.bev < 250 ? 0 : o.bev < 700 ? 1 : o.bev < 1400 ? 2 : 3;
   const lagerhaus = S.gebaeude && S.gebaeude[o.id] ? (S.gebaeude[o.id].stufe || 1) : 0;
-  const schluessel = `${o.id}|${o.aktiv}|${wasserStufe}|${haeuser}|${o.brunnen || 0}|${groesse}|${lagerhaus}`;
+  const verweht = o.verlassen ? Math.min(4, Math.floor((S.tag - o.verlassen.seit) / Math.max(1, o.verlassen.bis - o.verlassen.seit) * 5)) : -1;
+  const schluessel = `${o.id}|${o.aktiv}|${verweht}|${wasserStufe}|${haeuser}|${o.brunnen || 0}|${groesse}|${lagerhaus}`;
   let bild = oasenBilder.get(schluessel);
   if (bild) return bild;
   if (oasenBilder.size > 300) oasenBilder.clear();
@@ -527,6 +528,23 @@ function oasenBild(o) {
       g.fillRect(cx + 30, cy - 2, 44, 4);
       g.fillStyle = '#5b3d22';
       for (let i = 0; i < 5; i++) g.fillRect(cx + 32 + i * 10, cy + 2, 1.5, 4);
+    }
+  } else if (o.verlassen) {
+    // Verlassenes Lager: leere Zelte, die der Sand nach und nach zudeckt
+    const sicht = 1 - verweht * 0.18;
+    g.fillStyle = 'rgba(214,190,148,.8)';
+    g.beginPath(); g.ellipse(cx, cy + 2, 28, 12, 0, 0, Math.PI * 2); g.fill();
+    // kalte Feuerstelle
+    g.fillStyle = `rgba(70,55,45,${0.6 * sicht})`; g.beginPath(); g.ellipse(cx - 2, cy + 6, 4, 2, 0, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = sicht;
+    zeltKlein(g, cx - 16, cy + 2, 6); zeltKlein(g, cx + 6, cy - 4, 5.5); zeltKlein(g, cx + 16, cy + 8, 5);
+    g.globalAlpha = 1;
+    // Sandverwehungen wachsen über die Zelte
+    for (let i = 0; i < 2 + verweht * 2; i++) {
+      const x = cx - 26 + rnd() * 52, y = cy - 4 + rnd() * 16, b = 8 + rnd() * 10 + verweht * 2;
+      const sand = g.createLinearGradient(x, y - 4, x, y + 3);
+      sand.addColorStop(0, 'rgba(236,212,165,.95)'); sand.addColorStop(1, 'rgba(200,170,120,.9)');
+      g.fillStyle = sand; g.beginPath(); g.ellipse(x, y, b, 2.5 + verweht * 0.8, 0, Math.PI, 0); g.fill();
     }
   } else {
     // Versiegt: rissiger, trockener Boden, tote Palmen, verfallene Mauern
@@ -1017,6 +1035,7 @@ function zeichne() {
     if (nacht < 0.6) geier(g, echtzeit);
   }
 
+  zeichneWanderduenen(echtzeit);
   zeichneNebel();
   for (const g of aktiveRaeuber()) zeichneSoeldnerMarke(g);   // über dem Nebel: dort kämpfen deine Leute
 
@@ -1097,6 +1116,9 @@ function zeichne() {
     const links = [], rechts = [];
     if (S.angebote.some(a => a.oase === o.id)) links.push('📜');
     if (S.auftraege.some(a => a.oase === o.id)) links.push('📦');
+    if (jungeSiedlung(o)) links.push('🏕');                                   // junge Siedlung
+    if (o.verlassen) links.push(ware(o.verlassen.ware).icon);                // verlassenes Lager: was fehlt
+    if (o.aktiv && o.wunsch && !o.wunsch.erfuellt) links.push(ware(o.wunsch.ware).icon);   // Wunsch der Oase
     if (S.gebaeude[o.id]) {
       const g = S.gebaeude[o.id];
       rechts.push(g.betrieb ? '🏭' : '🏛️');
@@ -1394,7 +1416,12 @@ function zeichneInfoKarte() {
   const zeilen = [];
   const p = S.wissen[o.id];
   const live = augenVorOrt(o);
-  if (!o.aktiv) {
+  if (!o.aktiv && o.verlassen) {
+    const v = o.verlassen, w = ware(v.ware);
+    zeilen.push([T('Verlassenes Lager', 'Abandoned camp'), '', 'titel']);
+    zeilen.push([T(`Bring ${v.menge - v.geliefert} ${w.name} – dann kehren die Siedler zurück.`, `Bring ${v.menge - v.geliefert} ${w.nameEn.toLowerCase()} – and the settlers return.`), '']);
+    zeilen.push([T(`Verweht in ${Math.max(0, v.bis - S.tag)} Tagen`, `Buried in ${Math.max(0, v.bis - S.tag)} days`), '']);
+  } else if (!o.aktiv) {
     zeilen.push([T('Versiegt – hier gibt es nichts mehr.', 'Dried up – nothing left here.'), '']);
   } else if (!p) {
     zeilen.push([T('Preise unbekannt', 'Prices unknown'), '']);

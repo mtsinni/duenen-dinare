@@ -70,7 +70,15 @@
   </div>
 </div>
 
-<div id="startseite"><canvas id="startHimmel"></canvas><div class="start-inhalt" id="startInhalt"></div></div>
+<!-- Die Startseite ist von Anfang an sichtbar – so sieht man beim Laden nie das leere Spielgerüst.
+     Den Inhalt (Knöpfe, Sprache, animierter Himmel) setzt das Spiel ein, sobald alles geladen ist. -->
+<div id="startseite" class="offen"><canvas id="startHimmel"></canvas><div class="start-inhalt" id="startInhalt">
+  <div class="start-mitte"><div class="start-zier">✦ ✦ ✦</div>
+    <h1 class="start-titel">Dünen <span>&amp;</span> Dinare</h1>
+    <div class="start-unter">Karawanenhandel in der Wüste</div>
+    <div class="start-laedt"><span></span><span></span><span></span></div>
+  </div>
+</div></div>
 <div id="statistik"></div>
 <div id="menue"></div>
 
@@ -110,6 +118,8 @@
 <script src="js/31-hilfe-tasten.js"></script>
 <script src="js/32-benachrichtigungen.js"></script>
 <script src="js/33-app.js"></script>
+<script src="js/34-welt.js"></script>
+<script src="js/35-familie.js"></script>
 <script src="js/21-steuerung.js"></script>   <!-- startet das Spiel, darum als Letztes -->
 </body>
 </html>

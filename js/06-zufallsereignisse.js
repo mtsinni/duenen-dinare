@@ -43,7 +43,7 @@ function starkregen() {
     if (o.aktiv) {
       o.wasser = Math.min(100, o.wasser + zufall(25, 45));
     } else if (Math.random() < 0.5) {
-      o.aktiv = true; o.wasser = 45; o.bev = 40;
+      o.aktiv = true; o.wasser = 45; o.bev = 40; delete o.verlassen;
       log(T(`💧 Die Quelle von ${o.name} sprudelt wieder! Erste Siedler kehren zurück.`, `💧 The spring of ${o.name} is flowing again! The first settlers return.`), 'gut');
     }
   }

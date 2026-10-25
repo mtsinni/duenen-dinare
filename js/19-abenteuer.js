@@ -49,6 +49,7 @@ function karawansereiPruefen(k) {
     const auffuellen = Math.max(0, Math.min(bedarf - k.ladung.wasser, platz));
     k.ladung.wasser += auffuellen;
     k.durstig = false;
+    handelspostenRast(k, s);
     if (auffuellen >= 1) log(T(`🏰 ${k.name} rastet in ${s.name} und füllt ${Math.round(auffuellen)} Wasser auf.`, `🏰 ${k.name} rests at ${s.name} and takes on ${Math.round(auffuellen)} water.`));
   }
 }

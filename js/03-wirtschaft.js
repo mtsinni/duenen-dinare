@@ -34,9 +34,9 @@ function preisFaktor(o, w) {
 function festFaktor(o, w) { return S.feste.some(f => f.oase === o.id && f.ware === w.id) ? 1.8 : 1; }
 
 // Grundpreise (gelten für alle, auch für die Konkurrenz)
-function grundKaufPreis(o, w)    { return Math.ceil(w.basis * preisFaktor(o, w) * 1.1); }
+function grundKaufPreis(o, w)    { return Math.ceil(w.basis * preisFaktor(o, w) * 1.1 * wunschFaktor(o, w)); }
 function hafenFaktor(o, w) { return w.nurHafen ? (o.hafen ? 1.6 : 0.5) : 1; }
-function grundVerkaufPreis(o, w) { return Math.max(1, Math.floor(w.basis * preisFaktor(o, w) * 0.9 * festFaktor(o, w) * hafenFaktor(o, w))); }
+function grundVerkaufPreis(o, w) { return Math.max(1, Math.floor(w.basis * preisFaktor(o, w) * 0.9 * festFaktor(o, w) * hafenFaktor(o, w) * wunschFaktor(o, w))); }
 
 // Deine Preise: hohes Ansehen bringt bis zu 8 % Vorteil
 function ansehen(o) { return S.ansehen[o.id] || 0; }

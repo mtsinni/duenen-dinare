@@ -50,6 +50,8 @@ und dem Ordner `js`) ins Repository laden.
 | `js/31-hilfe-tasten.js` | Tastenkürzel (Taste ? zeigt alle) und Erklärungen beim Drüberfahren |
 | `js/32-benachrichtigungen.js` | Kleine Meldungen am Rand (Ankunft, Plünderer, Wasser leer, Auftrag läuft ab) – auf Wunsch auch im Hintergrund |
 | `js/33-app.js` | „Als App installieren“: Knopf im Menü, Anmeldung des Service Workers |
+| `js/34-welt.js` | Wünsche der Oasen, Handelsposten & Karawanserei-Netz, Wanderdünen, junge Siedlungen |
+| `js/35-familie.js` | Familie & Nachfolger: Alter, Hochzeit, Kinder, Ruhestand, Familienboni |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien

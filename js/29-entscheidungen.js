@@ -251,6 +251,7 @@ function htmlEntscheidung() {
     h += `<p class="ent-text">${e.text(z.c)}</p><div class="ent-optionen">`;
     e.optionen.forEach((o, i) => {
       const geht = !o.geht || o.geht(z.c);
+      if (!geht && o.verbergen) return;   // passt gerade nicht – gar nicht erst zeigen
       h += `<button data-a="entscheidungWahl" data-v="${i}" ${geht ? '' : 'disabled'}>${o.text(z.c)}</button>`;
     });
     h += '</div>';

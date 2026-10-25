@@ -378,6 +378,7 @@ function ansehenTitel(wert) {
 }
 
 function ansehenAendern(o, menge) {
+  if (menge > 0) menge *= 1 + 0.25 * familienBonus('diplomat');   // Diplomaten in der Familie
   const vorher = ansehen(o);
   const nachher = Math.max(0, Math.min(100, vorher + menge));
   S.ansehen[o.id] = nachher;

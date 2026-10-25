@@ -74,6 +74,12 @@ function tagesWechsel() {
   siegPruefen();
   entscheidungenTag();
   meldungenTag();
+  wuenscheTag();
+  handelspostenTag();
+  wanderduenenTag();
+  siedlerTag();
+  verlasseneTag();
+  familieTag();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }
 

@@ -98,7 +98,7 @@ function zeichneReiter() {
 
 // Aufklappbare Abschnitte. Welche offen sind, merken wir uns hier –
 // sonst würden sie beim täglichen Neuzeichnen wieder zuklappen.
-const offeneBereiche = new Set(['markt', 'karawane', 'aufgaben', 'berater']);
+const offeneBereiche = new Set(['markt', 'karawane', 'aufgaben', 'berater', 'familie']);
 function bereich(id, titel, inhalt) {
   return `<details data-bereich="${id}" ${offeneBereiche.has(id) ? 'open' : ''}>
             <summary>${titel}</summary>${inhalt}</details>`;
@@ -121,6 +121,7 @@ function htmlOase() {
   }
   const o = oase(S.gewOase);
   if (!o) return `<h2>${T('Oase', 'Oasis')}</h2><p class="hinweis">${T('Tippe auf eine Oase auf der Karte.', 'Tap an oasis on the map.')}</p>`;
+  if (!o.aktiv && o.verlassen) return `<h2>🏚 ${o.name}</h2>` + htmlVerlassen(o);
   if (!o.aktiv) {
     let h = `<h2>🌴 ${o.name}</h2>
       <p>${T('Diese Oase ist versiegt. Nur Ruinen und Sand sind geblieben – vielleicht bringt Regen sie zurück.', 'This oasis has dried up. Only ruins and sand remain – perhaps rain will bring it back.')}</p>`;
@@ -130,7 +131,7 @@ function htmlOase() {
 
   const handel = kannHandeln();
   // Kopf: Name und Wasserstand – bleibt in jedem Reiter sichtbar
-  let h = `<div class="oasen-kopf"><h2>🌴 ${o.name}</h2>
+  let h = `<div class="oasen-kopf"><h2>${jungeSiedlung(o) ? '🏕' : '🌴'} ${o.name}</h2>
              <span class="wasser-pille" title="${T('Wasserstand', 'Water level')}">💧 ${Math.round(o.wasser)} %</span></div>
            <div class="bar"><div style="width:${Math.max(0, o.wasser)}%;background:${wasserFarbe(o.wasser)}"></div></div>`;
 
@@ -143,7 +144,8 @@ function htmlOase() {
     if (inhalt) abschnitte.push({ id, icon, name: T(de, en), inhalt, zahl });
   };
 
-  dazu('markt', '📊', 'Markt', 'Market', [{ inhalt: htmlMarkt(o, handel) }]);
+  // Junge Siedlungen: ihre Bitte steht gleich über dem Markt, damit man sie nicht übersieht
+  dazu('markt', '📊', 'Markt', 'Market', [{ inhalt: (jungeSiedlung(o) ? htmlSiedlung(o) : '') + htmlMarkt(o, handel) }]);
 
   // --- Oase: Übersicht, Besonderheiten, Scheich, Reisende ---
   const ueberblick = `<div class="kennzahlen">
@@ -151,6 +153,7 @@ function htmlOase() {
        <div><span>💧</span><b>${Math.round(o.wasser)} %</b><small>${T('Wasser', 'water')}</small></div>
        <div><span>🏅</span><b>${Math.round(ansehen(o))}</b><small>${ansehenTitel(ansehen(o))}</small></div>
      </div>
+     ${htmlWunsch(o)}
      <div class="info">🏭 ${T('Erzeugt', 'Produces')}: ${o.produziert.map(id => ware(id).icon + ' ' + ware(id).name).join(', ')}</div>` +
      (ansehenVorteil(o) >= 0.005 ? `<div class="hinweis">${T(`Dein Ansehen bringt dir ${Math.round(ansehenVorteil(o) * 100)} % bessere Preise.`, `Your reputation gets you ${Math.round(ansehenVorteil(o) * 100)}% better prices.`)}</div>` : '') +
      htmlOasenExtras(o);
@@ -362,7 +365,7 @@ function htmlMarkt(o, handel) {
     const offen = handel && schieber.ware === w.id;
     const dabei = handel ? Math.floor(handel.k.ladung[w.id]) : 0;
     h += `<tr class="markt-zeile${hier ? ' hergestellt' : ''}${offen ? ' offen' : ''}" ${handel ? `data-a="schieber" data-v="${w.id}"` : ''}>
-          <td>${w.icon} ${w.name}${hier ? ' <span class="prod-marke" title="' + T('wird hier hergestellt', 'made here') + '">🏭</span>' : ''}${w.verderb ? ' ⏳' : ''}${fest}</td>
+          <td>${w.icon} ${w.name}${hier ? ' <span class="prod-marke" title="' + T('wird hier hergestellt', 'made here') + '">🏭</span>' : ''}${w.verderb ? ' ⏳' : ''}${fest}${wunschOffen(o, w.id) ? ` <span class="wunsch-marke" title="${T('Die Oase wünscht sich diese Ware – zahlt +20 %', 'The oasis wishes for this good – pays +20%')}">🙏</span>` : ''}</td>
           <td>${p.lager[w.id]}</td><td>${p.kauf[w.id]}</td><td>${p.verk[w.id]}</td>
           ${handel ? `<td class="${dabei ? 'dabei' : 'leer'}">${dabei || '·'}</td>` : ''}</tr>`;
     if (offen) {
@@ -530,6 +533,7 @@ function htmlKarawanen() {
       if (aktiveRaeuber().some(g => abstandPunktStrecke(g, start, ziel) < g.r)) {
         d += `<div class="warnung">${T('⚔️ Die Route führt durch Räubergebiet!', '⚔️ The route passes through robber territory!')}${k.wachen === 0 ? T(' Wachen wären klug.', ' Guards would be wise.') : ''}</div>`;
       }
+      if (routeDurchDuene(oase(k.ort), ziel)) d += `<div class="warnung">🏜️ ${T('Eine Wanderdüne liegt auf dem Weg – dort geht es nur langsam voran.', 'A shifting dune lies on the way – progress there is slow.')}</div>`;
       d += htmlKarawansereiBau(k);
       d += `<button data-a="los" title="${T('Taste G', 'Key G')}">🚶 ${T(`Nach ${ziel.name} aufbrechen`, `Set out for ${ziel.name}`)}</button>`;
     } else if (!k.route.aktiv) {
@@ -546,6 +550,8 @@ function htmlKarawanen() {
 
   h += bereich('karawane', `${hauptTier(k).icon} ${k.name}`, d);
   h += bereich('route', `🔁 ${T('Handelsroute', 'Trade route')}${k.route.aktiv ? T(' (läuft)', ' (running)') : ''}`, htmlRoute(k));
+  const netz = htmlSereiNetz();
+  if (netz) h += bereich('serei', `🏰 ${T('Karawansereien & Handelsposten', 'Caravanserais & trading posts')}`, netz);
   return h;
 }
 
@@ -629,6 +635,7 @@ function htmlAuftraege() {
           <span class="${rest <= 3 ? 'warnung' : ''}">${T(`noch ${rest} Tage`, `${rest} days left`)}</span></div>`;
   }
   if (S.angebote.length) h += `<div class="hinweis">${T(`${S.angebote.length} Angebot(e) warten auf Händler.`, `${S.angebote.length} offer(s) waiting for a merchant.`)}</div>`;
+  h += htmlWunschListe();
   h += `<h3 style="margin-top:12px">⚔️ ${T('Söldner', 'Mercenaries')}</h3>` + htmlSoeldnerAuftraege();
   return h;
 }
@@ -660,6 +667,10 @@ const AKTIONEN = {
   entscheidungOk: () => entscheidungFertig(),
   talentFenster: v => talentFensterOeffnen(+v),
   ausruestung: v => ausruestungKaufen(v),
+  posten:     v => handelspostenBauen(v),
+  familieName: () => familieUmbenennen(),
+  siedlerZurueck: v => siedlerZurueckholen(+v),
+  zeigeOase:  v => meldungZiel({ oase: +v }),
   beraterZiel: v => { S.ziel = +v; reiterWaehlen('karawanen'); zeichnePanel(); },
   siegWeiter: () => { statistikUmschalten(false); fensterArt = 'statistik'; },
   siegMenue:  () => { statistikUmschalten(false); fensterArt = 'statistik'; menueOeffnen(); },

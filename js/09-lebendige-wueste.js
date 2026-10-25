@@ -140,7 +140,7 @@ function bewegeRivalen(dt) {
       }
       const a = oase(k.von), b = oase(k.nach);
       const sturm = S.stuerme.some(s => Math.hypot(k.x - s.x, k.y - s.y) < s.r);
-      k.gereist += k.tempo * dt * (sturm ? 0.4 : 1);
+      k.gereist += k.tempo * dt * (sturm ? 0.4 : 1) * (inWanderduene(k) ? 0.6 : 1);
       const anteil = Math.min(1, k.gereist / entfernung(a, b));
       k.x = a.x + (b.x - a.x) * anteil;
       k.y = a.y + (b.y - a.y) * anteil;

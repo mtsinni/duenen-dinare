@@ -288,7 +288,7 @@ function zahl(n) { return zahlText(Math.round(n)); }
 
 // Die Buchungsarten sind auf Deutsch gespeichert – für die Anzeige übersetzen
 const BUCHUNGSARTEN_EN = {
-  'Aufträge': 'Contracts', 'Bauten': 'Construction', 'Belohnungen': 'Rewards', 'Beute': 'Loot', 'Söldner': 'Mercenaries', 'Boten': 'Messengers',
+  'Aufträge': 'Contracts', 'Bauten': 'Construction', 'Belohnungen': 'Rewards', 'Beute': 'Loot', 'Söldner': 'Mercenaries', 'Handelsposten': 'Trading posts', 'Boten': 'Messengers',
   'Diplomatie': 'Diplomacy', 'Funde': 'Finds', 'Gebäude': 'Buildings', 'Handel': 'Trade', 'Heiler': 'Healer',
   'Kundschafter': 'Scouts', 'Reisende': 'Passengers', 'Strafen': 'Penalties', 'Unterhalt': 'Upkeep', 'Zinsen': 'Interest',
 };

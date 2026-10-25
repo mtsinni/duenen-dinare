@@ -27,13 +27,13 @@ function fuehrerStufe(k) {
 
 // Grundtempo der Tiere + Bonus des Führers (5 % pro Stufe)
 function reiseTempo(k) {
-  return karawanenTempo(k) * (1 + 0.05 * (fuehrerStufe(k) - 1)) * (1 + 0.06 * talentStufe(k, 'spurenleser')) * (k.krank ? 0.7 : 1);
+  return karawanenTempo(k) * (1 + 0.05 * (fuehrerStufe(k) - 1)) * (1 + 0.06 * talentStufe(k, 'spurenleser')) * (1 + sereiNetzBonus() + familienBonus('wegfinder') * 0.04) * (k.krank ? 0.7 : 1);
 }
 
 function unterhaltKosten(k) {
   let s = k.wachen * WACHE_UNTERHALT;
   for (const t in k.tiere) s += k.tiere[t] * TIERE[t].unterhalt;
-  return s;
+  return Math.round(s * Math.max(0.5, 1 - 0.1 * familienBonus('sparsam')));
 }
 
 // Marktwert der Ladung (ohne Wasser) – danach richtet sich, wie gern Räuber zuschlagen

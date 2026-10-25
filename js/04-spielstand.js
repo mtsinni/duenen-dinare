@@ -208,6 +208,8 @@ function aufruesten() {
   }
   if (!S.soeldner) S.soeldner = [];
   if (!S.pluenderer) S.pluenderer = [];
+  if (!S.wanderduenen) S.wanderduenen = [];
+  familieAnlegen();
   if (!S.zaehler) S.zaehler = {};          // für Errungenschaften (Ankünfte, abgewehrte Überfälle …)
   if (!S.sieg) S.sieg = { art: 'frei' };   // gewähltes Spielziel   // Räuber-Reiterscharen unterwegs
   if (!S.braende) S.braende = [];         // Rauch über überfallenen Oasen   // angeheuerte Truppen gegen Räuberlager

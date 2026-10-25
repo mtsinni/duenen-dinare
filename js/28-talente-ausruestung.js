@@ -73,8 +73,10 @@ function talentWaehlen(id) {
 }
 
 // --- Wirkungen der Talente (werden an den passenden Stellen im Spiel abgefragt) ---
-function kaufPreisFuer(k, o, w) { const st = talentStufe(k, 'feilscher'); const p = kaufPreis(o, w); return st ? Math.max(1, Math.floor(p * (1 - 0.03 * st))) : p; }
-function verkaufPreisFuer(k, o, w) { const st = talentStufe(k, 'feilscher'); const p = verkaufPreis(o, w); return st && p > 0 ? Math.ceil(p * (1 + 0.03 * st)) : p; }
+// Feilscher-Talent der Karawane und Kaufmanns-Bonus der Familie
+function preisVorteil(k) { return 0.03 * talentStufe(k, 'feilscher') + 0.02 * familienBonus('kaufmann'); }
+function kaufPreisFuer(k, o, w) { const v = preisVorteil(k); const p = kaufPreis(o, w); return v ? Math.max(1, Math.floor(p * (1 - v))) : p; }
+function verkaufPreisFuer(k, o, w) { const v = preisVorteil(k); const p = verkaufPreis(o, w); return v && p > 0 ? Math.ceil(p * (1 + v)) : p; }
 
 // --- Ausrüstung ---
 const AUSRUESTUNG = {

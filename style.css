@@ -620,3 +620,34 @@ kbd { display: inline-block; padding: 2px 7px; border: 1px solid rgba(42,34,56,.
 /* Installierte App (iPhone mit durchscheinender Statusleiste): Platz für Uhr und Kamera lassen */
 header { padding-top: max(10px, env(safe-area-inset-top)); }
 @media (max-width: 600px) { header { padding-top: max(6px, env(safe-area-inset-top)); } }
+
+/* Startseite schon vor dem Laden: Himmel als Farbverlauf, drei pulsierende Punkte */
+#startseite { background: linear-gradient(180deg, #11163a 0%, #4a2a5c 29%, #c4613f 50%, #f2b25c 64%, #a4524a 66%, #4a2440 80%, #26132a 88%); }
+.start-laedt { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
+.start-laedt span { width: 9px; height: 9px; border-radius: 50%; background: var(--messing-hell); opacity: .3; animation: laedt 1.2s ease-in-out infinite; }
+.start-laedt span:nth-child(2) { animation-delay: .2s; } .start-laedt span:nth-child(3) { animation-delay: .4s; }
+@keyframes laedt { 50% { opacity: 1; transform: translateY(-4px); } }
+
+/* Wünsche der Oasen */
+.wunsch { padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(127,196,122,.45); background: rgba(127,196,122,.08); margin-bottom: 10px; }
+.wunsch .bar { margin: 6px 0 4px; }
+.wunsch.erfuellt { border-color: rgba(127,196,122,.3); color: #9fd38a; }
+.wunsch-marke { font-size: .85em; }
+
+/* Familie */
+.familie-kopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.familie-kinder { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+
+/* Junge Siedlungen */
+.wunsch.siedlung { border-color: rgba(200,160,74,.6); background: rgba(200,160,74,.09); }
+.siedlung-kopf { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.siedlung-kopf .pips { margin-left: auto; display: inline-flex; gap: 4px; }
+.siedlung-kopf .pip { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--gold, #c8a04a); }
+.siedlung-kopf .pip.an { background: var(--gold, #c8a04a); }
+.warnung-text { display: block; color: #ff9c7a; margin-top: 4px; }
+.wunsch-zeile { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;
+  text-align: left; padding: 7px 10px; margin: 0 0 6px; border-radius: 8px; border: 1px solid rgba(127,196,122,.35); background: rgba(127,196,122,.06); }
+.wunsch-zeile.siedlung { border-color: rgba(200,160,74,.55); background: rgba(200,160,74,.08); }
+.wunsch-zeile small { opacity: .75; }
+.wunsch.verlassen { border-color: rgba(190,150,110,.55); background: rgba(150,110,70,.10); }
+.wunsch.verlassen .gross { margin-top: 8px; width: 100%; }

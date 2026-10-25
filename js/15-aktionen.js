@@ -43,6 +43,7 @@ function handelVerkaufen(k, o, wid, menge, mindestPreis = 0) {
     anzahl++; erloes += preis; gewinn += preis - (k.einstand[wid] || 0);
   }
   if (anzahl) {
+    wunschLieferung(o, wid, anzahl);     // wünscht sich die Oase diese Ware?
     k.bilanz += erloes;
     buche('Handel', erloes);
     ansehenAendern(o, erloes / 2500);
@@ -156,7 +157,7 @@ function auftragErfuellen(id) {
 function losziehen() {
   const k = karawane(S.gewKarawane), ziel = oase(S.ziel);
   if (!k || !ziel || k.ort == null || tierAnzahl(k) === 0) return;
-  if (!ziel.aktiv) { log(T(`${ziel.name} ist versiegt – dort gibt es nichts mehr.`, `${ziel.name} has dried up – there is nothing left there.`)); zeichnePanel(); return; }
+  if (!ziel.aktiv && !ziel.verlassen) { log(T(`${ziel.name} ist versiegt – dort gibt es nichts mehr.`, `${ziel.name} has dried up – there is nothing left there.`)); zeichnePanel(); return; }
   if (k.route.aktiv) { k.route.aktiv = false; log(T(`🔁 ${k.name}: Handelsroute angehalten (Reise von Hand).`, `🔁 ${k.name}: trade route paused (manual journey).`)); }
   const startOase = oase(k.ort);
   reiseStarten(k, ziel);

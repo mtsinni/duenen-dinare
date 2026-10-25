@@ -147,6 +147,7 @@ function verbuendeteVorOrt(o) {
 
 function htmlHaeuser() {
   let h = `<h2>🤝 ${T('Handelshäuser', 'Trading houses')}</h2>`;
+  h += bereich('familie', `👪 ${T('Dein Haus', 'Your house')} – ${S.familie ? S.familie.nachname : ''}`, htmlFamilie());
   S.rivalen.forEach((r, i) => {
     const kannSabotage = S.tag >= (r.sabotageBis || 0);
     let s = `<div class="info">${T('Vermögen', 'Fortune')} ≈ ${zahl(rivalenVermoegen(r))} 🪙 · ${r.karawanen.length} ${T('Karawane(n)', 'caravan(s)')}</div>
