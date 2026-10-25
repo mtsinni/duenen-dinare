@@ -651,3 +651,62 @@ header { padding-top: max(10px, env(safe-area-inset-top)); }
 .wunsch-zeile small { opacity: .75; }
 .wunsch.verlassen { border-color: rgba(190,150,110,.55); background: rgba(150,110,70,.10); }
 .wunsch.verlassen .gross { margin-top: 8px; width: 100%; }
+
+/* ===== Menü mit Reitern (übersichtlicher) ===== */
+#menue .menue-neu { padding-top: 16px; }
+.menue-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.menue-kopf .sprachwahl { margin: 0; flex-shrink: 0; }
+#menue .menue-kopf h2 { font-size: 1.8rem; }
+#menue .menue-kopf .untertitel { margin-bottom: 10px; }
+#menue .weiter-knopf { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 2px 0 12px; }
+#menue .weiter-knopf small { font-weight: 400; opacity: .8; font-size: .85em; }
+.menue-reiter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; border-bottom: 2px solid rgba(138,106,42,.35); margin: 0 -4px; padding: 0 4px; }
+#menue .menue-reiter button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px;
+  border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; background: transparent; font-size: .9rem; line-height: 1.15; margin-bottom: -2px; }
+#menue .menue-reiter button.an { background: rgba(255,250,236,.9); color: #3a2a12; border-color: rgba(138,106,42,.45); border-bottom: 2px solid #fbf3df; font-weight: 700; }
+#menue .menue-reiter button:hover:not(.an) { background: rgba(40,52,99,.06); }
+.menue-reiter .mr-icon { font-size: 1.25rem; line-height: 1; }
+.menue-reiter .mr-zahl { position: absolute; top: 3px; left: calc(50% + 8px); font-size: .7rem; font-weight: 700; padding: 0 5px; border-radius: 8px; background: #b0872d; color: #fff8e6; }
+.menue-inhalt { padding: 14px 2px 4px; min-height: 260px; }
+.wahl-gruppe { margin-bottom: 14px; }
+.wahl-titel { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: #8a6a2a; font-weight: 700; margin: 4px 0 6px; }
+.menue-inhalt > .wahl-titel { margin-top: 14px; } .menue-inhalt > .wahl-titel:first-child { margin-top: 0; }
+.wahl-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+.wahl-knoepfe button { flex: 1 1 auto; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 6px; min-height: 40px; }
+.wahl-knoepfe button small { flex-basis: 100%; font-size: .7rem; opacity: .75; font-weight: 400; }
+.wahl-gruppe > .hinweis { margin-top: 5px; font-size: .88rem; }
+.wahl-zwei { display: grid; grid-template-columns: 1fr auto; gap: 14px; }
+.wahl-zwei .wahl-gruppe:last-child .wahl-knoepfe button { min-width: 5.5em; }
+.warnung-hinweis { color: #9a4a1f !important; margin: -4px 0 10px; }
+#menue .menue-inhalt > button.gross { width: 100%; }
+.hinweis.mitte { text-align: center; margin-top: 6px; }
+/* Spielstände */
+#menue .slot { padding: 8px 10px; margin: 0 0 8px; border-radius: 8px; }
+#menue .slot.leer { border-style: dashed; opacity: .85; }
+.slot-zeile { display: flex; align-items: center; gap: 10px; }
+.slot-nr { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+  background: rgba(138,106,42,.15); color: #6b4f1d; font-family: var(--schrift-titel); font-size: 1.05rem; }
+.slot.aktuell .slot-nr { background: #283463; color: var(--sand); }
+.slot-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.slot-text small { font-size: .8rem; color: #6b5a48; }
+#menue .slot-mehr { width: 36px; padding: 4px 0; font-size: 1.2rem; line-height: 1; letter-spacing: 1px; }
+#menue .slot-mehr.offen { background: rgba(40,52,99,.12); }
+.slot-extra { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px 40px; }
+#menue .slot-extra button.gefahr { color: #9a3a1f; border-color: rgba(154,58,31,.45); }
+#menue details.alle-staende { margin-top: 12px; border-top: 1px solid rgba(42,34,56,.14); padding-top: 8px; }
+#menue details.alle-staende summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+#menue details.alle-staende button { margin: 6px 6px 0 0; }
+/* Mehr */
+#menue .menue-karte { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 14px; margin-bottom: 8px; border-radius: 8px; }
+.menue-karte .mk-icon { font-size: 1.6rem; }
+.menue-karte .mk-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.menue-karte .mk-text small { font-size: .82rem; color: #6b5a48; }
+.menue-karte .bar { display: block; height: 6px; border-radius: 3px; background: rgba(42,34,56,.12); overflow: hidden; }
+.menue-karte .bar span { display: block; height: 100%; background: #b0872d; }
+.menue-karte .mk-pfeil { font-size: 1.6rem; opacity: .5; }
+@media (max-width: 480px) {
+  #menue .menue-kopf h2 { font-size: 1.5rem; }
+  .menue-reiter .mr-name { font-size: .78rem; }
+  .wahl-zwei { grid-template-columns: 1fr; gap: 0; }
+  .einstellung label { min-width: 7em; }
+}

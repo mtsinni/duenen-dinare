@@ -64,7 +64,8 @@ let menueOffen = false, pauseVorMenue = false;
 let geradeGeladen = true;
 const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true, sieg: 'frei', karte: 'klassisch', kartenNr: '' };
 
-function menueOeffnen() {
+function menueOeffnen(reiter) {
+  menueReiter = reiter || null; menueSlotOffen = 0;
   if (statistikOffen) statistikUmschalten(false);
   menueOffen = true;
   pauseVorMenue = S.pause;
@@ -91,90 +92,140 @@ function menueSchliessenMitPause() {
   menueSchliessen(false);
 }
 
+// Das Menü hat vier Reiter, damit nicht alles auf einer langen Seite steht
+let menueReiter = null;          // 'neu' | 'staende' | 'einst' | 'mehr' – null = passend wählen
+let menueSlotOffen = 0;          // bei welchem Spielstand die Zusatzknöpfe (⋯) offen sind
+
 function zeichneMenue() {
   const laeuft = !!slotLesen(S.slot) && !S.bankrott;
-  let h = `<div class="fenster">
-    <div class="sprachwahl">${htmlFlaggen('data-m="sprache"')}</div>
-    <h2 style="margin-top:0; margin-bottom:2px">🐪 ${T('Dünen & Dinare', 'Dunes & Dinars')}</h2>
-    <p class="untertitel">${T('Karawanenhandel in der Wüste', 'Caravan trading in the desert')}</p>`;
-  if (laeuft) {
-    h += `<button class="gross" data-m="weiter">▶ ${T(`Weiterspielen (Platz ${S.slot}, Tag ${S.tag})`, `Continue (slot ${S.slot}, day ${S.tag})`)}</button>`;
-  }
-
+  if (!menueReiter) menueReiter = laeuft ? 'staende' : 'neu';
   const erreicht = errungenschaftenLesen();
-  h += `<div class="menue-zeile"><button data-m="erfolge" class="erfolge-knopf">🏆 ${T('Errungenschaften', 'Achievements')} · ${ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length}/${ERRUNGENSCHAFTEN.length}</button>
-          <button data-m="hilfe" class="erfolge-knopf">⌨️ ${T('Tastenkürzel', 'Shortcuts')}</button></div>`;
-  h += `<h3>${T('Spielstände', 'Saved games')}</h3>`;
+  const anzahlErfolge = ERRUNGENSCHAFTEN.filter(e => erreicht[e.id]).length;
+  const belegt = [1, 2, 3].filter(n => slotLesen(n)).length;
+
+  let h = `<div class="fenster menue-neu">
+    <div class="menue-kopf">
+      <div><h2>🐪 ${T('Dünen & Dinare', 'Dunes & Dinars')}</h2>
+        <p class="untertitel">${T('Karawanenhandel in der Wüste', 'Caravan trading in the desert')}</p></div>
+      <div class="sprachwahl">${htmlFlaggen('data-m="sprache"')}</div>
+    </div>`;
+  if (laeuft) h += `<button class="gross weiter-knopf" data-m="weiter">▶ ${T('Weiterspielen', 'Continue')} <small>${T(`Platz ${S.slot} · Tag ${S.tag}`, `Slot ${S.slot} · day ${S.tag}`)}</small></button>`;
+
+  const reiter = [
+    ['neu', '🐪', T('Neues Spiel', 'New game'), ''],
+    ['staende', '💾', T('Spielstände', 'Saves'), belegt ? `${belegt}/${SLOT_ANZAHL}` : ''],
+    ['einst', '⚙️', T('Einstellungen', 'Settings'), ''],
+    ['mehr', '🏆', T('Erfolge', 'Achievements'), `${anzahlErfolge}`],
+  ];
+  h += `<div class="menue-reiter">${reiter.map(([id, icon, name, zahl]) =>
+    `<button data-m="reiter" data-n="${id}" class="${menueReiter === id ? 'an' : ''}"><span class="mr-icon">${icon}</span><span class="mr-name">${name}</span>${zahl ? `<span class="mr-zahl">${zahl}</span>` : ''}</button>`).join('')}</div>`;
+
+  h += `<div class="menue-inhalt">`;
+  if (menueReiter === 'neu') h += htmlMenueNeu();
+  else if (menueReiter === 'staende') h += htmlMenueStaende();
+  else if (menueReiter === 'einst') h += htmlMenueEinstellungen();
+  else h += htmlMenueMehr(anzahlErfolge);
+  h += `</div>${htmlRechtliches('menue-rechtliches')}</div>`;
+  document.getElementById('menue').innerHTML = symbole(h);
+}
+
+// Eine Auswahl-Gruppe: Überschrift, Knöpfe nebeneinander, kurzer Hinweis darunter
+function menueGruppe(titel, knoepfe, hinweis = '') {
+  return `<div class="wahl-gruppe"><div class="wahl-titel">${titel}</div><div class="wahl-knoepfe">${knoepfe}</div>${hinweis ? `<div class="hinweis">${hinweis}</div>` : ''}</div>`;
+}
+
+function htmlMenueNeu() {
+  const sw = SCHWIERIGKEITEN[menueWahl.schwierigkeit];
+  let h = menueGruppe(T('Schwierigkeit', 'Difficulty'),
+    Object.entries(SCHWIERIGKEITEN).map(([id, s]) => `<button data-m="sw" data-n="${id}" class="${menueWahl.schwierigkeit === id ? 'an' : ''}">${s.icon} ${s.name}</button>`).join(''),
+    `${sw.text} ${T('Startgold', 'Starting gold')}: ${sw.startGold} 🪙`);
+  h += menueGruppe(T('Karte', 'Map'),
+    `<button data-m="kartewahl" data-n="klassisch" class="${menueWahl.karte === 'klassisch' ? 'an' : ''}">🗺 ${T('Klassisch', 'Classic')}</button>
+     <button data-m="kartewahl" data-n="zufall" class="${menueWahl.karte === 'zufall' ? 'an' : ''}">🎲 ${T('Zufällig', 'Random')}</button>`,
+    menueWahl.karte === 'zufall'
+      ? `<span class="kartennr"><label>${T('Kartennummer', 'Map number')}:</label>
+          <input type="text" inputmode="numeric" maxlength="6" placeholder="${T('leer = zufällig', 'empty = random')}" value="${menueWahl.kartenNr}" data-kartennr="1">
+          <span>${T('Gleiche Nummer = gleiche Karte.', 'Same number = same map.')}</span></span>`
+      : T('Die bekannte Wüste von Timbuktu bis Suakin.', 'The familiar desert from Timbuktu to Suakin.'));
+  h += menueGruppe(T('Spielziel', 'Game goal'),
+    Object.entries(SIEGE).map(([id, z]) => `<button data-m="siegwahl" data-n="${id}" class="${menueWahl.sieg === id ? 'an' : ''}">${z.icon} ${T(z.name, z.nameEn)}</button>`).join(''),
+    T(SIEGE[menueWahl.sieg].text, SIEGE[menueWahl.sieg].textEn));
+  let plaetze = '';
+  for (let n = 1; n <= SLOT_ANZAHL; n++) {
+    plaetze += `<button data-m="slot" data-n="${n}" class="${menueWahl.slot === n ? 'an' : ''}">${T('Platz', 'Slot')} ${n}${slotLesen(n) ? `<small>${T('belegt', 'in use')}</small>` : ''}</button>`;
+  }
+  h += `<div class="wahl-zwei">` +
+    menueGruppe(T('Speicherplatz', 'Save slot'), plaetze) +
+    menueGruppe(T('Einführung', 'Tutorial'), `<button data-m="einf" class="${menueWahl.einfuehrung ? 'an' : ''}">💡 ${menueWahl.einfuehrung ? T('an', 'on') : T('aus', 'off')}</button>`) +
+    `</div>`;
+  if (slotLesen(menueWahl.slot)) h += `<div class="hinweis warnung-hinweis">⚠️ ${T(`Platz ${menueWahl.slot} ist belegt – der alte Spielstand wird überschrieben.`, `Slot ${menueWahl.slot} is in use – the old game will be overwritten.`)}</div>`;
+  h += `<button class="gross" data-m="neu">🐪 ${T('Neues Spiel starten', 'Start new game')}</button>
+        <p class="hinweis mitte">${T('Dein Spiel wird jeden Spieltag automatisch gespeichert.', 'Your game is saved automatically every game day.')}</p>`;
+  return h;
+}
+
+function htmlMenueStaende() {
+  let h = '';
   for (let n = 1; n <= SLOT_ANZAHL; n++) {
     const d = slotLesen(n);
     if (!d) {
-      h += `<div class="slot"><b>${T('Platz', 'Slot')} ${n}</b> · <span class="hinweis">${T('leer', 'empty')}</span>
-              <div style="margin-top:4px"><button data-m="import" data-n="${n}">📂 ${T('Aus Datei laden', 'Load from file')}</button></div></div>`;
+      h += `<div class="slot leer"><div class="slot-zeile"><span class="slot-nr">${n}</span>
+              <span class="slot-text hinweis">${T('Leer', 'Empty')}</span>
+              <button data-m="import" data-n="${n}" title="${T('Spielstand aus einer Datei laden', 'Load a game from a file')}">📂 ${T('Datei', 'File')}</button></div></div>`;
       continue;
     }
     const z = d.zusammenfassung || {};
     const s = SCHWIERIGKEITEN[d.schwierigkeit] || SCHWIERIGKEITEN.normal;
+    const offen = menueSlotOffen === n;
     h += `<div class="slot ${n === S.slot ? 'aktuell' : ''}">
-            <b>${T('Platz', 'Slot')} ${n}</b> · ${s.icon} ${s.name} · ${d.karte && d.karte.art === 'zufall' ? '🎲 ' + d.karte.nr + ' · ' : ''}${T('Tag', 'Day')} ${d.tag}${RAENGE[d.rang] ? ' · 🏅 ' + RAENGE[d.rang].name : ''}${z.vermoegen != null ? ' · ' + zahl(z.vermoegen) + ' 🪙' : ''}${d.bankrott ? ' · 💀 ' + T('bankrott', 'bankrupt') : ''}
-            <div style="margin-top:4px">
-              <button data-m="laden" data-n="${n}">${T('Laden', 'Load')}</button>
-              <button data-m="export" data-n="${n}">💾 ${T('Als Datei sichern', 'Save as file')}</button>
-              <button data-m="import" data-n="${n}">📂 ${T('Aus Datei laden', 'Load from file')}</button>
-              <button data-m="loeschen" data-n="${n}">${T('Löschen', 'Delete')}</button>
-            </div>
-          </div>`;
-  }
-
-  h += `<div class="alle-staende">
-          <button data-m="exportAlle" ${[1, 2, 3].some(n => slotLesen(n)) ? '' : 'disabled'}>💾 ${T('Alle Spielstände sichern', 'Back up all saved games')}</button>
-          <button data-m="importAlle">📂 ${T('Alle aus Datei wiederherstellen', 'Restore all from file')}</button>
-          <div class="hinweis">${T('Praktisch zum Sichern, für einen Gerätewechsel oder wenn das Spiel umzieht.', 'Handy for backups, switching devices or when the game moves to a new address.')}</div>
-        </div>`;
-
-  h += `<h3>${T('Neues Spiel', 'New game')}</h3><div class="info">${T('Schwierigkeit', 'Difficulty')}:</div><div>`;
-  for (const id in SCHWIERIGKEITEN) {
-    const s = SCHWIERIGKEITEN[id];
-    h += `<button data-m="sw" data-n="${id}" class="${menueWahl.schwierigkeit === id ? 'an' : ''}">${s.icon} ${s.name}</button> `;
-  }
-  h += `</div><div class="hinweis">${SCHWIERIGKEITEN[menueWahl.schwierigkeit].text}
-        ${T('Startgold', 'Starting gold')}: ${SCHWIERIGKEITEN[menueWahl.schwierigkeit].startGold} 🪙.</div>
-        <div class="info" style="margin-top:8px">${T('Karte', 'Map')}:</div><div>
-          <button data-m="kartewahl" data-n="klassisch" class="${menueWahl.karte === 'klassisch' ? 'an' : ''}">🗺 ${T('Klassisch', 'Classic')}</button>
-          <button data-m="kartewahl" data-n="zufall" class="${menueWahl.karte === 'zufall' ? 'an' : ''}">🎲 ${T('Zufällige Wüste', 'Random desert')}</button></div>
-        ${menueWahl.karte === 'zufall' ? `<div class="kartennr"><label>${T('Kartennummer', 'Map number')}:</label>
-          <input type="text" inputmode="numeric" maxlength="6" placeholder="${T('leer = zufällig', 'empty = random')}" value="${menueWahl.kartenNr}" data-kartennr="1">
-          <span class="hinweis">${T('Gleiche Nummer = gleiche Karte – zum Teilen mit Freunden.', 'Same number = same map – share it with friends.')}</span></div>`
-          : `<div class="hinweis">${T('Die bekannte Wüste von Timbuktu bis Suakin.', 'The familiar desert from Timbuktu to Suakin.')}</div>`}
-        <div class="info" style="margin-top:8px">${T('Spielziel', 'Game goal')}:</div><div>${Object.entries(SIEGE).map(([id, z]) =>
-          `<button data-m="siegwahl" data-n="${id}" class="${menueWahl.sieg === id ? 'an' : ''}">${z.icon} ${T(z.name, z.nameEn)}</button>`).join(' ')}</div>
-        <div class="hinweis">${T(SIEGE[menueWahl.sieg].text, SIEGE[menueWahl.sieg].textEn)}</div>
-        <div class="info" style="margin-top:8px">${T('Speicherplatz', 'Save slot')}:</div><div>`;
-  for (let n = 1; n <= SLOT_ANZAHL; n++) {
-    h += `<button data-m="slot" data-n="${n}" class="${menueWahl.slot === n ? 'an' : ''}">${T('Platz', 'Slot')} ${n}${slotLesen(n) ? T(' (belegt)', ' (in use)') : ''}</button> `;
-  }
-  h += `</div><div style="margin-top:8px">
-          <button data-m="einf" class="${menueWahl.einfuehrung ? 'an' : ''}">💡 ${T('Einführung', 'Tutorial')}: ${menueWahl.einfuehrung ? T('an', 'on') : T('aus', 'off')}</button>
-        </div>
-        <button class="gross" data-m="neu" style="margin-top:10px">🐪 ${T('Neues Spiel starten', 'Start new game')}</button>
-        <p class="hinweis">${T('Dein Spiel wird jeden Spieltag automatisch auf seinem Platz gespeichert.', 'Your game is saved to its slot automatically every game day.')}</p>
-        <h3>${T('Einstellungen', 'Settings')}</h3>
-        <div class="einstellung"><label>🎵 ${T('Musik', 'Music')}</label>
-          <input type="range" min="0" max="100" value="${Math.round(musikLautstaerke * 100)}" data-laut="musik">
-          <button data-m="musik" class="${musikAn ? 'an' : ''}">${musikAn ? T('an', 'on') : T('aus', 'off')}</button></div>
-        <div class="einstellung"><label>🔊 ${T('Geräusche', 'Sound effects')}</label>
-          <input type="range" min="0" max="100" value="${Math.round(tonLautstaerke * 100)}" data-laut="ton">
-          <button data-m="ton" class="${tonAn ? 'an' : ''}">${tonAn ? T('an', 'on') : T('aus', 'off')}</button></div>
-        <div class="einstellung"><label>🔔 ${T('Meldungen im Spiel', 'In-game alerts')}</label><span style="flex:1"></span>
-          <button data-m="meldungen" class="${meldungenAn ? 'an' : ''}">${meldungenAn ? T('an', 'on') : T('aus', 'off')}</button></div>
-        <div class="einstellung"><label>📣 ${T('Auch im Hintergrund', 'Also in background')}</label><span class="hinweis" style="flex:1">${T('wenn der Tab nicht sichtbar ist', 'when the tab is not visible')}</span>
-          <button data-m="systemmeldungen" class="${systemMeldungen ? 'an' : ''}">${systemMeldungen ? T('an', 'on') : T('aus', 'off')}</button></div>
-        ${htmlApp()}
-        ${htmlRechtliches('menue-rechtliches')}
+        <div class="slot-zeile"><span class="slot-nr">${n}</span>
+          <span class="slot-text"><span><b>${T('Tag', 'Day')} ${d.tag}</b>${z.vermoegen != null ? ` · ${zahl(z.vermoegen)} 🪙` : ''}${d.bankrott ? ' · 💀' : ''}</span>
+            <small>${s.icon} ${s.name}${d.karte && d.karte.art === 'zufall' ? ' · 🎲 ' + d.karte.nr : ''}${RAENGE[d.rang] ? ' · ' + RAENGE[d.rang].name : ''}${n === S.slot ? ' · ' + T('läuft gerade', 'current') : ''}</small></span>
+          ${n === S.slot && !S.bankrott ? '' : `<button data-m="laden" data-n="${n}" class="an">${T('Laden', 'Load')}</button>`}
+          <button data-m="slotmehr" data-n="${n}" class="slot-mehr ${offen ? 'offen' : ''}" title="${T('Weitere Möglichkeiten', 'More options')}">⋯</button></div>
+        ${offen ? `<div class="slot-extra">
+          <button data-m="export" data-n="${n}">💾 ${T('Als Datei sichern', 'Save as file')}</button>
+          <button data-m="import" data-n="${n}">📂 ${T('Aus Datei laden', 'Load from file')}</button>
+          <button data-m="loeschen" data-n="${n}" class="gefahr">🗑 ${T('Löschen', 'Delete')}</button></div>` : ''}
       </div>`;
-  document.getElementById('menue').innerHTML = symbole(h);
+  }
+  h += `<details class="alle-staende"><summary>💾 ${T('Sicherung für alle Spielstände', 'Backup of all saved games')}</summary>
+          <div class="hinweis">${T('Praktisch für einen Gerätewechsel oder wenn das Spiel umzieht.', 'Handy for switching devices or when the game moves to a new address.')}</div>
+          <button data-m="exportAlle" ${[1, 2, 3].some(n => slotLesen(n)) ? '' : 'disabled'}>💾 ${T('Alle sichern', 'Back up all')}</button>
+          <button data-m="importAlle">📂 ${T('Alle wiederherstellen', 'Restore all')}</button>
+        </details>`;
+  return h;
 }
 
+function htmlMenueEinstellungen() {
+  const schalter = (m, an) => `<button data-m="${m}" class="${an ? 'an' : ''}">${an ? T('an', 'on') : T('aus', 'off')}</button>`;
+  return `<div class="wahl-titel">${T('Ton', 'Sound')}</div>
+      <div class="einstellung"><label>🎵 ${T('Musik', 'Music')}</label>
+        <input type="range" min="0" max="100" value="${Math.round(musikLautstaerke * 100)}" data-laut="musik">${schalter('musik', musikAn)}</div>
+      <div class="einstellung"><label>🔊 ${T('Geräusche', 'Sounds')}</label>
+        <input type="range" min="0" max="100" value="${Math.round(tonLautstaerke * 100)}" data-laut="ton">${schalter('ton', tonAn)}</div>
+      <div class="wahl-titel">${T('Meldungen', 'Alerts')}</div>
+      <div class="einstellung"><label>🔔 ${T('Im Spiel', 'In game')}</label><span class="hinweis" style="flex:1">${T('kleine Karten am Rand', 'small cards at the edge')}</span>${schalter('meldungen', meldungenAn)}</div>
+      <div class="einstellung"><label>📣 ${T('Im Hintergrund', 'In background')}</label><span class="hinweis" style="flex:1">${T('wenn der Tab nicht sichtbar ist', 'when the tab is hidden')}</span>${schalter('systemmeldungen', systemMeldungen)}</div>
+      <div class="wahl-titel">${T('App', 'App')}</div>
+      ${htmlApp()}`;
+}
+
+function htmlMenueMehr(anzahl) {
+  const gesamt = ERRUNGENSCHAFTEN.length;
+  return `<button class="menue-karte" data-m="erfolge">
+        <span class="mk-icon">🏆</span><span class="mk-text"><b>${T('Errungenschaften', 'Achievements')}</b>
+          <span class="bar"><span style="width:${Math.round(anzahl / gesamt * 100)}%"></span></span>
+          <small>${T(`${anzahl} von ${gesamt} erreicht`, `${anzahl} of ${gesamt} unlocked`)}</small></span><span class="mk-pfeil">›</span></button>
+      <button class="menue-karte" data-m="hilfe">
+        <span class="mk-icon">⌨️</span><span class="mk-text"><b>${T('Tastenkürzel', 'Keyboard shortcuts')}</b>
+          <small>${T('Schneller spielen am Computer', 'Play faster on a computer')}</small></span><span class="mk-pfeil">›</span></button>`;
+}
+
+
 function menueAktion(m, n) {
+  if (m === 'reiter') { menueReiter = n; menueSlotOffen = 0; zeichneMenue(); return; }
+  if (m === 'slotmehr') { menueSlotOffen = menueSlotOffen === +n ? 0 : +n; zeichneMenue(); return; }
   if (m === 'sprache') spracheSetzen(n);
   if (m === 'weiter') menueSchliessen(true);
   if (m === 'laden' && ladeSlot(+n)) { speichern(); menueSchliessenMitPause(); }
@@ -464,7 +515,7 @@ function startAktion(art, n) {
   if (art === 'sprache') { spracheSetzen(n); zeichneStartInhalt(); return; }
   startseiteSchliessen();
   if (art === 'weiter') { geradeGeladen = false; S.pause = true; zeichnePanel(); }   // angehalten – Leertaste/▶ startet
-  if (art === 'menue') menueOeffnen();
+  if (art === 'menue') menueOeffnen(startSpielGeladen ? null : 'neu');
 }
 
 // Silhouetten-Farben für die Karawane vor dem Abendhimmel
