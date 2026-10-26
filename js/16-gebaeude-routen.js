@@ -200,8 +200,9 @@ function verkaufMenge(k, wid, regel) {
 
 // Wie viel Wasser braucht k von a nach b? Mit 80 % Reserve – ein Sandsturm kann die Reise stark verlängern
 function wasserFuer(k, a, b) {
-  const tage = entfernung(a, b) / Math.max(1, reiseTempo(k));
-  return Math.max(3, Math.ceil(karawanenDurst(k) * tage * 1.8 * Math.max(1, jahreszeit().durst)));
+  const info = streckenInfo(a, b);   // Gebirge und Furten verlängern die Reise
+  const tage = entfernung(a, b) / Math.max(1, reiseTempo(k)) * info.zeit;
+  return Math.max(3, Math.ceil(karawanenDurst(k) * tage * info.durst * 1.8 * Math.max(1, jahreszeit().durst)));
 }
 
 function routeFortsetzen(k) {

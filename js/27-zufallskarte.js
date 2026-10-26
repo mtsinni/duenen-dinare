@@ -95,8 +95,11 @@ function klassischerPlan() {
   return { nr: 0, samen: 1923, gebirge: KLASSISCH_GELAENDE.gebirge, sandmeere: KLASSISCH_GELAENDE.sandmeere, salz: KLASSISCH_GELAENDE.salz, oasen };
 }
 
+// Version 2 = große Wüste (seit der Kartenerweiterung); ältere Spielstände behalten ihre Karte
 function kartenPlanVon(karte) {
-  return karte && karte.art === 'zufall' ? kartenPlan(karte.nr) : klassischerPlan();
+  const gross = karte && karte.v >= 2;
+  if (karte && karte.art === 'zufall') return gross ? kartenPlanGross(karte.nr) : kartenPlan(karte.nr);
+  return gross ? klassischerPlanGross() : klassischerPlan();
 }
 
 // Oasen eines Plans im Spielstand anlegen
@@ -114,7 +117,9 @@ function kartenOasenAnlegen(plan) {
 // Gelände zum aktuellen Spielstand malen
 function kartenGelaendeAktualisieren() {
   if (typeof gelaendeSetzen !== 'function') return;
-  gelaendeSetzen(S.karte && S.karte.art === 'zufall' ? kartenPlan(S.karte.nr) : null);
+  const gross = S.karte && S.karte.v >= 2;
+  gelaendeSetzen(gross || (S.karte && S.karte.art === 'zufall') ? kartenPlanVon(S.karte) : null);
+  if (typeof ansichtStart === 'function') ansichtStart();
 }
 
 function kartenText(karte) {

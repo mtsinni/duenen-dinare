@@ -20,7 +20,10 @@ function bewegeKarawanen(dt) {
     if (k.nach == null) continue;
     const start = oase(k.von), ziel = oase(k.nach);
 
-    k.imSturm = S.stuerme.some(s => Math.hypot(k.x - s.x, k.y - s.y) < s.r);
+    // Im Gebirge: Felsen schützen vor Sandsturm und Hitze, aber es geht langsamer voran
+    const geb = gebirgeBei(k);
+    k.imGebirge = geb ? geb.name : null;
+    k.imSturm = !geb && S.stuerme.some(s => Math.hypot(k.x - s.x, k.y - s.y) < s.r);
     if (k.imSturm) k.sturmErlebt = true;
 
     // Tag und Nacht: Nachtmarsch-Karawanen rasten tagsüber im Schatten
@@ -28,11 +31,15 @@ function bewegeKarawanen(dt) {
     const rastet = k.nachtmarsch && !nacht;
     const segel = hatAusruestung(k, 'segel');   // Sonnensegel: weniger Durst am Tag
     let durstFaktor = (rastet ? 0.15 : nacht ? 0.5 : istMittagshitze() ? (segel ? 1.2 : 1.6) : (segel ? 1.0 : 1.1)) * jahreszeit().durst;
+    if (geb) durstFaktor *= GEBIRGE_WIRKUNG.durst;
 
     let tempo = rastet ? 0 : reiseTempo(k);
     if (nacht && hatAusruestung(k, 'laternen')) tempo *= 1.15;   // Laternen: nachts schneller
     if (k.imSturm) tempo *= nurKamele(k) ? 0.6 : 0.3;   // Kamele kennen die Stürme
     if (inWanderduene(k)) tempo *= WANDERDUENE.tempo;    // durch eine Wanderdüne geht es nur langsam
+    if (geb) tempo *= GEBIRGE_WIRKUNG.tempo;             // steile Pässe
+    const fluss = FLUESSE.length ? flussBei(k) : null;
+    if (fluss) tempo *= flussTempo(fluss);               // Furt – bei Hochwasser sehr langsam
     if (k.durstig) tempo *= 0.5;
     if (k.verirrt > 0) tempo *= -0.3;                     // Fata Morgana: es geht sogar zurück!
     k.gereist = Math.max(0, k.gereist + tempo * dt);
@@ -64,6 +71,7 @@ function bewegeKarawanen(dt) {
     k.x = start.x + (ziel.x - start.x) * anteil;
     k.y = start.y + (ziel.y - start.y) * anteil;
     karawansereiPruefen(k);
+    flussPruefen(k);
     if (anteil >= 1) ankunft(k, ziel);
   }
 }
@@ -90,6 +98,7 @@ function ankunft(k, ziel) {
     melden('🐪', T(`${k.name} ist in ${ziel.name} angekommen.`, `${k.name} has arrived in ${ziel.name}.`), 'gut', { karawane: k.id });
     S.pause = true;
     S.gewKarawane = k.id; S.gewOase = ziel.id; S.ziel = null;
+    ansichtZeigen(ziel);
     if (typeof aktiverReiter !== 'undefined') { aktiverReiter = 'oase'; aktiverOasenReiter = 'markt'; }
   }
   routeFortsetzen(k);                   // fährt die Karawane eine Handelsroute?

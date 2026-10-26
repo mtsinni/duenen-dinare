@@ -4,7 +4,7 @@
    Version, ohne Internet die zuletzt geladene.
    Kommen neue Dateien dazu, gehören sie in die Liste DATEIEN.
    ===================================================================== */
-const SPEICHER = 'duenen-dinare-v5';
+const SPEICHER = 'duenen-dinare-v6';
 const DATEIEN = [
   "./",
   "index.html",
@@ -50,6 +50,7 @@ const DATEIEN = [
   "js/33-app.js",
   "js/34-welt.js",
   "js/35-familie.js",
+  "js/36-landschaft.js",
   "fonts/AlegreyaSans-Bold.woff",
   "fonts/AlegreyaSans-Italic.woff",
   "fonts/AlegreyaSans-Medium.woff",

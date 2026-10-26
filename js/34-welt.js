@@ -151,10 +151,10 @@ function wanderduenenTag() {
     if (d.gemeldet) log(T('🏜️ Die Wanderdüne ist weitergezogen – der Weg ist wieder frei.', '🏜️ The shifting dune has moved on – the way is clear again.'));
     return false;
   });
-  if (S.tag < 8 || S.wanderduenen.length >= WANDERDUENE.max || Math.random() > WANDERDUENE.chance) return;
+  if (S.tag < 8 || S.wanderduenen.length >= Math.round(WANDERDUENE.max * flaeche()) || Math.random() > WANDERDUENE.chance * flaeche()) return;
   for (let versuch = 0; versuch < 40; versuch++) {
     const p = { x: zufall(120, KARTE_B - 200), y: zufall(100, KARTE_H - 100) };
-    if (!imLand(p, 80) || S.oasen.some(o => entfernung(o, p) < 90)) continue;
+    if (!imLand(p, 80) || S.oasen.some(o => entfernung(o, p) < 90) || gebirgeBei(p) || (FLUESSE.length && flussBei(p))) continue;
     const d = { id: S.naechsteId++, x: Math.round(p.x), y: Math.round(p.y), r: zufallInt(55, 85), bis: S.tag + zufallInt(12, 24) };
     S.wanderduenen.push(d);
     // Betrifft es eine deiner Reisen? Dann Bescheid sagen
@@ -225,6 +225,7 @@ function siedlungsPlatzFrei(p) {
   if (S.karawansereien.some(s => entfernung(s, p) < 70)) return false;
   if (S.raeuber.some(g => entfernung(g, p) < g.r + 40)) return false;
   if (GEBIRGE.some(g => Math.hypot(g.x - p.x, g.y - p.y) < g.breite * 0.75)) return false;
+  if (FLUESSE.some(f => abstandZuLinie(p, f.punkte) < 45)) return false;
   if (((p.x - SALZPFANNE.x) / (SALZPFANNE.rx + 30)) ** 2 + ((p.y - SALZPFANNE.y) / (SALZPFANNE.ry + 30)) ** 2 < 1) return false;
   return !inWanderduene(p);
 }
@@ -232,7 +233,7 @@ function siedlungsPlatzFrei(p) {
 function siedlerTag() {
   if (S.tag < SIEDLER.ab || Math.random() > SIEDLER.chance) return;
   const aktive = S.oasen.filter(o => o.aktiv);
-  if (aktive.length >= SIEDLER.maxOasen || aktive.filter(o => jungeSiedlung(o)).length >= SIEDLER.maxJung) return;
+  if (aktive.length >= SIEDLER.maxOasen * flaeche() || aktive.filter(o => jungeSiedlung(o)).length >= SIEDLER.maxJung) return;
   const muetter = aktive.filter(o => o.bev >= SIEDLER.abBev && !jungeSiedlung(o));
   if (!muetter.length) return;
   const mutter = muetter[zufallInt(0, muetter.length - 1)];

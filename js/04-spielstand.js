@@ -117,11 +117,13 @@ function neuesSpiel(schwierigkeit = 'normal', slot = 1, einfuehrung = false, sie
         naechsteId: 1, karawanenZaehler: 0,
         gewOase: null, gewKarawane: null, ziel: null };
   // Die Wüste: klassisch oder zufällig aus einer Kartennummer
-  S.karte = karte && karte.art === 'zufall' ? { art: 'zufall', nr: karte.nr || neueKartennummer() } : { art: 'klassisch' };
+  S.karte = karte && karte.art === 'zufall' ? { art: 'zufall', nr: karte.nr || neueKartennummer(), v: 2 } : { art: 'klassisch', v: 2 };
+  S.welt = { ...WELT_GROSS };
+  weltSetzen(S.welt);
   const startOase = kartenOasenAnlegen(kartenPlanVon(S.karte));
   S.startOase = startOase.id;
   kartenGelaendeAktualisieren();
-  S.raeuber.push(neuesRaeuberGebiet(), neuesRaeuberGebiet());
+  for (let i = 0; i < Math.max(2, Math.round(2 * flaeche() ** 0.7)); i++) S.raeuber.push(neuesRaeuberGebiet());
   S.sieg = { art: SIEGE[sieg] ? sieg : 'frei' };
   aufruesten();
   const start = oase(S.startOase);
@@ -151,6 +153,8 @@ function laden() {
 
 // Ältere Spielstände kennen die neuen Funktionen noch nicht – wir ergänzen sie
 function aufruesten() {
+  if (!S.welt) S.welt = { ...WELT_KLEIN };   // ältere Spielstände: die alte, kleinere Wüste
+  weltSetzen(S.welt);
   if (!S.angebote) S.angebote = [];
   if (!S.auftraege) S.auftraege = [];
   if (!S.raeuber) S.raeuber = [neuesRaeuberGebiet(), neuesRaeuberGebiet()];

@@ -79,6 +79,7 @@ function tagesWechsel() {
   wanderduenenTag();
   siedlerTag();
   verlasseneTag();
+  flussTag();
   familieTag();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }

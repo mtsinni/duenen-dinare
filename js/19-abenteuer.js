@@ -170,6 +170,7 @@ function abenteuerAnlegen() {
   if (!S.fundorte) {
     S.fundorte = [];
     const arten = ['ruine', 'quelle', 'schatz', ['ruine', 'schatz', 'quelle'][zufallInt(0, 2)]];
+    for (let i = 4; i < Math.round(4 * flaeche() * 0.8); i++) arten.push(['ruine', 'schatz', 'quelle'][zufallInt(0, 2)]);   // große Wüste: mehr zu finden
     for (const art of arten) {
       for (let versuch = 0; versuch < 60; versuch++) {
         const p = { x: zufall(70, KARTE_B - 150), y: zufall(70, KARTE_H - 70) };

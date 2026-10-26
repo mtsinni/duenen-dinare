@@ -523,9 +523,11 @@ function htmlKarawanen() {
   if (k.ort != null) {
     const ziel = oase(S.ziel);
     if (ziel) {
-      const tage = entfernung(oase(k.ort), ziel) / tempo;
-      const bedarf = Math.ceil(durst * tage);
+      const info = streckenInfo(oase(k.ort), ziel);
+      const tage = entfernung(oase(k.ort), ziel) / tempo * info.zeit;
+      const bedarf = Math.ceil(durst * tage * info.durst);
       d += `<div class="info">${T('Ziel', 'Destination')} <b>${ziel.name}</b>: ${T(`ca. ${zahlText(tage, 1)} Tage, braucht ~${bedarf} 💧`, `about ${zahlText(tage, 1)} days, needs ~${bedarf} 💧`)}</div>`;
+      d += htmlStreckenInfo(info);
       if (k.ladung.wasser < bedarf * 1.3) {
         d += `<div class="warnung">${T(`Zu wenig Wasser dabei! Nimm lieber ${Math.ceil(bedarf * 1.3)} mit (Reserve für Sandstürme).`, `Not enough water! Better take ${Math.ceil(bedarf * 1.3)} (a reserve for sandstorms).`)}</div>`;
       }
@@ -545,6 +547,7 @@ function htmlKarawanen() {
     d += `<div class="info">${T(`Unterwegs nach <b>${ziel.name}</b>, noch ca. ${zahlText(rest, 1)} Tage.`, `On the way to <b>${ziel.name}</b>, about ${zahlText(rest, 1)} days left.`)}</div>`;
     if (k.durstig) d += `<div class="warnung">${T('Die Tiere verdursten!', 'The animals are dying of thirst!')}</div>`;
     if (k.imSturm) d += `<div class="warnung">${T('Mitten im Sandsturm!', 'In the middle of a sandstorm!')}</div>`;
+    if (k.imGebirge) d += `<div class="hinweis">⛰️ ${T(`Im ${k.imGebirge}-Gebirge: langsam, aber geschützt vor Sandstürmen.`, `In the ${k.imGebirge} mountains: slow, but sheltered from sandstorms.`)}</div>`;
   }
   d += htmlKarawanenAktionen(k);
 

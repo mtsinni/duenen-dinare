@@ -146,7 +146,7 @@ function htmlMenueNeu() {
       ? `<span class="kartennr"><label>${T('Kartennummer', 'Map number')}:</label>
           <input type="text" inputmode="numeric" maxlength="6" placeholder="${T('leer = zufällig', 'empty = random')}" value="${menueWahl.kartenNr}" data-kartennr="1">
           <span>${T('Gleiche Nummer = gleiche Karte.', 'Same number = same map.')}</span></span>`
-      : T('Die bekannte Wüste von Timbuktu bis Suakin.', 'The familiar desert from Timbuktu to Suakin.'));
+      : T('Die große Wüste von Walata bis ans Rote Meer – mit Niger, Nil und 36 Oasen.', 'The great desert from Walata to the Red Sea – with the Niger, the Nile and 36 oases.'));
   h += menueGruppe(T('Spielziel', 'Game goal'),
     Object.entries(SIEGE).map(([id, z]) => `<button data-m="siegwahl" data-n="${id}" class="${menueWahl.sieg === id ? 'an' : ''}">${z.icon} ${T(z.name, z.nameEn)}</button>`).join(''),
     T(SIEGE[menueWahl.sieg].text, SIEGE[menueWahl.sieg].textEn));
@@ -400,10 +400,10 @@ const EINFUEHRUNG = [
     fertig: k => WAREN.some(w => w.id !== 'wasser' && k.ladung[w.id] >= 10) },
   { text: `Jetzt brauchst du ein Ziel. Tippe auf der Karte auf eine andere Oase, zum Beispiel <b>Tamanrasset</b> –
       dort wird kein Salz hergestellt, also zahlt man mehr. Fremde Preise kennst du erst, wenn du dort warst oder einen Boten schickst.
-      Mit zwei Fingern, dem Mausrad oder den Knöpfen <b>+ / −</b> kannst du die Karte vergrößern.`,
+      Mit zwei Fingern, dem Mausrad oder den Knöpfen <b>+ / −</b> kannst du die Karte vergrößern, durch Ziehen verschieben – und mit <b>⤢</b> die ganze Wüste sehen.`,
     textEn: `Now you need a destination. Tap another oasis on the map, for example <b>Tamanrasset</b> –
       no salt is made there, so they pay more. You only know distant prices once you have been there or sent a messenger.
-      Zoom the map with two fingers, the mouse wheel or the <b>+ / −</b> buttons.`,
+      Zoom the map with two fingers, the mouse wheel or the <b>+ / −</b> buttons, drag it to move around – and tap <b>⤢</b> to see the whole desert.`,
     fertig: () => S.ziel != null },
   { text: 'Im Reiter <b>🐪 Karawanen</b> siehst du Reisedauer und Wasserbedarf. Reicht dein Wasser? Dann tippe auf <b>Aufbrechen</b>.',
     textEn: 'The <b>🐪 Caravans</b> tab shows the travel time and the water needed. Enough water? Then tap <b>Set out</b>.',
@@ -450,6 +450,15 @@ function einfuehrungBeenden() { S.tutorial.schritt = -1; zeichnePanel(); }
 const EINFUEHRUNG_REITER = ['oase', 'oase', 'oase', 'oase', 'karawanen', 'karawanen', 'oase', 'ziele'];
 let letzterTippSchritt = null;
 
+// Ein gutes erstes Ziel für die Einführung: die nächste Oase, die kein Salz herstellt
+function tippZielName() {
+  const start = oase(S.startOase);
+  if (!start) return 'Tamanrasset';
+  const ziel = S.oasen.filter(o => o.aktiv && o !== start && !o.hafen && !o.produziert.includes('salz'))
+    .sort((a, b) => entfernung(a, start) - entfernung(b, start))[0];
+  return ziel ? ziel.name : 'Tamanrasset';
+}
+
 function htmlTipp() {
   const t = S.tutorial;
   if (!t || t.schritt < 0 || t.schritt >= EINFUEHRUNG.length) return '';
@@ -458,7 +467,7 @@ function htmlTipp() {
   const schritt = EINFUEHRUNG[t.schritt];
   return `<div class="tipp">
     <div class="tipp-kopf">💡 ${T('Einführung', 'Tutorial')} · ${T('Schritt', 'Step')} ${t.schritt + 1} ${T('von', 'of')} ${EINFUEHRUNG.length}</div>
-    <div>${schritt.text.replace(/Agadez/g, (oase(S.startOase) || { name: 'Agadez' }).name)}</div>
+    <div>${schritt.text.replace(/Agadez/g, (oase(S.startOase) || { name: 'Agadez' }).name).replace(/Tamanrasset/g, tippZielName())}</div>
     <div style="margin-top:6px">
       ${schritt.weiter ? `<button data-a="tippweiter" class="an">${T('Weiter', 'Next')}</button>` : ''}
       <button data-a="tippende">${T('Einführung beenden', 'End tutorial')}</button>

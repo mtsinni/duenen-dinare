@@ -4,16 +4,16 @@
 
 function zufallsEreignisse() {
   const j = jahreszeit(), wetter = sw().wetter;
-  if (Math.random() < 0.05 * j.sturm * wetter && S.stuerme.length < 2) sandsturm();
+  if (Math.random() < 0.05 * j.sturm * wetter * Math.sqrt(flaeche()) && S.stuerme.length < Math.round(2 * Math.sqrt(flaeche()))) sandsturm();
   if (Math.random() < 0.02 * j.hitze * wetter) hitzewelle();
-  if (Math.random() < 0.042 * j.regen / wetter) starkregen();   // die Karte ist seit der Küste größer – mehr Regen
+  if (Math.random() < 0.042 * j.regen / wetter * flaeche()) starkregen();   // die Karte ist seit der Küste größer – mehr Regen
 }
 
 function sandsturm() {
   const vonWesten = Math.random() < 0.5;
   S.stuerme.push({
     x: vonWesten ? -120 : KARTE_B + 120,
-    y: zufall(100, 600),
+    y: zufall(100, KARTE_H - 100),
     r: zufall(90, 150),
     dx: (vonWesten ? 1 : -1) * zufall(60, 110),  // Bewegung pro Tag
     dy: zufall(-25, 25),
@@ -51,7 +51,7 @@ function starkregen() {
   // Vielleicht entsteht eine ganz neue Oase
   const aktive = S.oasen.filter(o => o.aktiv);
   const platzFrei = S.oasen.every(o => Math.hypot(o.x - x, o.y - y) > 120);
-  if (aktive.length < 12 && platzFrei && Math.random() < 0.5) {
+  if (aktive.length < Math.round(12 * flaeche()) && platzFrei && Math.random() < 0.5) {
     const benutzt = S.oasen.map(o => o.name);
     const name = NEUE_NAMEN.find(n => !benutzt.includes(n)) || 'Neue Quelle ' + S.naechsteId;
     const auswahl = WAREN.filter(w => w.id !== 'gold' && w.id !== 'wasser' && !w.see && !w.mine && !w.veredelt);

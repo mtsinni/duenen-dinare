@@ -4,7 +4,13 @@
    ===================================================================== */
 
 const SEK_PRO_TAG = 60;         // Wie viele echte Sekunden ein Spieltag bei Tempo 1× dauert
-const KARTE_B = 1350, KARTE_H = 700;   // seit v5 mit der Küste im Osten
+// Größe der Wüste in Kartenpunkten. Ältere Spielstände: 1350 × 700, neue Spiele: die große Wüste.
+let KARTE_B = 1350, KARTE_H = 700;
+// So viel sieht man auf einmal (Größe des Karten-Canvas) – bei der großen Wüste wird verschoben
+const SICHT_B = 1350, SICHT_H = 700;
+const WELT_KLEIN = { b: 1350, h: 700 }, WELT_GROSS = { b: 2400, h: 1244 };
+// Wie viel größer ist die Wüste als die alte? (1 = alte Größe, ~3 = große Wüste)
+function flaeche() { return (KARTE_B * KARTE_H) / (WELT_KLEIN.b * WELT_KLEIN.h); }
 
 // basis = Grundpreis in Dinar
 const WAREN = [

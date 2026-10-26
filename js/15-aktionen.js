@@ -200,6 +200,7 @@ function waehleKarawane(id) {
   S.gewKarawane = id; S.ziel = null;
   const k = karawane(id);
   if (k && k.ort != null) S.gewOase = k.ort;
+  if (k) ansichtZeigen(k);
   aktiverReiter = 'karawanen';
   zeichnePanel();
 }

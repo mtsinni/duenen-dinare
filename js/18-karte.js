@@ -11,12 +11,14 @@ const ctx = canvas.getContext('2d');
 // Auflösung passend zur angezeigten Größe: Auf großen, scharfen Bildschirmen bis zu doppelt
 // so viele Pixel – auf dem Handy (Karte nur ~400 Pixel breit) reicht die einfache Auflösung.
 const DPR = (() => {
-  const breite = canvas.clientWidth || KARTE_B;
+  const breite = canvas.clientWidth || SICHT_B;
   const pixel = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
-  return Math.min(2, Math.max(1, Math.round(breite * pixel / KARTE_B * 4) / 4));
+  return Math.min(2, Math.max(1, Math.round(breite * pixel / SICHT_B * 4) / 4));
 })();
-canvas.width = KARTE_B * DPR;
-canvas.height = KARTE_H * DPR;
+canvas.width = SICHT_B * DPR;
+canvas.height = SICHT_H * DPR;
+// Kartenpunkte → Canvas-Punkte: bei der großen Wüste zeigt Zoom 1 die ganze Karte verkleinert
+function weltSkala() { return SICHT_B / KARTE_B; }
 
 const FARBE = {
   tinte:    '#2f2113',   // dunkles Braun für Schrift und Tiere
@@ -62,7 +64,7 @@ function neuesCanvas(b, h) {
    --------------------------------------------------------------------- */
 
 // Wo beginnt das Meer? (x-Wert der Küste für eine bestimmte Höhe y)
-function kuesteX(y) { return 1300 + 14 * Math.sin(y / 45) + 8 * Math.sin(y / 17); }
+function kuesteX(y) { return KARTE_B - 50 + 14 * Math.sin(y / 45) + 8 * Math.sin(y / 17); }
 
 // Gebirge, Salzpfanne und Sandmeere – bei zufälligen Karten werden sie für jedes Spiel neu gesetzt
 let GEBIRGE = [
@@ -71,12 +73,73 @@ let GEBIRGE = [
   { name: 'Aïr',     x: 520, y: 455, breite: 55,  huegel: 4 },
 ];
 let SALZPFANNE = { x: 215, y: 300, rx: 52, ry: 24 };
+let FLUESSE = [];   // Flüsse und Wadis: { name, nameEn, art: 'fluss'|'wadi', punkte: [{x,y}…] }
 let SANDMEERE = [[620, 150, 210], [930, 340, 200], [120, 120, 150], [720, 610, 230], [360, 650, 160], [1140, 130, 140], [1160, 640, 130]];
 let GELAENDE_SAMEN = 1923, gelaendeSchluessel = '';
 // Die klassische Karte – zum Zurücksetzen merken
 const KLASSISCH_GELAENDE = { gebirge: GEBIRGE.map(g => ({ ...g })), salz: { ...SALZPFANNE }, sandmeere: SANDMEERE.map(e => [...e]), samen: 1923 };
 
-const [hintergrund, hg] = neuesCanvas(KARTE_B, KARTE_H);
+// Das gemalte Gelände. Bei der großen Wüste reicht etwas weniger Auflösung (spart Speicher auf dem Handy).
+function hintergrundAnlegen() {
+  const c = document.createElement('canvas');
+  const f = KARTE_B > SICHT_B ? Math.min(DPR, 1.5) : DPR;
+  c.width = Math.ceil(KARTE_B * f); c.height = Math.ceil(KARTE_H * f);
+  return [c, c.getContext('2d')];
+}
+let [hintergrund, hg] = hintergrundAnlegen();
+
+// Größe der Wüste umstellen (beim Laden oder für ein neues Spiel)
+function weltSetzen(w) {
+  if (KARTE_B === w.b && KARTE_H === w.h) return;
+  KARTE_B = w.b; KARTE_H = w.h;
+  [hintergrund, hg] = hintergrundAnlegen();
+  gelaendeSchluessel = '';
+  if (typeof nebelBild !== 'undefined') { nebelBild = null; nebelGeaendert = true; }
+  ansichtBegrenzen();
+}
+
+// Eine geschwungene Linie durch die Punkte eines Flusses (über die Mittelpunkte geglättet)
+function flussPfad(g, punkte) {
+  g.beginPath();
+  g.moveTo(punkte[0].x, punkte[0].y);
+  for (let i = 1; i < punkte.length - 1; i++) {
+    const m = { x: (punkte[i].x + punkte[i + 1].x) / 2, y: (punkte[i].y + punkte[i + 1].y) / 2 };
+    g.quadraticCurveTo(punkte[i].x, punkte[i].y, m.x, m.y);
+  }
+  const l = punkte[punkte.length - 1];
+  g.lineTo(l.x, l.y);
+}
+
+// Flüsse: grüne Ufer, sandiger Rand, blaues Wasser · Wadis: trockenes, helles Bett mit Büschen
+function maleFluesse(g) {
+  const rnd = zufallsFolge(GELAENDE_SAMEN + 77);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const f of FLUESSE) {
+    const p = f.punkte;
+    if (f.art === 'fluss') {
+      for (const [breite, farbe] of [[44, 'rgba(120,140,70,.16)'], [30, 'rgba(105,140,62,.32)'], [16, '#d8c08c'], [11, '#3f97a3'], [6, '#5bb6bb']]) {
+        g.strokeStyle = farbe; g.lineWidth = breite; flussPfad(g, p); g.stroke();
+      }
+      g.strokeStyle = 'rgba(255,255,255,.28)'; g.lineWidth = 1.2; flussPfad(g, p); g.stroke();
+    } else {
+      for (const [breite, farbe] of [[20, 'rgba(150,110,60,.13)'], [10, 'rgba(150,108,62,.32)'], [6, 'rgba(240,222,182,.75)']]) {
+        g.strokeStyle = farbe; g.lineWidth = breite; flussPfad(g, p); g.stroke();
+      }
+    }
+    // Büsche und kleine Palmen am Ufer
+    for (let i = 0; i < p.length - 1; i++) {
+      const a = p[i], b = p[i + 1], l = Math.hypot(b.x - a.x, b.y - a.y);
+      const nx = -(b.y - a.y) / (l || 1), ny = (b.x - a.x) / (l || 1);
+      for (let j = 0; j < l / (f.art === 'fluss' ? 14 : 30); j++) {
+        const t = rnd(), seite = rnd() < 0.5 ? -1 : 1, d = (f.art === 'fluss' ? 12 : 7) + rnd() * (f.art === 'fluss' ? 14 : 8);
+        const x = a.x + (b.x - a.x) * t + nx * seite * d, y = a.y + (b.y - a.y) * t + ny * seite * d;
+        if (x > kuesteX(y) - 10) continue;
+        g.fillStyle = rnd() < 0.5 ? 'rgba(74,110,44,.75)' : 'rgba(98,132,54,.7)';
+        g.beginPath(); g.ellipse(x, y, 2.4 + rnd() * 2, 1.6 + rnd(), 0, 0, Math.PI * 2); g.fill();
+      }
+    }
+  }
+}
 
 function maleGelaende() {
   const g = hg, rnd = zufallsFolge(GELAENDE_SAMEN);
@@ -106,7 +169,7 @@ function maleGelaende() {
   }
 
   // 3. Feine Sandkörnung
-  for (let i = 0; i < 9000; i++) {
+  for (let i = 0; i < 9000 * flaeche(); i++) {
     g.fillStyle = rnd() < 0.5 ? 'rgba(120,75,35,.10)' : 'rgba(255,248,230,.16)';
     g.fillRect(rnd() * KARTE_B, rnd() * KARTE_H, 1, 1);
   }
@@ -135,7 +198,7 @@ function maleGelaende() {
       duenen.push({ x: ex + Math.cos(w) * d - 60, y: ey + Math.sin(w) * d * 0.55, l: 70 + rnd() * 150 });
     }
   }
-  for (let i = 0; i < 45; i++) duenen.push({ x: rnd() * KARTE_B, y: rnd() * KARTE_H, l: 35 + rnd() * 70 });
+  for (let i = 0; i < 45 * flaeche(); i++) duenen.push({ x: rnd() * KARTE_B, y: rnd() * KARTE_H, l: 35 + rnd() * 70 });
   duenen.sort((a, b) => a.y - b.y);
 
   for (const d of duenen) {
@@ -195,6 +258,9 @@ function maleGelaende() {
     }
   }
 
+  // 5b. Flüsse und Wadis
+  maleFluesse(g);
+
   // 6. Gebirge: viele runde Felskuppen aus dunklem Gestein, Licht von links, Schraffur rechts
   for (const geb of GEBIRGE) {
     const kuppen = [];
@@ -232,7 +298,7 @@ function maleGelaende() {
   }
 
   // 7. Verstreute Steine
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 260 * flaeche(); i++) {
     const x = rnd() * KARTE_B, y = rnd() * KARTE_H;
     if (x > kuesteX(y) - 8) continue;
     const r = 0.6 + rnd() * 1.8;
@@ -250,7 +316,7 @@ function maleGelaende() {
   };
   g.fillStyle = '#f2dcae'; kuestenLinie(-5); g.fill();           // heller Strand
   g.fillStyle = '#6cc2bd'; kuestenLinie(0); g.fill();            // flaches Wasser
-  const tief = g.createLinearGradient(1300, 0, KARTE_B, 0);
+  const tief = g.createLinearGradient(KARTE_B - 50, 0, KARTE_B, 0);
   tief.addColorStop(0, 'rgba(31,95,134,0)'); tief.addColorStop(0.35, 'rgba(31,95,134,.85)'); tief.addColorStop(1, '#1b4f75');
   g.fillStyle = tief; kuestenLinie(6); g.fill();
   g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.4;     // Schaumlinie
@@ -297,13 +363,14 @@ maleGelaende();
 // Gelände passend zum Spielstand malen (nur wenn sich die Karte geändert hat)
 function gelaendeSetzen(plan) {
   const p = plan || KLASSISCH_GELAENDE;
-  const schluessel = String(p.samen);
+  const schluessel = `${p.samen}|${KARTE_B}|${(p.fluesse || []).length}`;
   if (schluessel === gelaendeSchluessel) return;
   gelaendeSchluessel = schluessel;
   GEBIRGE.length = 0; p.gebirge.forEach(x => GEBIRGE.push({ ...x }));
   SALZPFANNE = { ...p.salz };
   SANDMEERE = p.sandmeere.map(e => [...e]);
   GELAENDE_SAMEN = p.samen;
+  FLUESSE = (p.fluesse || []).map(f => ({ ...f, punkte: f.punkte.map(q => ({ ...q })) }));
   if (typeof datenUebersetzen === 'function') datenUebersetzen();
   maleGelaende();
 }
@@ -964,8 +1031,10 @@ function zeichne() {
   const echtzeit = performance.now() / 1000;   // für Wellen und Funkeln, auch in der Pause
   const nacht = nachtStaerke();
   // Die "Kamera": vergrößern und den sichtbaren Ausschnitt verschieben
-  ctx.setTransform(DPR * ansicht.zoom, 0, 0, DPR * ansicht.zoom, -ansicht.x * DPR * ansicht.zoom, -ansicht.y * DPR * ansicht.zoom);
+  const sk = DPR * ansicht.zoom * weltSkala();
+  ctx.setTransform(sk, 0, 0, sk, -ansicht.x * sk, -ansicht.y * sk);
   ctx.drawImage(hintergrund, 0, 0, KARTE_B, KARTE_H);
+  if (FLUESSE.length && typeof zeichneFluesseLive === 'function') zeichneFluesseLive(echtzeit);
 
   // Glitzern auf dem Meer
   for (let i = 0; i < 60; i++) {
@@ -978,8 +1047,9 @@ function zeichne() {
 
   // Namen der Landschaften
   for (const geb of GEBIRGE) beschriftung(geb.name, geb.x, geb.y + geb.breite * 0.42, 13, 'rgba(92,58,28,.75)', true, null);
+  if (typeof beschrifteFluesse === 'function') beschrifteFluesse();
   beschriftung(T('Salzpfanne', 'Salt flat'), SALZPFANNE.x, SALZPFANNE.y + 1, 11, 'rgba(110,95,75,.8)', true, null);
-  ctx.save(); ctx.translate(1328, 520); ctx.rotate(-Math.PI / 2);
+  ctx.save(); ctx.translate(kuesteX(KARTE_H * 0.74) + 28, KARTE_H * 0.74); ctx.rotate(-Math.PI / 2);
   beschriftung(T('Rotes Meer', 'Red Sea'), 0, 0, 16, 'rgba(235,248,250,.75)', true, null);
   ctx.restore();
 
@@ -1226,7 +1296,7 @@ function zeichne() {
   if (nacht > 0) {
     ctx.fillStyle = `rgba(16,22,58,${(nacht * 0.5).toFixed(3)})`;
     ctx.fillRect(0, 0, KARTE_B, KARTE_H);
-    for (let i = 0; i < 110; i++) {
+    for (let i = 0; i < 110 * flaeche(); i++) {
       const funkeln = 0.5 + 0.5 * Math.sin(echtzeit * 2 + i * 7.1);
       ctx.fillStyle = `rgba(255,250,230,${(nacht * funkeln * 0.7).toFixed(2)})`;
       ctx.fillRect(hash01(i, 9) * KARTE_B, hash01(i, 10) * KARTE_H, 1.2, 1.2);
@@ -1260,9 +1330,9 @@ function zeichne() {
   // Pause und Bankrott: ein Schleier und ein gerahmter Schriftzug
   if ((S.bankrott || S.pause) && !infoKarteSichtbar()) {
     ctx.fillStyle = S.bankrott ? 'rgba(30,12,10,.62)' : 'rgba(20,26,60,.32)';
-    ctx.fillRect(0, 0, KARTE_B, KARTE_H);
+    ctx.fillRect(0, 0, SICHT_B, SICHT_H);
     const titel = S.bankrott ? T('Bankrott', 'Bankrupt') : T('Pause', 'Paused');
-    const mx = KARTE_B / 2, my = KARTE_H / 2 - (S.bankrott ? 16 : 0);
+    const mx = SICHT_B / 2, my = SICHT_H / 2 - (S.bankrott ? 16 : 0);
     ctx.font = `700 52px ${SCHRIFT_KARTE}`;
     const breite = ctx.measureText(titel).width;
     ctx.strokeStyle = FARBE.messing; ctx.lineWidth = 1.5;
@@ -1286,13 +1356,38 @@ const ansicht = { zoom: 1, x: 0, y: 0 };
 const ZOOM_MAX = 3;
 
 function ansichtBegrenzen() {
-  ansicht.zoom = Math.max(1, Math.min(ZOOM_MAX, ansicht.zoom));
+  ansicht.zoom = Math.max(1, Math.min(ZOOM_MAX * KARTE_B / SICHT_B, ansicht.zoom));
   ansicht.x = Math.max(0, Math.min(KARTE_B - KARTE_B / ansicht.zoom, ansicht.x));
   ansicht.y = Math.max(0, Math.min(KARTE_H - KARTE_H / ansicht.zoom, ansicht.y));
   // Ungezoomt darf der Finger die Seite scrollen; gezoomt verschiebt er die Karte
   canvas.style.touchAction = ansicht.zoom > 1.01 ? 'none' : 'pan-y';
   const anzeige = document.getElementById('zoomStufe');
-  if (anzeige) anzeige.textContent = ansicht.zoom > 1.01 ? `${zahlText(ansicht.zoom, 1)}×` : '';
+  const relativ = ansicht.zoom * SICHT_B / KARTE_B;   // 1 = normale Größe
+  if (anzeige) anzeige.textContent = Math.abs(relativ - 1) > 0.02 ? `${zahlText(relativ, 1)}×` : '';
+}
+
+// Normale Größe: so groß wie früher die ganze Karte – bei der großen Wüste also ein Ausschnitt
+function normalZoom() { return KARTE_B / SICHT_B; }
+
+// Den Ausschnitt auf einen Punkt richten (mittig)
+function ansichtAuf(p, zoom = ansicht.zoom) {
+  ansicht.zoom = zoom;
+  ansicht.x = p.x - KARTE_B / ansicht.zoom / 2;
+  ansicht.y = p.y - KARTE_H / ansicht.zoom / 2;
+  ansichtBegrenzen();
+}
+// Nur verschieben, wenn der Punkt gerade nicht (gut) zu sehen ist
+function ansichtZeigen(p) {
+  if (!p) return;
+  const b = KARTE_B / ansicht.zoom, h = KARTE_H / ansicht.zoom;
+  const rand = 0.12;
+  if (p.x < ansicht.x + b * rand || p.x > ansicht.x + b * (1 - rand) || p.y < ansicht.y + h * rand || p.y > ansicht.y + h * (1 - rand)) ansichtAuf(p);
+}
+// Beim Start oder Laden: normale Größe, mittig auf die gewählte Karawane bzw. Oase
+function ansichtStart() {
+  const k = S && karawane(S.gewKarawane), o = S && (oase(S.gewOase) || oase(S.startOase));
+  const p = k ? { x: k.x, y: k.y } : o;
+  if (p) ansichtAuf(p, normalZoom()); else { ansicht.zoom = 1; ansicht.x = 0; ansicht.y = 0; ansichtBegrenzen(); }
 }
 
 // Bildschirmpunkt (z. B. Mausposition) in Kartenkoordinaten umrechnen
@@ -1316,7 +1411,11 @@ function zoomen(faktor, clientX, clientY) {
   ansichtBegrenzen();
 }
 
-function zoomZuruecksetzen() { ansicht.zoom = 1; ansicht.x = 0; ansicht.y = 0; ansichtBegrenzen(); }
+// ⤢: ganze Karte zeigen – ist sie schon ganz zu sehen, zurück zur normalen Größe
+function zoomZuruecksetzen() {
+  if (ansicht.zoom < 1.01 && KARTE_B > SICHT_B) { ansichtStart(); return; }
+  ansicht.zoom = 1; ansicht.x = 0; ansicht.y = 0; ansichtBegrenzen();
+}
 
 // Mausrad
 canvas.addEventListener('wheel', e => {

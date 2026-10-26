@@ -150,7 +150,7 @@ function wimpel(x, y, rechts, groesse = 1.55) {
 
 // Ein verzierter Rahmen um die ganze Karte, wie bei einer alten Landkarte (ohne Zoom gezeichnet)
 function zeichneKartenRahmen() {
-  const B = KARTE_B, H = KARTE_H, r = 7;
+  const B = SICHT_B, H = SICHT_H, r = 7;
   ctx.strokeStyle = 'rgba(92,60,24,.85)'; ctx.lineWidth = 2;
   ctx.strokeRect(r, r, B - 2 * r, H - 2 * r);
   ctx.strokeStyle = 'rgba(176,135,45,.75)'; ctx.lineWidth = 1;

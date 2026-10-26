@@ -38,9 +38,11 @@ function meldungZiel(ziel) {
   if (ziel.karawane != null && karawane(ziel.karawane)) {
     const k = karawane(ziel.karawane);
     S.gewKarawane = k.id;
+    ansichtZeigen(k);
     if (k.ort != null) { S.gewOase = k.ort; reiterWaehlen('oase'); } else reiterWaehlen('karawanen');
   } else if (ziel.oase != null && oase(ziel.oase)) {
     S.gewOase = ziel.oase; reiterWaehlen('oase');
+    ansichtZeigen(oase(ziel.oase));
   }
   zeichnePanel();
 }
