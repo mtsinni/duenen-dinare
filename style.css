@@ -501,7 +501,9 @@ table.markt.handelbar tr.markt-zeile:hover td { background: rgba(200,160,74,.10)
 table.markt tr.markt-zeile.offen td { background: rgba(200,160,74,.16); border-bottom-color: transparent; }
 table.markt td.dabei { color: var(--messing-hell); font-weight: 700; }
 table.markt td.leer { color: var(--gedaempft); }
-table.markt tr.handelszeile td { text-align: left; background: rgba(200,160,74,.08); padding: 8px 10px 10px; border-bottom: 1px solid var(--messing); }
+table.markt tr.handelszeile td { text-align: left; background: rgba(200,160,74,.08); padding: 8px 10px 10px; border-bottom: 1px solid var(--messing);
+  white-space: normal; }   /* Hinweise im Handel dürfen umbrechen – sonst wird die Seite auf dem Handy zu breit */
+.schnell-gruppe, .schieber-fuss > span:last-child { white-space: nowrap; }
 .schnell { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .schnell-gruppe { display: inline-flex; align-items: center; gap: 5px; font-size: .85rem; color: var(--gedaempft); }
 .schnell-gruppe button { min-width: 2.8em; }
