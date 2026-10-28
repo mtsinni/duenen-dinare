@@ -4,7 +4,7 @@
    Version, ohne Internet die zuletzt geladene.
    Kommen neue Dateien dazu, gehören sie in die Liste DATEIEN.
    ===================================================================== */
-const SPEICHER = 'duenen-dinare-v7';
+const SPEICHER = 'duenen-dinare-v8';
 const DATEIEN = [
   "./",
   "index.html",

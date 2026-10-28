@@ -712,3 +712,4 @@ header { padding-top: max(10px, env(safe-area-inset-top)); }
   .wahl-zwei { grid-template-columns: 1fr; gap: 0; }
   .einstellung label { min-width: 7em; }
 }
+.neu-marke { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; background: var(--messing, #c8a04a); color: #1c1a2e; vertical-align: middle; }

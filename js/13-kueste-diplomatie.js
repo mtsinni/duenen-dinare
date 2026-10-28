@@ -115,7 +115,7 @@ function hausAktion(art, index) {
 function diplomatieTag() {
   for (const r of S.rivalen) {
     if (r.buendnis) r.beziehung = Math.min(100, r.beziehung + 0.2);
-    else r.beziehung += r.beziehung > 0 ? -0.3 : r.beziehung < 0 ? 0.3 : 0;   // ohne Pflege wird man sich wieder fremd
+    else { const ziel = r.grundhaltung || 0; r.beziehung += r.beziehung > ziel ? -0.3 : r.beziehung < ziel ? 0.3 : 0; }   // ohne Pflege wird man sich wieder fremd
 
     if (r.buendnis && r.beziehung < 30) {
       r.buendnis = false;
@@ -150,7 +150,9 @@ function htmlHaeuser() {
   h += bereich('familie', `👪 ${T('Dein Haus', 'Your house')} – ${S.familie ? S.familie.nachname : ''}`, htmlFamilie());
   S.rivalen.forEach((r, i) => {
     const kannSabotage = S.tag >= (r.sabotageBis || 0);
-    let s = `<div class="info">${T('Vermögen', 'Fortune')} ≈ ${zahl(rivalenVermoegen(r))} 🪙 · ${r.karawanen.length} ${T('Karawane(n)', 'caravan(s)')}</div>
+    const e = r.eigenart && HAUS_EIGENARTEN[r.eigenart], heim = r.heimat != null && oase(r.heimat);
+    let s = (e ? `<div class="info">${e.icon} <b>${T(e.name, e.nameEn)}</b> – ${T(e.text, e.textEn)}${heim ? ` · ${T('aus', 'from')} ${heim.name}` : ''} · ${T(`seit Tag ${r.seitTag}`, `since day ${r.seitTag}`)}</div>` : '') +
+            `<div class="info">${T('Vermögen', 'Fortune')} ≈ ${zahl(rivalenVermoegen(r))} 🪙 · ${r.karawanen.length} ${T('Karawane(n)', 'caravan(s)')}</div>
              <div class="info">${T('Beziehung', 'Relations')}: <b>${beziehungTitel(r)}</b> (${Math.round(r.beziehung)})</div>`;
     if (r.absprache) s += `<div class="hinweis">📉 ${T(`Preisabsprache bis Tag ${r.absprache.bis}`, `Price agreement until day ${r.absprache.bis}`)}: ${r.absprache.waren.map(id => ware(id).name).join(', ')}</div>`;
     s += `<div>
@@ -159,7 +161,8 @@ function htmlHaeuser() {
       <button data-a="haus" data-v="absprache" data-n="${i}" ${r.beziehung < 25 || r.absprache || S.gold < DIPLO.absprache ? 'disabled' : ''}>📉 ${T('Preisabsprache', 'Price agreement')} (${DIPLO.absprache} 🪙)</button>
       <button data-a="haus" data-v="sabotage" data-n="${i}" ${!kannSabotage || S.gold < DIPLO.sabotage ? 'disabled' : ''}>🗡️ Sabotage (${DIPLO.sabotage} 🪙)</button>
     </div>`;
-    h += bereich('haus' + i, `<span class="punkt" style="background:${r.farbe}"></span>${r.name} · ${beziehungTitel(r)}`, s);
+    const neu = r.seitTag != null && S.tag - r.seitTag <= 10 ? ` <span class="neu-marke">${T('neu', 'new')}</span>` : '';
+    h += bereich('haus' + i, `<span class="punkt" style="background:${r.farbe}"></span>${r.name}${neu} · ${beziehungTitel(r)}`, s);
   });
   h += `<div class="hinweis">${T(`Bündnis ab „Vertraut“ (50): Verbündete verraten dir die Preise, wo sie Halt machen.
         Preisabsprache ab „Freundlich“ (25): Das Haus meidet 30 Tage lang deine Waren.

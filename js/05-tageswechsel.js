@@ -95,6 +95,7 @@ function tagesWechsel() {
   diplomatieTag();
   festTag();
   rivalenTag();
+  neueHaeuserTag();
   zieleTag();
 
   zufallsEreignisse();

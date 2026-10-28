@@ -116,11 +116,11 @@ function neueRivalen() {
   return RIVALEN_START.map(r => ({ ...r, name: T('Haus ', 'House ') + r.name, gold: 3000, karawanen: [rivalenKarawane()] }));
 }
 
-function rivalenKarawane() {
+function rivalenKarawane(heimat = null, schnell = false) {
   const aktive = S.oasen.filter(o => o.aktiv);
-  const o = aktive[zufallInt(0, aktive.length - 1)];
+  const o = heimat && heimat.aktiv ? heimat : aktive[zufallInt(0, aktive.length - 1)];
   return { ort: o.id, von: null, nach: null, gereist: 0, x: o.x, y: o.y,
-           tempo: zufall(45, 60), kap: Math.round(25 * sw().rivalen), ware: null, menge: 0, warten: zufall(0, 2) };
+           tempo: schnell ? zufall(62, 75) : zufall(45, 60), kap: Math.round(25 * sw().rivalen), ware: null, menge: 0, warten: zufall(0, 2) };
 }
 
 function rivalenVermoegen(r) {
@@ -213,7 +213,7 @@ function rivalenTag() {
       r.gold += 40;
     }
     r.gold -= Math.max(0, (r.gold - 10000 * sw().rivalen) * 0.01);   // Abgaben, Familie, Paläste … großes Vermögen wächst langsamer
-    if (r.gold > 7000 && r.karawanen.length < 3) {
+    if (r.gold > 7000 && r.karawanen.length < (r.eigenart === 'reich' ? 4 : 3)) {
       r.gold -= 2500;
       r.karawanen.push(rivalenKarawane());
       log(T(`📣 ${r.name} schickt eine weitere Karawane in die Wüste.`, `📣 ${r.name} sends another caravan into the desert.`));
@@ -226,6 +226,58 @@ function rivalenTag() {
       }
     }
   }
+}
+
+/* --- Neue Handelshäuser: Zu Beginn gibt es drei, später kommen weitere dazu --- */
+const NEUE_HAEUSER = [
+  { name: 'Benali',   farbe: '#1f6fb0' },
+  { name: 'Al-Masri', farbe: '#c27c0e' },
+  { name: 'Haddad',   farbe: '#5d6b7a' },
+  { name: 'Zayani',   farbe: '#c2185b' },
+  { name: 'Mansour',  farbe: '#2e7d32' },
+  { name: 'Ould Amar', farbe: '#6d4c41' },
+];
+// Eigenarten: jedes neue Haus ist ein bisschen anders
+const HAUS_EIGENARTEN = {
+  reich:       { icon: '💰', name: 'Reich',       nameEn: 'Wealthy',      text: 'startet mit viel Gold und hält bis zu 4 Karawanen', textEn: 'starts with lots of gold and keeps up to 4 caravans' },
+  schnell:     { icon: '🐎', name: 'Schnell',     nameEn: 'Swift',        text: 'seine Karawanen sind deutlich flotter unterwegs',     textEn: 'its caravans travel noticeably faster' },
+  freundlich:  { icon: '🤝', name: 'Freundlich',  nameEn: 'Friendly',     text: 'ist dir von Anfang an wohlgesonnen',                textEn: 'is well-disposed towards you from the start' },
+  skrupellos:  { icon: '🗡️', name: 'Skrupellos',  nameEn: 'Ruthless',     text: 'misstraut dir – und vergisst nichts',                textEn: 'distrusts you – and never forgets' },
+};
+const HAEUSER = { ersteAb: [50, 80], abstand: [60, 100] };
+
+function hausGrenze() { return 3 + (KARTE_B > WELT_KLEIN.b ? 5 : 2); }
+
+function neueHaeuserTag() {
+  if (S.naechstesHaus == null) S.naechstesHaus = S.tag + zufallInt(...HAEUSER.ersteAb);
+  if (S.tag < S.naechstesHaus) return;
+  S.naechstesHaus = S.tag + zufallInt(...HAEUSER.abstand);
+  if (S.rivalen.length >= hausGrenze()) return;
+  const frei = NEUE_HAEUSER.filter(h => !S.rivalen.some(r => r.name.endsWith(h.name)));
+  if (!frei.length) return;
+  neuesHausGruenden(frei[zufallInt(0, frei.length - 1)]);
+}
+
+function neuesHausGruenden(vorlage, eigenart = null) {
+  // Heimat: eine größere Oase, möglichst nicht dort, wo schon ein Haus zu Hause ist
+  const besetzt = S.rivalen.map(r => r.heimat);
+  const kandidaten = S.oasen.filter(o => o.aktiv && !o.hafen && o.bev >= 500 && !besetzt.includes(o.id));
+  const liste = kandidaten.length ? kandidaten : S.oasen.filter(o => o.aktiv);
+  const heimat = liste[zufallInt(0, liste.length - 1)];
+  eigenart = eigenart || Object.keys(HAUS_EIGENARTEN)[zufallInt(0, 3)];
+  const r = { name: T('Haus ', 'House ') + vorlage.name, farbe: vorlage.farbe, heimat: heimat.id, eigenart, seitTag: S.tag,
+              gold: Math.min(8000, 3000 + S.tag * 12) + (eigenart === 'reich' ? 4000 : 0),
+              beziehung: eigenart === 'freundlich' ? 35 : eigenart === 'skrupellos' ? -30 : 0,
+              grundhaltung: eigenart === 'freundlich' ? 25 : eigenart === 'skrupellos' ? -30 : 0,
+              buendnis: false, karawanen: [] };
+  const anzahl = eigenart === 'reich' ? 2 : 1;
+  for (let i = 0; i < anzahl; i++) r.karawanen.push(rivalenKarawane(heimat, eigenart === 'schnell'));
+  S.rivalen.push(r);
+  const e = HAUS_EIGENARTEN[eigenart];
+  log(T(`📣 Ein neues Handelshaus betritt die Wüste: <b>${r.name}</b> aus ${heimat.name} (${e.icon} ${e.name} – ${e.text}).`,
+        `📣 A new trading house enters the desert: <b>${r.name}</b> from ${heimat.name} (${e.icon} ${e.nameEn} – ${e.textEn}).`), eigenart === 'skrupellos' ? 'schlecht' : 'info');
+  melden('🏛', T(`Neue Konkurrenz: ${r.name} aus ${heimat.name}`, `New competition: ${r.name} from ${heimat.name}`), 'info', { oase: heimat.id });
+  return r;
 }
 
 // --- Anzeige-Bausteine für die Seitenleiste ---
