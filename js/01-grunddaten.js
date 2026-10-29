@@ -41,6 +41,8 @@ const TIERE = {
   pferd:   { name: 'Pferd',   nameEn: 'Horse',    icon: '🐎', kapazitaet: 10, tempo: 90, durst: 1.2, unterhalt: 5,  preis: 350 },
   kamel:   { name: 'Kamel',   nameEn: 'Camel',    icon: '🐪', kapazitaet: 30, tempo: 55, durst: 0.2, unterhalt: 4,  preis: 500 },
   elefant: { name: 'Elefant', nameEn: 'Elephant', icon: '🐘', kapazitaet: 80, tempo: 35, durst: 3,   unterhalt: 12, preis: 1400 },
+  // Mehari: Rennkamel – nur aus der eigenen Zucht, nicht auf dem Markt
+  mehari:  { name: 'Mehari',  nameEn: 'Mehari',   icon: '🐪', kapazitaet: 22, tempo: 72, durst: 0.18, unterhalt: 5, preis: 900, zucht: true },
 };
 
 const OASEN_START = [

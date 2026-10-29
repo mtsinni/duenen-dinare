@@ -65,6 +65,7 @@ document.getElementById('menue').addEventListener('input', e => {
   if (!art) return;
   const wert = Math.max(0, Math.min(1, +e.target.value / 100));
   if (art === 'musik') { musikLautstaerke = wert; einstellungSchreiben('karawane-musik-laut', wert); }
+  else if (art === 'umgebung') { umgebungLautSetzen(wert); audioBereit(); return; }
   else { tonLautstaerke = wert; einstellungSchreiben('karawane-ton-laut', wert); }
   audioBereit(); lautstaerkenSetzen();
   if (art === 'ton') ton('muenze');
@@ -73,6 +74,7 @@ document.getElementById('btnSprache').addEventListener('click', () => spracheSet
 document.getElementById('btnZoomRein').addEventListener('click', () => zoomen(1.5));
 document.getElementById('btnZoomRaus').addEventListener('click', () => zoomen(1 / 1.5));
 document.getElementById('btnZoomGanz').addEventListener('click', zoomZuruecksetzen);
+document.getElementById('btnMini').addEventListener('click', miniUmschalten);
 document.getElementById('menue').addEventListener('click', e => {
   const b = e.target.closest('[data-m]');
   if (b) menueAktion(b.dataset.m, b.dataset.n);

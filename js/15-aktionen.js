@@ -59,6 +59,7 @@ function handelVerkaufen(k, o, wid, menge, mindestPreis = 0) {
 
 function reiseStarten(k, ziel) {
   k.von = k.ort; k.nach = ziel.id; k.ort = null; k.gereist = 0;
+  if (k.spaeher && typeof spaeherAufbruch === 'function') spaeherAufbruch(k);
 }
 
 // --- Buttons: arbeiten mit der ausgewählten Karawane ---

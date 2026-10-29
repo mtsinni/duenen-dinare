@@ -187,7 +187,7 @@ function abenteuerAnlegen() {
 
 // Täglich: reisende Karawanen erkunden ihre Umgebung
 function erkundenTag() {
-  for (const k of S.karawanen) if (k.nach != null) erkunden(k.x, k.y, 80, k.name);
+  for (const k of S.karawanen) if (k.nach != null) erkunden(k.x, k.y, k.spaeher ? 125 : 80, k.name);   // der Kundschafter sieht weiter
 }
 
 /* ---------------------------------------------------------------------

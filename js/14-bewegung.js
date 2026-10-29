@@ -46,7 +46,7 @@ function bewegeKarawanen(dt) {
 
     // Räuber lauern – nachts häufiger (außerhalb der Lager kommen sie meist als Plünderer, siehe 22-pluenderer.js), rastende Lager werden seltener entdeckt
     const imRaeuberGebiet = aktiveRaeuber().some(g => Math.hypot(k.x - g.x, k.y - g.y) < g.r);
-    const ueberfallProTag = (imRaeuberGebiet ? 0.3 : 0.01) * (nacht ? 1.6 : 0.7) * (rastet ? 0.4 : 1) * sw().raeuber * sereiSchutz(k);
+    const ueberfallProTag = (imRaeuberGebiet ? 0.3 : 0.01) * (nacht ? 1.6 : 0.7) * (rastet ? 0.4 : 1) * sw().raeuber * sereiSchutz(k) * (k.spaeher ? SPAEHER.schutz : 1);
     if (Math.random() < ueberfallProTag * dt) {
       ueberfall(k);
       if (!S.karawanen.includes(k)) continue;
@@ -72,6 +72,7 @@ function bewegeKarawanen(dt) {
     k.y = start.y + (ziel.y - start.y) * anteil;
     karawansereiPruefen(k);
     flussPruefen(k);
+    spaeherPruefen(k);
     if (anteil >= 1) ankunft(k, ziel);
   }
 }

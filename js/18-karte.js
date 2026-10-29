@@ -51,11 +51,11 @@ function hash01(i, salz = 0) {
   return x - Math.floor(x);
 }
 
-function neuesCanvas(b, h) {
+function neuesCanvas(b, h, extra = 1) {
   const c = document.createElement('canvas');
-  c.width = Math.ceil(b * DPR); c.height = Math.ceil(h * DPR);
+  c.width = Math.ceil(b * DPR * extra); c.height = Math.ceil(h * DPR * extra);
   const g = c.getContext('2d');
-  g.scale(DPR, DPR);
+  g.scale(DPR * extra, DPR * extra);
   return [c, g];
 }
 
@@ -74,6 +74,7 @@ let GEBIRGE = [
 ];
 let SALZPFANNE = { x: 215, y: 300, rx: 52, ry: 24 };
 let FLUESSE = [];   // Flüsse und Wadis: { name, nameEn, art: 'fluss'|'wadi', punkte: [{x,y}…] }
+let GELAENDE_OASEN = [];   // Lage der Oasen beim Malen des Geländes (dort keine Felsen und Bäume)
 let SANDMEERE = [[620, 150, 210], [930, 340, 200], [120, 120, 150], [720, 610, 230], [360, 650, 160], [1140, 130, 140], [1160, 640, 130]];
 let GELAENDE_SAMEN = 1923, gelaendeSchluessel = '';
 // Die klassische Karte – zum Zurücksetzen merken
@@ -141,11 +142,145 @@ function maleFluesse(g) {
   }
 }
 
-function maleGelaende() {
-  const g = hg, rnd = zufallsFolge(GELAENDE_SAMEN);
+// Eine Bergkette: erst ein gemeinsames Massiv, darauf zerklüftete Gipfel – hinten höher, vorne flacher.
+// Licht kommt von links oben: Westhänge hell, Osthänge im Schatten.
+function maleGebirge(g, geb, rnd) {
+  const B = geb.breite, gr = Math.min(1.35, B / 95);
+  // breiter Schatten am Fuß
+  const fuss = g.createRadialGradient(geb.x + 8, geb.y + 6, 4, geb.x + 8, geb.y + 6, B * 1.05);
+  fuss.addColorStop(0, 'rgba(92,58,30,.18)'); fuss.addColorStop(1, 'rgba(92,58,30,0)');
+  g.fillStyle = fuss; g.beginPath(); g.ellipse(geb.x + 8, geb.y + 6, B * 1.05, B * 0.5, 0, 0, Math.PI * 2); g.fill();
+
+  // Ein unregelmäßiger Berg: Profil aus vielen kleinen Zacken
+  const berg = (x, y, w, h, hell, dunkel, zacken) => {
+    const n = 9, oben = [];
+    const spitzeT = 0.35 + rnd() * 0.3;
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const profil = t < spitzeT ? Math.pow(t / spitzeT, 0.8) : Math.pow((1 - t) / (1 - spitzeT), 1.15);
+      oben.push({ x: x - w + 2 * w * t, y: y - h * profil * (1 - zacken * 0.5 + rnd() * zacken) });
+    }
+    const umriss = () => { g.beginPath(); g.moveTo(x - w, y); for (const q of oben) g.lineTo(q.x, q.y); g.lineTo(x + w, y); g.closePath(); };
+    const spitze = oben.reduce((m, q) => q.y < m.y ? q : m, oben[0]);
+    const verlauf = g.createLinearGradient(0, y - h, 0, y);
+    verlauf.addColorStop(0, hell[0]); verlauf.addColorStop(1, hell[1]);
+    g.fillStyle = verlauf; umriss(); g.fill();
+    g.save(); umriss(); g.clip();
+    // Schattenseite: alles rechts einer gezackten Linie von der Spitze nach unten
+    const sv = g.createLinearGradient(0, y - h, 0, y);
+    sv.addColorStop(0, dunkel[0]); sv.addColorStop(1, dunkel[1]);
+    g.fillStyle = sv;
+    g.beginPath(); g.moveTo(spitze.x, spitze.y - 3);
+    let lx = spitze.x;
+    for (let i = 1; i <= 5; i++) { lx += w * (0.02 + rnd() * 0.1) - w * 0.03; g.lineTo(lx, spitze.y + (y - spitze.y) * i / 5); }
+    g.lineTo(x + w + 3, y + 2); g.lineTo(x + w + 3, y - h - 4); g.closePath(); g.fill();
+    // Rinnen auf beiden Seiten
+    g.lineWidth = 0.6;
+    for (let i = 0; i < 5; i++) {
+      const links = i < 2;
+      const sx = spitze.x + (links ? -1 : 1) * rnd() * w * 0.35, sy = spitze.y + (y - spitze.y) * (0.12 + rnd() * 0.3);
+      g.strokeStyle = links ? 'rgba(120,70,35,.32)' : 'rgba(40,20,8,.35)';
+      g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo(sx + (links ? -1 : 1) * w * 0.1, (sy + y) / 2, sx + (links ? -1 : 1) * w * (0.15 + rnd() * 0.25), y);
+      g.stroke();
+    }
+    g.restore();
+    // heller Grat auf der Sonnenseite
+    g.strokeStyle = 'rgba(255,236,200,.55)'; g.lineWidth = 0.8;
+    g.beginPath(); let erst = true;
+    for (const q of oben) { if (q.x > spitze.x + 0.5) break; erst ? g.moveTo(q.x, q.y) : g.lineTo(q.x, q.y); erst = false; }
+    g.stroke();
+  };
+
+  // 1. Massiv: zwei, drei breite, flache Rücken als Unterbau
+  for (let i = 0; i < 3; i++) {
+    const t = (i - 1) * 0.42 + (rnd() - 0.5) * 0.15;
+    berg(geb.x + t * B * 0.8, geb.y - B * 0.06 + (rnd() - 0.5) * 6, B * (0.42 + rnd() * 0.15), (12 + rnd() * 6) * gr,
+         ['#c99a66', '#a8763f'], ['#7e5030', '#5e3a1f'], 0.25);
+  }
+  // 2. Gipfel darauf
+  const gipfel = [];
+  const anzahl = Math.max(6, Math.round(geb.huegel * 0.8));
+  for (let i = 0; i < anzahl; i++) {
+    const t = (i + rnd()) / anzahl * 2 - 1, mitte = 1 - Math.abs(t), reihe = rnd();
+    gipfel.push({ x: geb.x + t * B * 0.72, y: geb.y + (reihe - 0.55) * B * 0.36,
+                  h: (9 + mitte * 16 + rnd() * 8) * (1.1 - reihe * 0.4) * gr, w: (14 + rnd() * 14) * gr });
+  }
+  gipfel.sort((a, b) => a.y - b.y);
+  for (const p of gipfel) {
+    g.fillStyle = 'rgba(70,40,18,.18)';
+    g.beginPath(); g.ellipse(p.x + p.w * 0.4, p.y + 1.2, p.w * 1.1, p.w * 0.16, 0, 0, Math.PI * 2); g.fill();
+    berg(p.x, p.y, p.w, p.h, ['#d8ab76', '#ab7642'], ['#83522d', '#5c3519'], 0.45);
+  }
+  // 3. Geröll und kleine Felsen am Fuß
+  for (let i = 0; i < geb.huegel * 2; i++) {
+    const w = rnd() * Math.PI * 2, d = 0.75 + rnd() * 0.45;
+    const x = geb.x + Math.cos(w) * B * 0.85 * d, y = geb.y + Math.sin(w) * B * 0.38 * d + 6;
+    const r = 1.5 + rnd() * 3.5;
+    g.fillStyle = 'rgba(70,40,18,.25)'; g.beginPath(); g.ellipse(x + r * 0.5, y + 0.8, r * 1.3, r * 0.4, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = rnd() < 0.5 ? '#9c6a3c' : '#b88553';
+    g.beginPath(); g.ellipse(x, y - r * 0.3, r * 1.1, r * 0.7, 0, Math.PI, 0); g.fill();
+  }
+}
+
+// Tafelberge, Akazien und Gras – verteilt über die Wüste, aber nicht in Oasen, Flüssen oder Gebirgen
+function maleLandschaftsDetails(g, rnd) {
+  const frei = (x, y, abstand) => x > 30 && y > 30 && y < KARTE_H - 20 && x < kuesteX(y) - 40 &&
+    !GEBIRGE.some(geb => ((x - geb.x) / (geb.breite * 1.05)) ** 2 + ((y - geb.y) / (geb.breite * 0.55)) ** 2 < 1) &&
+    !GELAENDE_OASEN.some(o => Math.hypot(o.x - x, o.y - y) < abstand) &&
+    !FLUESSE.some(f => typeof abstandZuLinie === 'function' ? abstandZuLinie({ x, y }, f.punkte) < 22 : false);
+  const f = flaeche();
+  // Tafelberge (Mesas): flache Felsplateaus mit Gesteinsschichten
+  for (let i = 0; i < 16 * f; i++) {
+    const x = rnd() * KARTE_B, y = rnd() * KARTE_H, b = 8 + rnd() * 12, h = 8 + rnd() * 9, schief = (rnd() - 0.5) * 3;
+    if (!frei(x, y, 70)) continue;
+    g.fillStyle = 'rgba(70,40,18,.22)'; g.beginPath(); g.ellipse(x + b * 0.5, y + 1.5, b * 1.4, b * 0.25, 0, 0, Math.PI * 2); g.fill();
+    const top = y - h;
+    g.fillStyle = '#b07a46';
+    g.beginPath(); g.moveTo(x - b, y); g.lineTo(x - b * 0.75 + schief, top); g.lineTo(x + b * 0.7 + schief, top); g.lineTo(x + b, y); g.closePath(); g.fill();
+    g.fillStyle = '#7d4c27';
+    g.beginPath(); g.moveTo(x + b * 0.2, y); g.lineTo(x + b * 0.35 + schief, top); g.lineTo(x + b * 0.7 + schief, top); g.lineTo(x + b, y); g.closePath(); g.fill();
+    g.fillStyle = '#e1b985';
+    g.beginPath(); g.ellipse(x - b * 0.02 + schief, top, b * 0.73, b * 0.12, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(80,45,20,.35)'; g.lineWidth = 0.5;
+    for (let j = 1; j < 3; j++) { const yy = top + h * j / 3; g.beginPath(); g.moveTo(x - b * (0.75 + j * 0.08), yy); g.lineTo(x + b * (0.7 + j * 0.1), yy); g.stroke(); }
+  }
+  // Akazien: flache Schirmkronen, im Süden und an Wasser häufiger
+  for (let i = 0; i < 90 * f; i++) {
+    const x = rnd() * KARTE_B, y = rnd() * KARTE_H;
+    const sued = Math.max(0, (y / KARTE_H - 0.45) / 0.55);
+    const amWasser = FLUESSE.some(fl => typeof abstandZuLinie === 'function' && abstandZuLinie({ x, y }, fl.punkte) < 70);
+    if (rnd() > 0.18 + sued * 0.7 + (amWasser ? 0.5 : 0)) continue;
+    if (!frei(x, y, 45)) continue;
+    const s = 0.8 + rnd() * 0.6;
+    g.fillStyle = 'rgba(60,35,15,.22)'; g.beginPath(); g.ellipse(x + 4 * s, y + 0.8, 7 * s, 1.6 * s, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#5e3e22'; g.lineWidth = 1.1 * s; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 0.6 * s, y - 5 * s); g.lineTo(x - 2.5 * s, y - 7.5 * s);
+    g.moveTo(x + 0.6 * s, y - 5 * s); g.lineTo(x + 3 * s, y - 7.8 * s); g.stroke();
+    g.fillStyle = '#5d7a32'; g.beginPath(); g.ellipse(x + 0.3 * s, y - 8.6 * s, 7 * s, 2.2 * s, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#7f9a44'; g.beginPath(); g.ellipse(x - 0.6 * s, y - 9.4 * s, 5.4 * s, 1.4 * s, 0, 0, Math.PI * 2); g.fill();
+  }
+  // Grasbüschel in der Sahelzone (unteres Drittel der Karte)
+  g.lineWidth = 0.7;
+  for (let i = 0; i < 700 * f; i++) {
+    const x = rnd() * KARTE_B, y = KARTE_H * (0.62 + rnd() * 0.38);
+    const dicht = (y / KARTE_H - 0.62) / 0.38;
+    if (rnd() > dicht * 0.9 || !frei(x, y, 30)) continue;
+    g.strokeStyle = rnd() < 0.5 ? 'rgba(120,128,58,.55)' : 'rgba(160,150,80,.5)';
+    g.beginPath();
+    for (let j = -1; j <= 1; j++) { g.moveTo(x + j * 1.2, y); g.lineTo(x + j * 2.4 + (rnd() - 0.5), y - 2.5 - rnd() * 1.5); }
+    g.stroke();
+  }
+}
+
+// ziel: ganze Karte (Standard) oder eine Kachel { g, c, x, y, b, h } – dieselbe Wüste, nur schärfer
+function maleGelaende(ziel) {
+  const z = ziel || { g: hg, c: hintergrund, x: 0, y: 0, b: KARTE_B, h: KARTE_H };
+  const g = z.g, rnd = zufallsFolge(GELAENDE_SAMEN);
   g.setTransform(1, 0, 0, 1, 0, 0);
-  g.clearRect(0, 0, hintergrund.width, hintergrund.height);
-  if (typeof DPR !== 'undefined') g.setTransform(hintergrund.width / KARTE_B, 0, 0, hintergrund.height / KARTE_H, 0, 0);
+  g.clearRect(0, 0, z.c.width, z.c.height);
+  const sx = z.c.width / z.b, sy = z.c.height / z.h;
+  g.setTransform(sx, 0, 0, sy, -z.x * sx, -z.y * sy);
+  g.save(); g.beginPath(); g.rect(z.x, z.y, z.b, z.h); g.clip();
 
   // 1. Grundfarbe: Licht kommt von links oben
   const grund = g.createLinearGradient(0, 0, KARTE_B, KARTE_H);
@@ -261,41 +396,12 @@ function maleGelaende() {
   // 5b. Flüsse und Wadis
   maleFluesse(g);
 
-  // 6. Gebirge: viele runde Felskuppen aus dunklem Gestein, Licht von links, Schraffur rechts
-  for (const geb of GEBIRGE) {
-    const kuppen = [];
-    for (let i = 0; i < geb.huegel * 2; i++) {
-      const w = rnd() * Math.PI * 2, d = Math.sqrt(rnd());
-      kuppen.push({ x: geb.x + Math.cos(w) * d * geb.breite * 0.8, y: geb.y + Math.sin(w) * d * geb.breite * 0.3,
-                    s: 7 + rnd() * 11 * (1.2 - d * 0.5) });
-    }
-    kuppen.sort((a, b) => a.y - b.y);
-    for (const k of kuppen) {
-      const h = k.s * (0.55 + rnd() * 0.35), versatz = (rnd() - 0.5) * k.s * 0.5;
-      const umriss = () => {
-        g.beginPath();
-        g.moveTo(k.x - k.s, k.y);
-        g.bezierCurveTo(k.x - k.s * 0.7, k.y - h * 0.9, k.x + versatz - k.s * 0.35, k.y - h * 1.15, k.x + versatz, k.y - h);
-        g.bezierCurveTo(k.x + versatz + k.s * 0.4, k.y - h * 0.9, k.x + k.s * 0.8, k.y - h * 0.5, k.x + k.s * 1.1, k.y);
-        g.closePath();
-      };
-      g.fillStyle = 'rgba(60,32,15,.22)';
-      g.beginPath(); g.ellipse(k.x + k.s * 0.45, k.y + 1.5, k.s * 1.15, k.s * 0.22, 0, 0, Math.PI * 2); g.fill();
-      const fels = g.createLinearGradient(k.x - k.s, 0, k.x + k.s, 0);
-      fels.addColorStop(0, '#b8865a'); fels.addColorStop(0.45, '#97633d'); fels.addColorStop(1, '#5e3a22');
-      g.fillStyle = fels; umriss(); g.fill();
-      g.save(); umriss(); g.clip();                 // Schraffur nur innerhalb der Kuppe
-      g.strokeStyle = 'rgba(45,25,12,.32)'; g.lineWidth = 0.7;
-      for (let j = 0; j < 7; j++) {
-        const x = k.x + versatz + j * k.s * 0.17;
-        g.beginPath(); g.moveTo(x, k.y - h * 1.1); g.lineTo(x + k.s * 0.25, k.y); g.stroke();
-      }
-      g.restore();
-      g.strokeStyle = 'rgba(255,235,200,.45)'; g.lineWidth = 0.9;
-      g.beginPath(); g.moveTo(k.x - k.s * 0.9, k.y - h * 0.2);
-      g.bezierCurveTo(k.x - k.s * 0.7, k.y - h * 0.9, k.x + versatz - k.s * 0.35, k.y - h * 1.15, k.x + versatz, k.y - h); g.stroke();
-    }
-  }
+  // 6. Gebirge: Bergketten aus zackigen Gipfeln – Licht von links oben, Schattenseite rechts,
+  //    davor ein Saum aus Geröll und kleinen Kuppen
+  for (const geb of GEBIRGE) maleGebirge(g, geb, rnd);
+
+  // 6b. Tafelberge, Akazien und Grasbüschel (im Süden, wo die Sahelzone beginnt)
+  maleLandschaftsDetails(g, rnd);
 
   // 7. Verstreute Steine
   for (let i = 0; i < 260 * flaeche(); i++) {
@@ -357,8 +463,41 @@ function maleGelaende() {
   rand.addColorStop(0, 'rgba(60,35,15,0)'); rand.addColorStop(1, 'rgba(60,35,15,.32)');
   g.fillStyle = rand;
   g.fillRect(0, 0, KARTE_B, KARTE_H);
+  g.restore();
 }
 maleGelaende();
+
+/* Scharfe Kacheln: Ist man weit hineingezoomt, wird das Gelände Stück für Stück in hoher
+   Auflösung neu gemalt (höchstens eine Kachel pro Bild, damit nichts ruckelt). */
+const KACHEL = 256, KACHELN_MAX = 20;
+const kacheln = new Map();
+function zeichneHintergrund() {
+  ctx.drawImage(hintergrund, 0, 0, KARTE_B, KARTE_H);
+  const noetig = DPR * ansicht.zoom * weltSkala();             // Bildpunkte pro Kartenpunkt auf dem Schirm
+  const vorhanden = hintergrund.width / KARTE_B;
+  if (noetig <= vorhanden * 1.2) return;
+  const stufe = Math.min(3, Math.ceil(noetig * 2) / 2);
+  const x0 = Math.max(0, Math.floor(ansicht.x / KACHEL)), y0 = Math.max(0, Math.floor(ansicht.y / KACHEL));
+  const x1 = Math.floor(Math.min(KARTE_B - 1, ansicht.x + KARTE_B / ansicht.zoom) / KACHEL);
+  const y1 = Math.floor(Math.min(KARTE_H - 1, ansicht.y + KARTE_H / ansicht.zoom) / KACHEL);
+  let neu = 0;
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    const schluessel = `${gelaendeSchluessel}|${stufe}|${tx}|${ty}`;
+    let k = kacheln.get(schluessel);
+    if (!k && neu < 1) {
+      const b = Math.min(KACHEL, KARTE_B - tx * KACHEL), h = Math.min(KACHEL, KARTE_H - ty * KACHEL);
+      const c = document.createElement('canvas');
+      c.width = Math.ceil(b * stufe); c.height = Math.ceil(h * stufe);
+      maleGelaende({ g: c.getContext('2d'), c, x: tx * KACHEL, y: ty * KACHEL, b, h });
+      k = { c, b, h };
+      neu++;
+    }
+    if (!k) continue;
+    kacheln.delete(schluessel); kacheln.set(schluessel, k);    // zuletzt benutzt nach hinten
+    ctx.drawImage(k.c, tx * KACHEL, ty * KACHEL, k.b, k.h);
+  }
+  while (kacheln.size > KACHELN_MAX) kacheln.delete(kacheln.keys().next().value);
+}
 
 // Gelände passend zum Spielstand malen (nur wenn sich die Karte geändert hat)
 function gelaendeSetzen(plan) {
@@ -371,6 +510,7 @@ function gelaendeSetzen(plan) {
   SANDMEERE = p.sandmeere.map(e => [...e]);
   GELAENDE_SAMEN = p.samen;
   FLUESSE = (p.fluesse || []).map(f => ({ ...f, punkte: f.punkte.map(q => ({ ...q })) }));
+  GELAENDE_OASEN = (p.oasen || (typeof S !== 'undefined' && S ? S.oasen : [])).map(o => ({ x: o.x, y: o.y }));
   if (typeof datenUebersetzen === 'function') datenUebersetzen();
   maleGelaende();
 }
@@ -408,32 +548,93 @@ function zeichnePalme(g, x, y, hoehe, neigung, rnd, tot = false) {
   g.beginPath(); g.arc(kx, ky + 1, 1.5, 0, Math.PI * 2); g.fill();   // Datteln
 }
 
-// Ein Lehmhaus als kleiner Würfel: Dach hell, Vorderseite mittel, Seite dunkel
-function zeichneHaus(g, x, y, b, h, fenster, verfallen = false) {
+// Baustile je nach Gegend: Sahel (roter Lehm mit Holzbalken), Norden (weiß gekalkt, blaue Türen),
+// Nil (heller Sandstein) und dazwischen ockerfarbener Lehm
+const BAUSTILE = {
+  lehm:  { vorn: '#c4965e', seite: '#a37443', dach: '#ebcf9f', tuer: '#5b3a1f', rand: '#d9b27a', kuppel: '#ebcf9f', balken: false },
+  sahel: { vorn: '#b8774a', seite: '#8f5532', dach: '#d9a273', tuer: '#4a2a14', rand: '#c98a5a', kuppel: '#d29a6a', balken: true },
+  nord:  { vorn: '#f1ead9', seite: '#cfc3a8', dach: '#fffaf0', tuer: '#2f5f9a', rand: '#e6dcc4', kuppel: '#fbf6ea', balken: false },
+  nil:   { vorn: '#dcc49a', seite: '#b49a70', dach: '#f0e2c2', tuer: '#6b4a2b', rand: '#cdb489', kuppel: '#efe1bf', balken: false },
+};
+function stadtStil(o) {
+  if (o.hafen) return BAUSTILE.nord;
+  const fy = o.y / KARTE_H, fx = o.x / KARTE_B;
+  if (fx > 0.78) return BAUSTILE.nil;
+  if (fy > 0.66) return BAUSTILE.sahel;
+  if (fy < 0.3) return BAUSTILE.nord;
+  return BAUSTILE.lehm;
+}
+
+// Ein Haus: Dach hell, Vorderseite mittel, Seite dunkel – mit Brüstung, Tür und kleinem Fenster.
+// art: 'flach' | 'kuppel' (Kuppel auf dem Dach) | 'turm' (zweistöckig)
+function zeichneHaus(g, x, y, b, h, fenster, verfallen = false, stil = BAUSTILE.lehm, art = 'flach') {
   const tiefe = b * 0.45;
-  g.fillStyle = verfallen ? '#b8a68c' : '#a37443';   // Seite
+  if (art === 'turm') h *= 1.7;
+  g.fillStyle = 'rgba(60,35,15,.2)';                 // Schatten am Boden
+  g.beginPath(); g.moveTo(x + b, y); g.lineTo(x + b + tiefe * 0.6 + h * 0.5, y + 0.5); g.lineTo(x + b + tiefe * 0.6, y - tiefe * 0.5); g.closePath(); g.fill();
+  g.fillStyle = verfallen ? '#b8a68c' : stil.seite;  // Seite
   g.beginPath(); g.moveTo(x + b, y); g.lineTo(x + b + tiefe * 0.6, y - tiefe * 0.5); g.lineTo(x + b + tiefe * 0.6, y - h - tiefe * 0.5); g.lineTo(x + b, y - h); g.closePath(); g.fill();
-  g.fillStyle = verfallen ? '#cbbba2' : FARBE.lehm;  // Vorderseite
+  g.fillStyle = verfallen ? '#cbbba2' : stil.vorn;   // Vorderseite
   if (verfallen) {
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + b, y); g.lineTo(x + b, y - h * 0.5); g.lineTo(x + b * 0.6, y - h); g.lineTo(x, y - h * 0.7); g.closePath(); g.fill();
     return;
   }
   g.fillRect(x, y - h, b, h);
-  g.fillStyle = '#ebcf9f';                           // flaches Dach
+  // Licht von links: leichte Aufhellung am linken Rand
+  g.fillStyle = 'rgba(255,245,225,.18)'; g.fillRect(x, y - h, b * 0.25, h);
+  g.fillStyle = stil.dach;                           // flaches Dach
   g.beginPath(); g.moveTo(x, y - h); g.lineTo(x + b, y - h); g.lineTo(x + b + tiefe * 0.6, y - h - tiefe * 0.5); g.lineTo(x + tiefe * 0.6, y - h - tiefe * 0.5); g.closePath(); g.fill();
-  g.fillStyle = '#5b3a1f';                           // Tür
-  g.fillRect(x + b * 0.4, y - h * 0.55, b * 0.22, h * 0.55);
+  g.fillStyle = stil.rand;                           // Brüstung
+  g.fillRect(x - 0.3, y - h - 0.9, b + 0.6, 0.9);
+  g.fillStyle = stil.tuer;                           // Tür (oben rund)
+  const tb = b * 0.22, tx = x + b * 0.4, th = Math.min(h * 0.55, 4.2);
+  g.beginPath(); g.moveTo(tx, y); g.lineTo(tx, y - th + tb / 2); g.arc(tx + tb / 2, y - th + tb / 2, tb / 2, Math.PI, 0); g.lineTo(tx + tb, y); g.closePath(); g.fill();
+  if (b > 7) { g.fillStyle = 'rgba(40,25,12,.55)'; g.fillRect(x + b * 0.12, y - h * 0.72, b * 0.14, b * 0.12); }   // Fensterchen
+  if (art === 'turm') { g.fillStyle = 'rgba(40,25,12,.55)'; g.fillRect(x + b * 0.65, y - h * 0.8, b * 0.13, b * 0.16); }
+  if (stil.balken) {                                 // Sahel: herausstehende Holzbalken (Torons)
+    g.strokeStyle = '#5b3a1f'; g.lineWidth = 0.55;
+    for (let i = 0; i < 3; i++) { const by = y - h * (0.3 + i * 0.25); g.beginPath(); g.moveTo(x - 0.8, by); g.lineTo(x + 0.6, by); g.moveTo(x + b * 0.98, by); g.lineTo(x + b + 1.2, by - 0.4); g.stroke(); }
+  }
+  if (art === 'kuppel') {
+    const kx = x + b * 0.5 + tiefe * 0.3, ky = y - h - tiefe * 0.25, kr = Math.min(b, 9) * 0.32;
+    g.fillStyle = stil.kuppel; g.beginPath(); g.arc(kx, ky, kr, Math.PI, 0); g.fill();
+    g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.arc(kx, ky, kr, Math.PI * 1.55, 0); g.lineTo(kx, ky); g.fill();
+  }
   fenster.push({ x: x + b * 0.51, y: y - h * 0.3 });
 }
 
-function zeichneMoschee(g, x, y, fenster) {
-  zeichneHaus(g, x, y, 13, 9, fenster);
-  g.fillStyle = '#ebcf9f';
-  g.beginPath(); g.arc(x + 7.5, y - 10.5, 4.5, Math.PI, 0); g.fill();   // Kuppel
-  g.fillStyle = '#d9b27a';
-  g.fillRect(x - 4, y - 22, 4, 22);                                    // Minarett
-  g.fillStyle = '#ebcf9f';
-  g.fillRect(x - 5, y - 23, 6, 2);
+// Die große Moschee – im Stil der Gegend
+function zeichneMoschee(g, x, y, fenster, stil = BAUSTILE.lehm) {
+  if (stil === BAUSTILE.sahel) {
+    // Djenné-Stil: breite Lehmfront mit drei kegelförmigen Türmen und vielen Balken
+    zeichneHaus(g, x, y, 16, 10, fenster, false, stil);
+    for (const [tx, th] of [[x + 1.5, 9], [x + 8, 12], [x + 14.5, 9]]) {
+      g.fillStyle = stil.vorn; g.beginPath(); g.moveTo(tx - 2.2, y - 9.5); g.lineTo(tx - 1.1, y - 10 - th); g.lineTo(tx + 1.1, y - 10 - th); g.lineTo(tx + 2.2, y - 9.5); g.closePath(); g.fill();
+      g.fillStyle = stil.seite; g.beginPath(); g.moveTo(tx, y - 9.5); g.lineTo(tx + 0.4, y - 10 - th); g.lineTo(tx + 1.1, y - 10 - th); g.lineTo(tx + 2.2, y - 9.5); g.closePath(); g.fill();
+      g.fillStyle = '#f2e3c4'; g.beginPath(); g.arc(tx, y - 10.4 - th, 0.9, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#5b3a1f'; g.lineWidth = 0.5;
+      for (let i = 1; i < 4; i++) { const by = y - 10 - th * i / 4; g.beginPath(); g.moveTo(tx - 2.3 + i * 0.25, by); g.lineTo(tx + 2.3 - i * 0.25, by); g.stroke(); }
+    }
+    fenster.push({ x: x + 8, y: y - 16 });
+    return;
+  }
+  zeichneHaus(g, x, y, 13, 9, fenster, false, stil);
+  g.fillStyle = stil.kuppel;
+  g.beginPath(); g.arc(x + 7.5, y - 10.5, 4.8, Math.PI, 0); g.fill();               // Kuppel
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.arc(x + 7.5, y - 10.5, 4.8, Math.PI * 1.55, 0); g.lineTo(x + 7.5, y - 10.5); g.fill();
+  g.fillStyle = '#c8a04a'; g.fillRect(x + 7.2, y - 17, 0.6, 2.2);                    // Mondsichel-Spitze
+  if (stil === BAUSTILE.nil) {                                                      // rundes, schlankes Minarett
+    g.fillStyle = stil.vorn; g.fillRect(x - 3.6, y - 24, 3.6, 24);
+    g.fillStyle = stil.seite; g.fillRect(x - 1.4, y - 24, 1.4, 24);
+    g.fillStyle = stil.rand; g.fillRect(x - 4.6, y - 16, 5.6, 1.2); g.fillRect(x - 4.4, y - 24.5, 5.2, 1);
+    g.fillStyle = stil.kuppel; g.beginPath(); g.arc(x - 1.8, y - 24.5, 2, Math.PI, 0); g.fill();
+  } else {                                                                          // eckiges Minarett mit Zinnen
+    g.fillStyle = stil.vorn; g.fillRect(x - 4.2, y - 23, 4.6, 23);
+    g.fillStyle = stil.seite; g.fillRect(x - 1.2, y - 23, 1.6, 23);
+    g.fillStyle = stil.rand; g.fillRect(x - 5, y - 24, 6.2, 1.6);
+    for (let i = 0; i < 3; i++) g.fillRect(x - 4.9 + i * 2.1, y - 25.6, 1.2, 1.6);
+    g.fillStyle = stil.tuer; g.fillRect(x - 2.7, y - 20, 1.4, 2.4);
+  }
   fenster.push({ x: x - 2, y: y - 18 });
 }
 
@@ -490,19 +691,20 @@ function zeichneLagerhaus(g, x, y, stufe, fenster) {
   g.fillStyle = FARBE.messing; g.fillRect(x + 2, y - 15.9 - stufe, 5, 0.6);
 }
 
-function oasenBild(o) {
+// q: Schärfe (1 = normal, 2–3 = beim Hineinzoomen)
+function oasenBild(o, q = 1) {
   const wasserStufe = Math.round(Math.max(0, o.wasser) / 10);
-  const haeuser = Math.max(1, Math.min(14, Math.round(o.bev / 200)));
+  const haeuser = Math.max(1, Math.min(20, Math.round(o.bev / 110)));
   // Größenstufe: 0 Weiler, 1 Dorf, 2 Stadt, 3 große Stadt
   const groesse = o.bev < 250 ? 0 : o.bev < 700 ? 1 : o.bev < 1400 ? 2 : 3;
   const lagerhaus = S.gebaeude && S.gebaeude[o.id] ? (S.gebaeude[o.id].stufe || 1) : 0;
   const verweht = o.verlassen ? Math.min(4, Math.floor((S.tag - o.verlassen.seit) / Math.max(1, o.verlassen.bis - o.verlassen.seit) * 5)) : -1;
-  const schluessel = `${o.id}|${o.aktiv}|${verweht}|${wasserStufe}|${haeuser}|${o.brunnen || 0}|${groesse}|${lagerhaus}`;
+  const schluessel = `${o.id}|${q}|${o.aktiv}|${verweht}|${wasserStufe}|${haeuser}|${o.brunnen || 0}|${groesse}|${lagerhaus}`;
   let bild = oasenBilder.get(schluessel);
   if (bild) return bild;
-  if (oasenBilder.size > 300) oasenBilder.clear();
+  if (oasenBilder.size > 160) oasenBilder.clear();
 
-  const [c, g] = neuesCanvas(OASE_B, OASE_H);
+  const [c, g] = neuesCanvas(OASE_B, OASE_H, q);
   const rnd = zufallsFolge(o.id * 7919 + 17);
   const cx = OASE_B / 2, cy = OASE_H / 2 + 4;
   const fenster = [];
@@ -548,11 +750,17 @@ function oasenBild(o) {
 
     // Häuser rechts/unten, Palmen links/oben – nach Höhe sortiert für die richtige Überdeckung
     const dinge = [];
+    const stil = stadtStil(o);
+    const kuppelAnteil = stil === BAUSTILE.nord ? 0.35 : stil === BAUSTILE.nil ? 0.25 : 0.08;
+    const turmAnteil = stil === BAUSTILE.sahel ? 0.25 : 0.12;
     for (let i = 0; i < haeuser; i++) {
-      const winkel = -0.5 + (i / Math.max(1, haeuser - 1)) * 2.3 + (rnd() - 0.5) * 0.3;
-      const abst = 26 + rnd() * 12 + (i % 3) * 5;
+      // Häuser rechts und unten ums Wasser, in zwei bis drei Ringen – größere Städte werden dichter
+      const ring = i % 3, winkel = -0.55 + ((i * 0.618) % 1) * 2.45 + (rnd() - 0.5) * 0.25;
+      const abst = 25 + ring * 8 + rnd() * 6;
+      const z = rnd();
+      const hausArt = z < kuppelAnteil ? 'kuppel' : z < kuppelAnteil + turmAnteil ? 'turm' : 'flach';
       dinge.push({ art: i === 0 && o.bev > 900 ? 'moschee' : 'haus', x: cx + Math.cos(winkel) * abst, y: cy + Math.sin(winkel) * abst * 0.55 + 4,
-                   b: 7 + rnd() * 4, h: 5 + rnd() * 3 });
+                   b: 6.5 + rnd() * 4, h: 4.5 + rnd() * 3, hausArt });
     }
     const palmen = Math.max(3, Math.min(9, 3 + Math.round(o.bev / 300))) + Math.round(w * 2);
     const totAnteil = w < 0.35 ? (0.35 - w) / 0.35 * 0.6 : 0;          // Trockenheit: ein Teil der Palmen verdorrt
@@ -581,12 +789,12 @@ function oasenBild(o) {
     dinge.sort((a, b) => a.y - b.y);
     for (const d of dinge) {
       if (d.art === 'palme') zeichnePalme(g, d.x, d.y, d.hoehe, d.neigung, rnd, d.tot);
-      else if (d.art === 'moschee') zeichneMoschee(g, d.x - 6, d.y, fenster);
+      else if (d.art === 'moschee') zeichneMoschee(g, d.x - 6, d.y, fenster, stil);
       else if (d.art === 'zelt') zeltKlein(g, d.x, d.y, d.s);
       else if (d.art === 'garten') zeichneGarten(g, d.x - d.b / 2, d.y - d.h, d.b, d.h, rnd);
       else if (d.art === 'markt') zeichneMarktstand(g, d.x, d.y, d.farbe);
       else if (d.art === 'lagerhaus') zeichneLagerhaus(g, d.x, d.y, d.stufe, fenster);
-      else zeichneHaus(g, d.x - d.b / 2, d.y, d.b, d.h, fenster);
+      else zeichneHaus(g, d.x - d.b / 2, d.y, d.b, d.h, fenster, false, stil, d.hausArt);
     }
     if (groesse === 3) zeichneStadtmauer(g, cx, cy + 2, 58, 32, true);    // vordere Hälfte der Mauer
     // Hafen: Bootssteg ins Meer
@@ -649,6 +857,7 @@ const TIER_FARBEN = {
   pferd:   { grund: '#7d4b2a', schatten: '#4b2a15', licht: '#a8703f' },
   esel:    { grund: '#918679', schatten: '#5e554b', licht: '#bdb3a6' },
   elefant: { grund: '#8a847e', schatten: '#5c5752', licht: '#b0aaa3' },
+  mehari:  { grund: '#e3cfa6', schatten: '#b39a72', licht: '#f7ead0' },   // helles Rennkamel
 };
 
 // Ein Bein mit Knie: schwingt vor und zurück und hebt den Huf beim Vorschwingen
@@ -691,7 +900,7 @@ function gepaeck(g, x, y, breite, nr) {
 // opt: { schritt, decke, reiter: true/false, last: Nummer oder -1 }
 function zeichneTier(g, typ, opt) {
   const f = opt.farben || TIER_FARBEN[typ], schritt = opt.schritt;   // opt.farben: z. B. Scherenschnitt auf der Startseite
-  if (typ === 'kamel') {
+  if (typ === 'kamel' || typ === 'mehari') {
     const nicken = Math.sin(schritt * 2) * 0.6;
     vierBeine(g, f, [-4.2, -2.8, 3, 4.4], -7.5, 7.5, schritt, 1.25, false);
     g.fillStyle = f.grund;
@@ -762,7 +971,7 @@ function zeichneTier(g, typ, opt) {
 // Aus der Tierliste einer Karawane höchstens 5 Figuren machen (größte Tiere vorne)
 function karawanenFiguren(tiere) {
   const liste = [];
-  for (const typ of ['elefant', 'kamel', 'pferd', 'esel']) for (let i = 0; i < (tiere[typ] || 0); i++) liste.push(typ);
+  for (const typ of ['elefant', 'kamel', 'mehari', 'pferd', 'esel']) for (let i = 0; i < (tiere[typ] || 0); i++) liste.push(typ);
   if (liste.length <= 5) return liste;
   const auswahl = [];
   for (let i = 0; i < 5; i++) auswahl.push(liste[Math.floor(i * liste.length / 5)]);
@@ -874,6 +1083,7 @@ function textMitSymbol(text, x, y, gr, ausrichtung, aufHell = false) {
 }
 
 function beschriftung(text, x, y, groesse, farbe, kursiv = false, halo = 'rgba(246,232,200,.9)') {
+  if (typeof kartenSchriftFaktor === 'function') groesse *= kartenSchriftFaktor();
   ctx.font = `${kursiv ? 'italic ' : ''}700 ${groesse}px ${SCHRIFT_KARTE}`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (halo) { ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = halo; ctx.strokeText(text, x, y); }
@@ -1033,8 +1243,10 @@ function zeichne() {
   // Die "Kamera": vergrößern und den sichtbaren Ausschnitt verschieben
   const sk = DPR * ansicht.zoom * weltSkala();
   ctx.setTransform(sk, 0, 0, sk, -ansicht.x * sk, -ansicht.y * sk);
-  ctx.drawImage(hintergrund, 0, 0, KARTE_B, KARTE_H);
+  zeichneHintergrund();
   if (FLUESSE.length && typeof zeichneFluesseLive === 'function') zeichneFluesseLive(echtzeit);
+  if (typeof zeichnePfade === 'function') zeichnePfade();
+  if (typeof zeichneLeben === 'function') zeichneLeben(echtzeit, nacht);
 
   // Glitzern auf dem Meer
   for (let i = 0; i < 60; i++) {
@@ -1106,6 +1318,7 @@ function zeichne() {
   }
 
   zeichneWanderduenen(echtzeit);
+  if (typeof zeichneLebenOben === 'function') zeichneLebenOben(echtzeit, nacht);
   zeichneNebel();
   for (const g of aktiveRaeuber()) zeichneSoeldnerMarke(g);   // über dem Nebel: dort kämpfen deine Leute
 
@@ -1141,11 +1354,15 @@ function zeichne() {
 
   // Oasen
   const oasenListe = [...S.oasen].sort((a, b) => a.y - b.y);
+  const q = Math.min(3, Math.max(1, Math.ceil(ansicht.zoom * weltSkala() - 0.2)));
   for (const o of oasenListe) {
-    const bild = oasenBild(o);
+    const sichtbar = o.x > ansicht.x - 100 && o.x < ansicht.x + KARTE_B / ansicht.zoom + 100 && o.y > ansicht.y - 80 && o.y < ansicht.y + KARTE_H / ansicht.zoom + 80;
+    if (!sichtbar) continue;
+    const bild = oasenBild(o, q);
     ctx.drawImage(bild.canvas, o.x - OASE_B / 2, o.y - OASE_H / 2 - 4, OASE_B, OASE_H);
   }
   zeichneWasserGlitzern(echtzeit, nacht);
+  if (typeof zeichneStadtleben === 'function') zeichneStadtleben(echtzeit, nacht);
 
   // Auswahl- und Zielringe
   const zeitRing = echtzeit;
@@ -1252,6 +1469,7 @@ function zeichne() {
     const beladen = WAREN.some(w => w.id !== 'wasser' && k.ladung[w.id] >= 1);
     zeichneZug(figuren, x, y, rx, ry, laeuft, FARBE.tinte, FARBE.indigo, 1.55, { beladen });
     wimpel(x, y, rx >= 0);
+    if (typeof zeichneSpaeher === 'function') zeichneSpaeher(k, x, y, rx, ry, laeuft);
     if (k.nach != null && k.nachtmarsch && !istNacht()) zelt(x - 4, y + 1, 8);
 
     const zeichen = [];
@@ -1345,6 +1563,8 @@ function zeichne() {
     if (S.bankrott) beschriftung(T(`Deine Karawanen zogen ${S.tag} Tage durch die Wüste.`, `Your caravans crossed the desert for ${S.tag} days.`), mx, my + 46, 20, '#f3e3bd', true, null);
   }
   zeichneInfoKarte();
+  if (typeof zeichneMiniKarte === 'function') zeichneMiniKarte();
+  if (typeof umgebungAktualisieren === 'function') umgebungAktualisieren();
 }
 
 /* ---------------------------------------------------------------------
@@ -1592,9 +1812,10 @@ function zeichneTageslicht(echtzeit, nacht) {
     ctx.fillStyle = `rgba(255,240,205,${(0.07 * mittag).toFixed(3)})`; ctx.fillRect(0, 0, KARTE_B, KARTE_H);
     // Hitzeflimmern: feine, wabernde Linien, die langsam nach oben steigen
     ctx.strokeStyle = `rgba(255,252,240,${(0.09 * mittag).toFixed(3)})`; ctx.lineWidth = 1.4;
+    const vb = KARTE_B / ansicht.zoom, vh = KARTE_H / ansicht.zoom;
     for (let i = 0; i < 14; i++) {
-      const y = KARTE_H - ((hash01(i, 31) * KARTE_H + echtzeit * 9) % KARTE_H);
-      const x0 = hash01(i, 32) * KARTE_B * 0.7, laenge = 140 + hash01(i, 33) * 220;
+      const y = ansicht.y + vh - ((hash01(i, 31) * vh + echtzeit * 9) % vh);
+      const x0 = ansicht.x + hash01(i, 32) * vb * 0.7, laenge = (140 + hash01(i, 33) * 220) / Math.max(1, ansicht.zoom * weltSkala());
       ctx.beginPath();
       for (let x = 0; x <= laenge; x += 12) {
         const yy = y + Math.sin(x / 18 + echtzeit * 3 + i) * 1.6;

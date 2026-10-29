@@ -187,6 +187,7 @@ function htmlOase() {
         <tr><th>${T('Tier', 'Animal')}</th><th>${T('Last', 'Load')}</th><th>${T('Tempo', 'Speed')}</th><th>${T('Durst', 'Thirst')}</th><th></th></tr>`;
   for (const typ in TIERE) {
     const tier = TIERE[typ];
+    if (tier.zucht) continue;   // Mehari gibt es nur aus der eigenen Zucht
     const verfuegbar = typ !== 'elefant' || o.bev >= 1000;
     t += `<tr><td>${tier.icon} ${tier.name}</td><td>${tier.kapazitaet}</td><td>${tier.tempo}</td><td>${zahlText(tier.durst)}</td>
           <td>${verfuegbar
@@ -196,6 +197,7 @@ function htmlOase() {
   dazu('bauen', '🏛️', 'Bauen & Ausrüsten', 'Build & equip', [
     { titel: `🏛️ ${T('Deine Gebäude', 'Your buildings')}`, inhalt: htmlGebaeude(o) },
     { titel: `🐾 ${T('Tiermarkt', 'Animal market')}`, inhalt: t + '</table>' },
+    { titel: `🐪 ${T('Kamelzucht', 'Camel breeding')}`, inhalt: htmlZucht(o) },
     { titel: `🎒 ${T('Ausrüstung', 'Equipment')}`, inhalt: htmlAusruestung(o) },
   ]);
 
@@ -508,6 +510,8 @@ function htmlKarawanen() {
            <button data-a="wache" data-v="-1" ${k.wachen < 1 ? 'disabled' : ''}>${T('entlassen', 'dismiss')}</button>`
        : '') + '</div>';
 
+  d += htmlSpaeher(k);
+
   if (anOase) {
     for (const t in k.tiere) if (k.tiere[t] > 0) {
       d += `<div class="info">${TIERE[t].icon} ${k.tiere[t]}× ${TIERE[t].name}
@@ -673,6 +677,13 @@ const AKTIONEN = {
   posten:     v => handelspostenBauen(v),
   familieName: () => familieUmbenennen(),
   siedlerZurueck: v => siedlerZurueckholen(+v),
+  spaeher:    () => spaeherAnheuern(),
+  spaeherWeg: () => spaeherEntlassen(),
+  zuchtBauen: () => zuchtBauen(),
+  zuchtAusbau: () => zuchtAusbauen(),
+  zuchtRein:  v => zuchtEinstellen(v),
+  zuchtRaus:  v => zuchtAbholen(v),
+  zuchtVerkauf: v => zuchtVerkaufen(v),
   zeigeOase:  v => meldungZiel({ oase: +v }),
   beraterZiel: v => { S.ziel = +v; reiterWaehlen('karawanen'); zeichnePanel(); },
   siegWeiter: () => { statistikUmschalten(false); fensterArt = 'statistik'; },

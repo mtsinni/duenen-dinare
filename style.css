@@ -41,7 +41,7 @@ button.an svg.sym:not(.getoent) { color: #2a2238; }
 button.an svg.getoent { filter: brightness(.5) saturate(1.4); }
 body {
   margin: 0; background: var(--nacht); color: var(--sand);
-  font-family: var(--schrift-text); font-size: 16px; line-height: 1.4;
+  font-family: var(--schrift-text); font-size: 1rem; line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
 b, strong { font-weight: 700; color: #fff4dc; }
@@ -713,3 +713,24 @@ header { padding-top: max(10px, env(safe-area-inset-top)); }
   .einstellung label { min-width: 7em; }
 }
 .neu-marke { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; background: var(--messing, #c8a04a); color: #1c1a2e; vertical-align: middle; }
+
+/* Mini-Karte */
+#miniKarte { position: absolute; left: 12px; bottom: 12px; width: 210px; aspect-ratio: 1350 / 700; border: 1px solid var(--messing, #c8a04a);
+  border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.45); cursor: crosshair; touch-action: none; background: #d8b98a; }
+#kartenRahmen #miniKarte.aus { display: none; }
+@media (max-width: 760px) { #miniKarte { width: 118px; left: 8px; bottom: 8px; } }
+.zoomKnoepfe #btnMini.an { background: var(--messing, #c8a04a); color: #1c1a2e; }
+/* Spielstand als Code */
+.code-ansicht textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .72rem; word-break: break-all;
+  border: 1px solid rgba(42,34,56,.45); border-radius: 6px; background: #fffaf0; color: #2a2238; padding: 8px; resize: vertical; }
+.code-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.code-meldung { margin: 10px 0 0; font-weight: 700; color: #3a5a1f; }
+/* Lesbarkeit */
+.schrift-wahl { display: inline-flex; gap: 4px; flex: 1; }
+.schrift-wahl button { min-width: 2.4em; font-family: var(--schrift-titel); font-weight: 700; }
+body.farbenblind { --gruen: #56b4e9; --henna: #f0a830; }
+body.farbenblind .s-verk::before { content: '▼ '; } body.farbenblind .s-kauf::before { content: '▲ '; }
+/* Zuchtstall */
+table.zucht td.zucht-knoepfe { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+table.zucht td.zucht-knoepfe button { padding: 3px 8px; font-size: .85rem; }
+table.zucht td:nth-child(2) { text-align: center; }

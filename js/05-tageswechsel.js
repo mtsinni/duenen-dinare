@@ -80,6 +80,7 @@ function tagesWechsel() {
   siedlerTag();
   verlasseneTag();
   flussTag();
+  zuchtTag();
   familieTag();
   finanzen();
   if (S.bankrott) { speichern(); zeichnePanel(); return; }

@@ -353,3 +353,37 @@ function htmlStreckenInfo(info) {
   }
   return h;
 }
+
+/* ---------------- F) Karawanenpfade ---------------- */
+// Ausgetretene Pfade verbinden jede Oase mit ihren nächsten Nachbarn
+let pfadCache = { schluessel: '', pfade: [] };
+function pfadeBerechnen() {
+  const aktive = S.oasen.filter(o => o.aktiv);
+  const schluessel = aktive.map(o => o.id).join(',');
+  if (schluessel === pfadCache.schluessel) return pfadCache.pfade;
+  const paare = new Map();
+  for (const a of aktive) {
+    const nahe = aktive.filter(b => b !== a).map(b => ({ b, d: entfernung(a, b) })).filter(x => x.d < 320).sort((x, y) => x.d - y.d).slice(0, 2);
+    for (const { b } of nahe) {
+      const k = a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`;
+      if (!paare.has(k)) paare.set(k, { a, b, bogen: (hash01(a.id * 31 + b.id, 5) - 0.5) * 0.18 });
+    }
+  }
+  pfadCache = { schluessel, pfade: [...paare.values()] };
+  return pfadCache.pfade;
+}
+function zeichnePfade() {
+  if (!S || !S.oasen) return;
+  const x0 = ansicht.x - 50, y0 = ansicht.y - 50, x1 = ansicht.x + KARTE_B / ansicht.zoom + 50, y1 = ansicht.y + KARTE_H / ansicht.zoom + 50;
+  ctx.save(); ctx.lineCap = 'round';
+  for (const p of pfadeBerechnen()) {
+    const { a, b } = p;
+    if (Math.max(a.x, b.x) < x0 || Math.min(a.x, b.x) > x1 || Math.max(a.y, b.y) < y0 || Math.min(a.y, b.y) > y1) continue;
+    const mx = (a.x + b.x) / 2 - (b.y - a.y) * p.bogen, my = (a.y + b.y) / 2 + (b.x - a.x) * p.bogen;
+    ctx.strokeStyle = 'rgba(150,108,62,.10)'; ctx.lineWidth = 4; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(mx, my, b.x, b.y); ctx.stroke();
+    ctx.strokeStyle = 'rgba(115,78,40,.2)'; ctx.lineWidth = 0.9; ctx.setLineDash([2, 5]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(mx, my, b.x, b.y); ctx.stroke();
+  }
+  ctx.setLineDash([]); ctx.restore();
+}

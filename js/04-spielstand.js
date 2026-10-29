@@ -20,7 +20,7 @@ function neueOase(name, x, y, produziert, bev) {
 function neueKarawane(o) {
   const k = {
     id: S.naechsteId++, name: T('Karawane ', 'Caravan ') + (++S.karawanenZaehler),
-    tiere: { esel: 0, pferd: 0, kamel: 0, elefant: 0 }, ladung: {},
+    tiere: { esel: 0, pferd: 0, kamel: 0, elefant: 0, mehari: 0 }, ladung: {},
     ort: o.id, von: null, nach: null, gereist: 0, x: o.x, y: o.y,
     durstig: false, imSturm: false, sturmErlebt: false,
   };
@@ -34,6 +34,7 @@ function neueKarawane(o) {
 function karawaneAufruesten(k) {
   if (!k.fuehrer) k.fuehrer = neuerFuehrer();
   if (k.wachen == null) k.wachen = 0;
+  if (k.tiere.mehari == null) k.tiere.mehari = 0;
   if (!k.route) k.route = { stationen: [], index: 0, aktiv: false };
   if (!k.einstand) k.einstand = {};     // durchschnittlicher Einkaufspreis je Ware
   if (!k.herkunft) k.herkunft = {};     // wo die Ware zuletzt gekauft wurde

@@ -52,7 +52,11 @@ und dem Ordner `js`) ins Repository laden.
 | `js/33-app.js` | „Als App installieren“: Knopf im Menü, Anmeldung des Service Workers |
 | `js/34-welt.js` | Wünsche der Oasen, Handelsposten & Karawanserei-Netz, Wanderdünen, junge Siedlungen |
 | `js/35-familie.js` | Familie & Nachfolger: Alter, Hochzeit, Kinder, Ruhestand, Familienboni |
-| `js/36-landschaft.js` | Große Wüste: klassische Karte mit 36 Oasen, große Zufallskarten, Flüsse & Wadis, Gebirge mit Wirkung |
+| `js/36-landschaft.js` | Große Wüste: klassische Karte mit 36 Oasen, große Zufallskarten, Flüsse & Wadis, Gebirge mit Wirkung, Karawanenpfade |
+| `js/37-leben.js` | Leben in der Wüste: Gazellen, Nomadenlager, Fata Morgana, Vogelschwärme, wehender Sand |
+| `js/38-komfort.js` | Mini-Karte, Spielstand als Code übertragen, Schriftgröße & Farbenblind-Modus |
+| `js/39-zucht-spaeher.js` | Kundschafter für Karawanen, Zuchtstall mit Mehari-Rennkamelen |
+| `js/40-atmosphaere.js` | Umgebungsgeräusche (Wind, Glocken, Markt, Grillen), lebendige Städte |
 | `js/21-steuerung.js` | Tastatur, Kopfleisten-Knöpfe und die Spielschleife – hier startet alles |
 
 **Wichtig:** Die Reihenfolge der `<script>`-Zeilen in `index.html` zählt. Spätere Dateien

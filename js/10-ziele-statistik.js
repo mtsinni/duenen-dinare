@@ -63,7 +63,7 @@ const RAENGE = [
 
 // Alles, was dir gehört, minus Schulden
 function vermoegen() {
-  let wert = S.gold - S.schulden;
+  let wert = S.gold - S.schulden + (typeof zuchtWert === 'function' ? zuchtWert() : 0);
   for (const k of S.karawanen) {
     wert += ladungsWert(k) + k.ladung.wasser * 4;
     for (const t in k.tiere) wert += k.tiere[t] * TIERE[t].preis * 0.6;

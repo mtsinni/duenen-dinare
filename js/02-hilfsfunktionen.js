@@ -31,7 +31,7 @@ function reiseTempo(k) {
 }
 
 function unterhaltKosten(k) {
-  let s = k.wachen * WACHE_UNTERHALT;
+  let s = k.wachen * WACHE_UNTERHALT + (k.spaeher ? SPAEHER.unterhalt : 0);
   for (const t in k.tiere) s += k.tiere[t] * TIERE[t].unterhalt;
   return Math.round(s * Math.max(0.5, 1 - 0.1 * familienBonus('sparsam')));
 }
@@ -53,7 +53,7 @@ function ladungGewicht(k) {
   const wasserRabatt = hatAusruestung(k, 'schlaeuche') ? k.ladung.wasser * 0.5 : 0;   // Wasserschläuche: Wasser wiegt halb
   return Object.values(k.ladung).reduce((a, b) => a + b, 0) - wasserRabatt + 2 * passagierAnzahl(k);
 }
-function nurKamele(k) { return tierAnzahl(k) > 0 && tierAnzahl(k) === k.tiere.kamel; }
+function nurKamele(k) { return tierAnzahl(k) > 0 && tierAnzahl(k) === k.tiere.kamel + (k.tiere.mehari || 0); }
 
 // Eine Karawane ist nur so schnell wie ihr langsamstes Tier
 function karawanenTempo(k) {
@@ -69,4 +69,7 @@ function hauptTier(k) {
   return TIERE[bestes];
 }
 
-function wasserFarbe(w) { return w > 50 ? '#3fb4b0' : w > 20 ? '#e0a83c' : '#e8664c'; }
+function wasserFarbe(w) {
+  if (typeof farbenblind !== 'undefined' && farbenblind) return w > 50 ? '#56b4e9' : w > 20 ? '#f0e442' : '#e69f00';
+  return w > 50 ? '#3fb4b0' : w > 20 ? '#e0a83c' : '#e8664c';
+}

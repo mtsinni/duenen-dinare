@@ -65,7 +65,7 @@ let geradeGeladen = true;
 const menueWahl = { schwierigkeit: 'normal', slot: 1, einfuehrung: true, sieg: 'frei', karte: 'klassisch', kartenNr: '' };
 
 function menueOeffnen(reiter) {
-  menueReiter = reiter || null; menueSlotOffen = 0;
+  menueReiter = reiter || null; menueSlotOffen = 0; if (typeof menueCode !== 'undefined') menueCode = null;
   if (statistikOffen) statistikUmschalten(false);
   menueOffen = true;
   pauseVorMenue = S.pause;
@@ -121,7 +121,8 @@ function zeichneMenue() {
     `<button data-m="reiter" data-n="${id}" class="${menueReiter === id ? 'an' : ''}"><span class="mr-icon">${icon}</span><span class="mr-name">${name}</span>${zahl ? `<span class="mr-zahl">${zahl}</span>` : ''}</button>`).join('')}</div>`;
 
   h += `<div class="menue-inhalt">`;
-  if (menueReiter === 'neu') h += htmlMenueNeu();
+  if (menueCode) h += htmlMenueCode();
+  else if (menueReiter === 'neu') h += htmlMenueNeu();
   else if (menueReiter === 'staende') h += htmlMenueStaende();
   else if (menueReiter === 'einst') h += htmlMenueEinstellungen();
   else h += htmlMenueMehr(anzahlErfolge);
@@ -171,6 +172,7 @@ function htmlMenueStaende() {
     if (!d) {
       h += `<div class="slot leer"><div class="slot-zeile"><span class="slot-nr">${n}</span>
               <span class="slot-text hinweis">${T('Leer', 'Empty')}</span>
+              <button data-m="codeImport" data-n="${n}" title="${T('Spielstand-Code einfügen', 'Paste a save code')}">📋 Code</button>
               <button data-m="import" data-n="${n}" title="${T('Spielstand aus einer Datei laden', 'Load a game from a file')}">📂 ${T('Datei', 'File')}</button></div></div>`;
       continue;
     }
@@ -184,6 +186,8 @@ function htmlMenueStaende() {
           ${n === S.slot && !S.bankrott ? '' : `<button data-m="laden" data-n="${n}" class="an">${T('Laden', 'Load')}</button>`}
           <button data-m="slotmehr" data-n="${n}" class="slot-mehr ${offen ? 'offen' : ''}" title="${T('Weitere Möglichkeiten', 'More options')}">⋯</button></div>
         ${offen ? `<div class="slot-extra">
+          <button data-m="codeExport" data-n="${n}">🔗 ${T('Als Code', 'As code')}</button>
+          <button data-m="codeImport" data-n="${n}">📋 ${T('Code einfügen', 'Paste code')}</button>
           <button data-m="export" data-n="${n}">💾 ${T('Als Datei sichern', 'Save as file')}</button>
           <button data-m="import" data-n="${n}">📂 ${T('Aus Datei laden', 'Load from file')}</button>
           <button data-m="loeschen" data-n="${n}" class="gefahr">🗑 ${T('Löschen', 'Delete')}</button></div>` : ''}
@@ -204,9 +208,11 @@ function htmlMenueEinstellungen() {
         <input type="range" min="0" max="100" value="${Math.round(musikLautstaerke * 100)}" data-laut="musik">${schalter('musik', musikAn)}</div>
       <div class="einstellung"><label>🔊 ${T('Geräusche', 'Sounds')}</label>
         <input type="range" min="0" max="100" value="${Math.round(tonLautstaerke * 100)}" data-laut="ton">${schalter('ton', tonAn)}</div>
+      ${htmlUmgebung()}
       <div class="wahl-titel">${T('Meldungen', 'Alerts')}</div>
       <div class="einstellung"><label>🔔 ${T('Im Spiel', 'In game')}</label><span class="hinweis" style="flex:1">${T('kleine Karten am Rand', 'small cards at the edge')}</span>${schalter('meldungen', meldungenAn)}</div>
       <div class="einstellung"><label>📣 ${T('Im Hintergrund', 'In background')}</label><span class="hinweis" style="flex:1">${T('wenn der Tab nicht sichtbar ist', 'when the tab is hidden')}</span>${schalter('systemmeldungen', systemMeldungen)}</div>
+      ${htmlLesbarkeit()}
       <div class="wahl-titel">${T('App', 'App')}</div>
       ${htmlApp()}`;
 }
@@ -224,7 +230,17 @@ function htmlMenueMehr(anzahl) {
 
 
 function menueAktion(m, n) {
-  if (m === 'reiter') { menueReiter = n; menueSlotOffen = 0; zeichneMenue(); return; }
+  if (m === 'reiter') { menueReiter = n; menueSlotOffen = 0; menueCode = null; zeichneMenue(); return; }
+  if (m === 'codeExport') { codeExportStarten(+n); return; }
+  if (m === 'codeImport') { codeImportStarten(+n); return; }
+  if (m === 'codeKopieren') { codeKopieren(); return; }
+  if (m === 'codeTeilen') { codeTeilen(); return; }
+  if (m === 'codeLaden') { codeLaden(); return; }
+  if (m === 'codeZurueck') { menueCode = null; zeichneMenue(); return; }
+  if (m === 'schrift') { schriftSetzen(n); return; }
+  if (m === 'farbenblind') { farbenblindUmschalten(); return; }
+  if (m === 'minikarte') { miniUmschalten(); return; }
+  if (m === 'umgebung') { umgebungUmschalten(); return; }
   if (m === 'slotmehr') { menueSlotOffen = menueSlotOffen === +n ? 0 : +n; zeichneMenue(); return; }
   if (m === 'sprache') spracheSetzen(n);
   if (m === 'weiter') menueSchliessen(true);
