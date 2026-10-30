@@ -30,6 +30,22 @@
   .warn::before { content: '⚠️ '; }
   kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: 0 5px; border: 1px solid #a99572; border-bottom-width: 2px; border-radius: 4px; background: #fffaf0; font: 700 .85rem 'Alegreya Sans', sans-serif; }
   .oben { display: inline-block; margin-top: 4px; font-size: .85rem; text-decoration: none; }
+  /* Video-Guides */
+  .videos { display: grid; gap: 14px; margin: 10px 0 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .videos.hoch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 520px) { .videos.quer { grid-template-columns: 1fr; } }
+  .video { margin: 0; }
+  .video .bild { position: relative; display: block; width: 100%; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
+    background: #1b1530; cursor: pointer; box-shadow: 0 3px 12px rgba(0,0,0,.25); }
+  .videos.quer .bild { aspect-ratio: 16 / 9; } .videos.hoch .bild { aspect-ratio: 9 / 16; }
+  .video .bild img, .video .bild video, .video .bild iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
+  .video .knopf { position: absolute; left: 50%; top: 76%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+    background: rgba(240,200,100,.92); box-shadow: 0 4px 16px rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
+  .video .knopf::after { content: ''; margin-left: 5px; border-style: solid; border-width: 11px 0 11px 18px; border-color: transparent transparent transparent #2a1d0c; }
+  .video .bild:hover .knopf, .video .bild:focus-visible .knopf { transform: scale(1.08); }
+  .video figcaption { margin-top: 5px; font-weight: 700; line-height: 1.25; }
+  .video figcaption span { display: block; font-weight: 400; font-size: .85rem; color: #6b5a48; }
+  .yt-hinweis { font-size: .82rem; color: #6b5a48; margin: 4px 0 0; }
 </style>
 </head>
 <body>
@@ -37,6 +53,12 @@
 <a class="zurueck" href="index.html">← Zurück zum Spiel</a>
 <h1>Spielhilfe</h1>
 <p class="untertitel">Wie alles funktioniert, mit Tipps und Tricks für Händler.</p>
+
+<h2 id="videos">🎬 Video-Guides</h2>
+<p>Kurze Videos zeigen dir Schritt für Schritt, wie alles geht. Auf dem Handy siehst du sie automatisch im Hochformat, am PC im Querformat.</p>
+<div class="videos" id="videoListe"></div>
+<p class="yt-hinweis" id="ytHinweis" hidden>Einige Videos werden von YouTube abgespielt. YouTube wird erst geladen, wenn du auf ein Video tippst – mehr dazu im <a href="datenschutz.html#videos">Datenschutz</a>.</p>
+<noscript><p class="klein">Die Videos brauchen JavaScript.</p></noscript>
 
 <nav class="inhalt" id="inhalt">
   <b>Inhalt</b>
@@ -161,7 +183,7 @@
 <ul>
   <li><b>Räuber</b> lauern auf den Wegen und greifen schwach bewachte Karawanen an. Wachen, Säbel, ein Krieger-Anführer und ein Kundschafter schützen dich.</li>
   <li><b>Plünderer</b> können auch ganze Oasen bedrohen. Dann kannst du Truppen anheuern, um sie zu vertreiben.</li>
-  <li><b>Söldner</b> (ab Rang Händler): Miliz für 600 Dinar (55 % Erfolg), Söldner für 1300 (75 %) und ab Rang 3 die Reiterei des Sultans für 2600 (92 %).</li>
+  <li><b>Söldner</b> (ab Rang Händler): Tippe ein Räuberlager auf der Karte an und heuere die Miliz (ab etwa 600 Dinar), einen Söldnertrupp (ab etwa 1300) oder ab Rang Karawanenmeister die Reiterei des Sultans (ab etwa 2600) an. Je stärker die Bande, desto teurer der Auftrag und desto geringer die Erfolgschance – die Reiterei ist am zuverlässigsten.</li>
   <li><b>Krankheit</b> kann Tiere schwächen. Ein Heiler hilft.</li>
 </ul>
 <div class="tipp">Auf der Karte siehst du, wo es gefährlich ist. Wenn du nur ein paar Tage länger reist, sparst du dir oft einen teuren Überfall.</div>
@@ -274,4 +296,49 @@
 <hr>
 <p class="klein"><a class="oben" href="#inhalt">↑ Nach oben</a> · <a href="index.html">Zum Spiel</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
 </main>
+<script>
+// --- Video-Guides ---
+// Nach dem Hochladen bei YouTube hier die Kennung eintragen (der Teil nach "youtu.be/" bzw. "shorts/").
+// Bleibt ein Feld leer, wird das Video direkt von dieser Seite abgespielt (Ordner "videos").
+const VIDEOS = [
+  { nr: 1, titel: 'Erste Schritte',         text: 'Dein erster Handel',                  yt: { quer: '', hoch: '' } },
+  { nr: 2, titel: 'Tiere & Zucht',          text: 'Mehr tragen, schneller reisen',       yt: { quer: '', hoch: '' } },
+  { nr: 3, titel: 'Gefahren & Schutz',      text: 'Räuber, Stürme und Söldner',          yt: { quer: '', hoch: '' } },
+  { nr: 4, titel: 'Gebäude & Wirtschaft',   text: 'Lagerhaus, Betrieb, Handelsrouten',   yt: { quer: '', hoch: '' } },
+];
+(function () {
+  // Handy im Hochformat → 9:16, sonst 16:9
+  const format = (matchMedia('(orientation: portrait)').matches && innerWidth < 820) ? 'hoch' : 'quer';
+  const liste = document.getElementById('videoListe');
+  liste.classList.add(format);
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  let youtube = false;
+  for (const v of VIDEOS) {
+    const id = (v.yt[format] || '').trim();
+    if (id) youtube = true;
+    const fig = document.createElement('figure');
+    fig.className = 'video';
+    fig.innerHTML = `<button class="bild" type="button" aria-label="Video abspielen: ${esc(v.titel)}">
+        <img src="videos/guide${v.nr}-${format}.jpg" alt="" loading="lazy"><span class="knopf"></span></button>
+      <figcaption>${v.nr}. ${esc(v.titel)}<span>${esc(v.text)}${id ? ' · YouTube' : ''}</span></figcaption>`;
+    fig.querySelector('.bild').addEventListener('click', function () {
+      const rahmen = this;
+      if (id) {
+        const f = document.createElement('iframe');
+        f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&playsinline=1`;
+        f.title = v.titel; f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;
+        rahmen.replaceWith(Object.assign(document.createElement('div'), { className: 'bild' })); fig.querySelector('.bild').appendChild(f);
+      } else {
+        const vid = document.createElement('video');
+        vid.src = `videos/guide${v.nr}-${format}.mp4`; vid.poster = `videos/guide${v.nr}-${format}.jpg`;
+        vid.controls = true; vid.autoplay = true; vid.playsInline = true; vid.preload = 'auto';
+        const box = Object.assign(document.createElement('div'), { className: 'bild' });
+        box.appendChild(vid); rahmen.replaceWith(box);
+      }
+    });
+    liste.appendChild(fig);
+  }
+  document.getElementById('ytHinweis').hidden = !youtube;
+})();
+</script>
 </body>

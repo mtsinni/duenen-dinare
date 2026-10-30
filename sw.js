@@ -4,7 +4,7 @@
    Version, ohne Internet die zuletzt geladene.
    Kommen neue Dateien dazu, gehören sie in die Liste DATEIEN.
    ===================================================================== */
-const SPEICHER = 'duenen-dinare-v12';
+const SPEICHER = 'duenen-dinare-v14';
 const DATEIEN = [
   "./",
   "index.html",
@@ -82,6 +82,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const anfrage = e.request;
   if (anfrage.method !== 'GET' || new URL(anfrage.url).origin !== location.origin) return;
+  if (new URL(anfrage.url).pathname.includes('/videos/')) return;   // Videos nicht zwischenspeichern (zu groß)
   e.respondWith(
     fetch(anfrage)
       .then(antwort => {
