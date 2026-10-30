@@ -392,6 +392,7 @@ function alleSpielstaendeImportieren() {
 // Links zu Impressum und Datenschutz (öffnen sich in einem neuen Tab – das Spiel läuft weiter)
 function htmlRechtliches(klasse) {
   return `<div class="${klasse}">
+      <a href="wiki.html" target="_blank" rel="noopener">📖 ${T('Spielhilfe', 'Game guide')}</a> ·
       <a href="impressum.html" target="_blank" rel="noopener">${T('Impressum', 'Legal notice')}</a> ·
       <a href="datenschutz.html" target="_blank" rel="noopener">${T('Datenschutz', 'Privacy')}</a>
     </div>`;

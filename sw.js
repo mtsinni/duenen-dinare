@@ -4,13 +4,14 @@
    Version, ohne Internet die zuletzt geladene.
    Kommen neue Dateien dazu, gehören sie in die Liste DATEIEN.
    ===================================================================== */
-const SPEICHER = 'duenen-dinare-v11';
+const SPEICHER = 'duenen-dinare-v12';
 const DATEIEN = [
   "./",
   "index.html",
   "style.css",
   "seiten.css",
   "impressum.html",
+  "wiki.html",
   "datenschutz.html",
   "manifest.webmanifest",
   "js/00-sprache.js",

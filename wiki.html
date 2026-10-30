@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spielhilfe – Dünen &amp; Dinare</title>
+<meta name="description" content="Spielhilfe zu Dünen & Dinare: wie alles funktioniert, mit Tipps und Tricks.">
+<link rel="stylesheet" href="seiten.css">
+<style>
+  .untertitel { margin: 0 0 18px; color: #6b5a48; font-style: italic; }
+  nav.inhalt { background: rgba(176,135,45,.12); border: 1px solid rgba(176,135,45,.45); border-radius: 8px; padding: 12px 16px; margin: 6px 0 10px; }
+  nav.inhalt b { font-family: 'Amiri', Georgia, serif; font-size: 1.1rem; }
+  nav.inhalt ol { margin: 6px 0 0; padding-left: 22px; columns: 2; column-gap: 26px; }
+  nav.inhalt li { margin: 2px 0; break-inside: avoid; }
+  @media (max-width: 520px) { nav.inhalt ol { columns: 1; } }
+  h2 { border-bottom: 1px solid rgba(176,135,45,.5); padding-bottom: 3px; scroll-margin-top: 12px; }
+  h3 { font-size: 1.05rem; margin: 16px 0 4px; color: #4a3518; }
+  p, li { overflow-wrap: anywhere; }
+  ul { padding-left: 22px; }
+  li { margin: 3px 0; }
+  .tabelle { overflow-x: auto; margin: 8px 0 12px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid rgba(42,34,56,.15); vertical-align: top; }
+  th { background: rgba(176,135,45,.2); font-weight: 700; white-space: nowrap; }
+  td.z { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: rgba(255,255,255,.28); }
+  .tipp { background: #fff6d8; border-left: 4px solid var(--messing); border-radius: 4px; padding: 8px 12px; margin: 10px 0; }
+  .tipp::before { content: '💡 '; }
+  .warn { background: #fbe3d6; border-left: 4px solid #a6452a; border-radius: 4px; padding: 8px 12px; margin: 10px 0; }
+  .warn::before { content: '⚠️ '; }
+  kbd { display: inline-block; min-width: 1.6em; text-align: center; padding: 0 5px; border: 1px solid #a99572; border-bottom-width: 2px; border-radius: 4px; background: #fffaf0; font: 700 .85rem 'Alegreya Sans', sans-serif; }
+  .oben { display: inline-block; margin-top: 4px; font-size: .85rem; text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+<a class="zurueck" href="index.html">← Zurück zum Spiel</a>
+<h1>Spielhilfe</h1>
+<p class="untertitel">Wie alles funktioniert, mit Tipps und Tricks für Händler.</p>
+
+<nav class="inhalt" id="inhalt">
+  <b>Inhalt</b>
+  <ol>
+    <li><a href="#start">Erste Schritte</a></li>
+    <li><a href="#waren">Handel &amp; Waren</a></li>
+    <li><a href="#tiere">Tiere</a></li>
+    <li><a href="#karawanen">Karawanen ausrüsten</a></li>
+    <li><a href="#reisen">Wasser &amp; Reisen</a></li>
+    <li><a href="#gefahren">Gefahren</a></li>
+    <li><a href="#oasen">Oasen, Ansehen &amp; Aufträge</a></li>
+    <li><a href="#gebaeude">Gebäude &amp; Wirtschaft</a></li>
+    <li><a href="#geld">Geld &amp; Kredite</a></li>
+    <li><a href="#haeuser">Handelshäuser</a></li>
+    <li><a href="#familie">Familie &amp; Dynastie</a></li>
+    <li><a href="#ziele">Spielziele &amp; Ränge</a></li>
+    <li><a href="#bedienung">Bedienung</a></li>
+    <li><a href="#tipps">Tipps &amp; Tricks</a></li>
+  </ol>
+</nav>
+
+<h2 id="start">1. Erste Schritte</h2>
+<p>Du beginnst als kleiner Händler mit einer Karawane und etwas Gold. Kauf Waren dort, wo sie billig sind, bring sie durch die Wüste und verkauf sie dort, wo sie teuer sind. Alles andere baut darauf auf: mehr Tiere, mehr Karawanen, Gebäude, eine Familie.</p>
+<ol>
+  <li><b>Oase antippen:</b> Du siehst den Markt mit Kauf- und Verkaufspreisen. Grüne Preise sind günstig, rote teuer.</li>
+  <li><b>Wasser kaufen:</b> Ohne Wasser verdursten deine Tiere unterwegs. Nimm lieber zu viel mit als zu wenig.</li>
+  <li><b>Ware kaufen:</b> Mit dem Schieberegler wählst du die Menge. Achte auf den freien Platz deiner Tiere.</li>
+  <li><b>Ziel wählen und losziehen:</b> Tipp eine andere Oase an und schick die Karawane hin (<kbd>G</kbd>). Die Reiseinfo zeigt Dauer, Wasserbedarf und Gefahren.</li>
+  <li><b>Verkaufen:</b> Am Ziel verkaufst du mit Gewinn und planst die nächste Strecke.</li>
+</ol>
+<p><b>Schwierigkeit:</b> Leicht beginnt mit 3500 Dinar, Normal mit 2000, Schwer mit 1200. Auf Schwer sind Kredite außerdem teurer.</p>
+<div class="tipp">Am Anfang lohnen sich kurze Strecken mit günstigen Waren wie Salz, Indigo oder Datteln. Teure Waren bringen mehr, aber ein Überfall kostet dann auch mehr.</div>
+
+<h2 id="waren">2. Handel &amp; Waren</h2>
+<p>Jede Oase stellt manche Waren her (dort sind sie billig) und braucht andere (dort sind sie teuer). Verkaufst du viel von einer Ware, sinkt dort ihr Preis. Mit der Zeit erholt er sich wieder.</p>
+<div class="tabelle"><table>
+  <tr><th>Ware</th><th>Grundpreis</th><th>Hinweis</th></tr>
+  <tr><td>Wasser</td><td class="z">4</td><td>Zum Überleben. Überall zu haben, wird aber auch geladen.</td></tr>
+  <tr><td>Datteln</td><td class="z">10</td><td>Verderben: etwa 3 % pro Tag. Schnell verkaufen!</td></tr>
+  <tr><td>Salz</td><td class="z">18</td><td>Klassische Wüstenware, gut für den Einstieg.</td></tr>
+  <tr><td>Indigo</td><td class="z">25</td><td>Wird auch in der Färberei gebraucht.</td></tr>
+  <tr><td>Gewürze</td><td class="z">40</td><td></td></tr>
+  <tr><td>Eisenwaren</td><td class="z">45</td><td>Nur aus Oasen mit Eisenmine.</td></tr>
+  <tr><td>Weihrauch</td><td class="z">60</td><td></td></tr>
+  <tr><td>Teppiche</td><td class="z">80</td><td>Rohstoff für Prunkstoffe.</td></tr>
+  <tr><td>Porzellan</td><td class="z">100</td><td>Nur in Häfen.</td></tr>
+  <tr><td>Seide</td><td class="z">120</td><td>Nur in Häfen.</td></tr>
+  <tr><td>Gold</td><td class="z">150</td><td>Rohstoff für Schmuck.</td></tr>
+  <tr><td>Edelsteine</td><td class="z">200</td><td>Fund aus Minen. Häfen zahlen besonders gut.</td></tr>
+  <tr><td>Prunkstoffe</td><td class="z">220</td><td>Nur aus der Färberei.</td></tr>
+  <tr><td>Schmuck</td><td class="z">520</td><td>Nur vom Juwelier.</td></tr>
+</table></div>
+<ul>
+  <li><b>Feste:</b> Feiert eine Oase ein Fest, zahlt sie für die Festware bis zu 80 % mehr. Achte auf die Meldungen.</li>
+  <li><b>Boten:</b> Für 40 Dinar schickst du einen Boten, der dir die aktuellen Preise einer fernen Oase bringt.</li>
+  <li><b>Jahreszeiten:</b> In der Erntezeit sind Datteln billig. Manche Preise schwanken mit dem Jahr.</li>
+</ul>
+
+<h2 id="tiere">3. Tiere</h2>
+<p>Deine Tiere tragen die Ladung. Die langsamste Tierart bestimmt das Tempo der ganzen Karawane. Jedes Tier kostet täglich Unterhalt und trinkt Wasser.</p>
+<div class="tabelle"><table>
+  <tr><th>Tier</th><th>Last</th><th>Tempo</th><th>Durst</th><th>Unterhalt/Tag</th><th>Preis</th></tr>
+  <tr><td>Esel</td><td class="z">15</td><td class="z">45</td><td class="z">0,5</td><td class="z">2</td><td class="z">120</td></tr>
+  <tr><td>Pferd</td><td class="z">10</td><td class="z">90</td><td class="z">1,2</td><td class="z">5</td><td class="z">350</td></tr>
+  <tr><td>Kamel</td><td class="z">30</td><td class="z">55</td><td class="z">0,2</td><td class="z">4</td><td class="z">500</td></tr>
+  <tr><td>Elefant</td><td class="z">80</td><td class="z">35</td><td class="z">3</td><td class="z">12</td><td class="z">1400</td></tr>
+  <tr><td>Mehari (Rennkamel)</td><td class="z">22</td><td class="z">72</td><td class="z">0,18</td><td class="z">5</td><td class="z">nur Zucht</td></tr>
+</table></div>
+<ul>
+  <li><b>Kamele</b> sind das Rückgrat jeder Karawane: viel Platz und kaum Durst.</li>
+  <li><b>Esel</b> sind billig, aber langsam und durstig. Gut für den Anfang.</li>
+  <li><b>Pferde</b> sind schnell, tragen aber wenig und trinken viel. Gut für kurze Eilstrecken.</li>
+  <li><b>Elefanten</b> tragen riesige Mengen, gibt es aber nur in großen Oasen ab 1000 Einwohnern. Sie trinken sehr viel.</li>
+  <li><b>Mehari</b> sind schnell, genügsam und trotzdem gute Lastträger. Es gibt sie nur aus der eigenen Zucht.</li>
+  <li><b>Heiler:</b> In Oasen ab 800 Einwohnern heilt ein Heiler kranke Tiere für 50 Dinar pro Tier.</li>
+</ul>
+
+<h2 id="karawanen">4. Karawanen ausrüsten</h2>
+<h3>Wachen</h3>
+<p>Wachen kosten 100 Dinar beim Anheuern und 3 Dinar pro Tag. Sie schützen vor Räubern. Je wertvoller die Ladung, desto mehr Wachen brauchst du.</p>
+<h3>Kundschafter</h3>
+<p>Ein Kundschafter (150 Dinar, 3 pro Tag) reitet voraus. Er warnt vor Räubern, Stürmen und verlassenen Lagern und senkt das Überfallrisiko deutlich.</p>
+<h3>Ausrüstung</h3>
+<div class="tabelle"><table>
+  <tr><th>Gegenstand</th><th>Preis</th><th>Wirkung</th></tr>
+  <tr><td>Wasserschläuche</td><td class="z">300</td><td>Wasser wiegt nur noch halb so viel.</td></tr>
+  <tr><td>Sonnensegel</td><td class="z">250</td><td>Weniger Durst in der Hitze.</td></tr>
+  <tr><td>Laternen</td><td class="z">200</td><td>15 % schneller bei Nacht.</td></tr>
+  <tr><td>Säbel</td><td class="z">400</td><td>10 % bessere Verteidigung.</td></tr>
+</table></div>
+<h3>Karawanenführer</h3>
+<p>Jede Karawane hat einen Anführer, der Erfahrung sammelt. Bei 60, 160, 320 und 560 Erfahrungspunkten steigt er eine Stufe auf und lernt ein Talent (jedes bis Stufe 3):</p>
+<ul>
+  <li><b>Feilscher:</b> 3 % bessere Preise pro Stufe.</li>
+  <li><b>Spurenleser:</b> 6 % schneller pro Stufe.</li>
+  <li><b>Krieger:</b> 8 % bessere Verteidigung pro Stufe.</li>
+  <li><b>Wasserkundiger:</b> 8 % weniger Wasserverbrauch pro Stufe.</li>
+</ul>
+
+<h2 id="reisen">5. Wasser &amp; Reisen</h2>
+<p>Wasser ist das Wichtigste in der Wüste. Jedes Tier trinkt täglich, je nach Art und Hitze. Geht das Wasser aus, werden die Tiere schwach und sterben.</p>
+<div class="warn">Prüfe vor jeder Abreise die Reiseinfo. Steht dort, dass das Wasser knapp wird, kauf mehr oder plane einen Zwischenstopp.</div>
+<h3>Jahreszeiten</h3>
+<p>Ein Jahr hat 120 Tage und vier Jahreszeiten zu je 30 Tagen:</p>
+<ul>
+  <li><b>Frühling:</b> mildes Wetter, gut zum Reisen.</li>
+  <li><b>Hochsommer:</b> 20 % mehr Durst, mehr Sandstürme, die Wadis trocknen aus.</li>
+  <li><b>Erntezeit:</b> billige Datteln und viele Feste.</li>
+  <li><b>Regenzeit:</b> 20 % weniger Durst, aber Flüsse treten über die Ufer.</li>
+</ul>
+<h3>Landschaft</h3>
+<ul>
+  <li><b>Flüsse</b> (Niger, Nil) füllen dein Wasser unterwegs auf. Überquert wird an Furten. In der Regenzeit können Hochwasser die Reise aufhalten.</li>
+  <li><b>Wadis</b> sind ausgetrocknete Flussbetten. Sie führen nur außerhalb des Hochsommers Wasser.</li>
+  <li><b>Gebirge</b> bremsen stark (etwa 40 % langsamer), aber man durstet dort weniger und ist vor Sandstürmen geschützt.</li>
+  <li><b>Wandernde Dünen</b> verschieben sich mit der Zeit und können Wege verlängern.</li>
+  <li><b>Sandstürme</b> halten Karawanen auf. Ein Kundschafter warnt dich vorher.</li>
+  <li><b>Nachtmarsch:</b> Nachts ist es kühler. Mit Laternen kommst du nachts sogar schneller voran.</li>
+</ul>
+
+<h2 id="gefahren">6. Gefahren</h2>
+<ul>
+  <li><b>Räuber</b> lauern auf den Wegen und greifen schwach bewachte Karawanen an. Wachen, Säbel, ein Krieger-Anführer und ein Kundschafter schützen dich.</li>
+  <li><b>Plünderer</b> können auch ganze Oasen bedrohen. Dann kannst du Truppen anheuern, um sie zu vertreiben.</li>
+  <li><b>Söldner</b> (ab Rang Händler): Miliz für 600 Dinar (55 % Erfolg), Söldner für 1300 (75 %) und ab Rang 3 die Reiterei des Sultans für 2600 (92 %).</li>
+  <li><b>Krankheit</b> kann Tiere schwächen. Ein Heiler hilft.</li>
+</ul>
+<div class="tipp">Auf der Karte siehst du, wo es gefährlich ist. Wenn du nur ein paar Tage länger reist, sparst du dir oft einen teuren Überfall.</div>
+
+<h2 id="oasen">7. Oasen, Ansehen &amp; Aufträge</h2>
+<h3>Ansehen</h3>
+<p>Mit jedem Handel und erfüllten Wunsch steigt dein Ansehen in einer Oase: vom <i>Fremden</i> über den <i>Bekannten</i> (25) und den <i>Freund</i> (50) zum <i>Ehrengast</i> (75). Hohes Ansehen bringt bessere Preise und neue Möglichkeiten.</p>
+<h3>Wünsche &amp; Aufträge</h3>
+<p>Oasen wünschen sich manchmal bestimmte Waren. Lieferst du rechtzeitig, zahlen sie 20 % mehr und dein Ansehen steigt. Alle offenen Wünsche findest du im Reiter <b>Aufträge</b>.</p>
+<h3>Siedler</h3>
+<p>Manchmal ziehen Siedler aus einer Oase fort und gründen ein eigenes kleines Lager. Ihre Wünsche zahlen sogar 30 % mehr. Erfüllst du drei ihrer Wünsche, wird aus dem Lager eine richtige Oase, und du bekommst 600 Dinar Belohnung. Hilft ihnen niemand, geben sie auf. Ihre verlassenen Zelte verwehen nach 30 bis 40 Tagen.</p>
+<h3>Brunnen</h3>
+<p>Du kannst in Oasen Brunnen bauen (800 Dinar × Stufe, bis Stufe 3). Jede Stufe bringt 30 Wasser mehr. Das hilft der Oase und deinen Karawanen.</p>
+
+<h2 id="gebaeude">8. Gebäude &amp; Wirtschaft</h2>
+<div class="tabelle"><table>
+  <tr><th>Gebäude</th><th>Preis</th><th>Kosten/Tag</th><th>Nutzen</th></tr>
+  <tr><td>Lagerhaus</td><td class="z">1500</td><td class="z">5</td><td>300 Platz für Waren. Ausbau: Stufe 2 für 2500 (500 Platz), Stufe 3 für 4000 (750 Platz).</td></tr>
+  <tr><td>Betrieb</td><td class="z">3000</td><td class="z">10</td><td>Stellt täglich die Ware der Oase her und lagert sie ein.</td></tr>
+  <tr><td>Juwelier</td><td class="z">4000</td><td></td><td>Macht aus Edelsteinen und Gold wertvollen Schmuck.</td></tr>
+  <tr><td>Färberei</td><td class="z">3500</td><td></td><td>2 Teppiche + 3 Indigo → 2 Prunkstoffe.</td></tr>
+  <tr><td>Karawanserei</td><td class="z">2500</td><td class="z">8</td><td>Rastplatz auf langen Strecken (ab 220 Entfernung).</td></tr>
+  <tr><td>Handelsposten</td><td class="z">1500</td><td></td><td>Kleiner Stützpunkt zum Handeln an neuen Orten.</td></tr>
+  <tr><td>Zuchtstall</td><td class="z">2000</td><td class="z">6 + 1 pro Tier</td><td>Züchtet Kamele. Ausbau für 3000 mit mehr Platz (8 → 14 Tiere) und Mehari.</td></tr>
+</table></div>
+<h3>Zucht</h3>
+<p>Jedes Kamelpaar im Stall bekommt mit etwas Glück Nachwuchs (etwa 4,5 % pro Tag). Ein Jungtier ist nach 20 Tagen ausgewachsen. Ab Ausbaustufe 2 ist jedes dritte Jungtier ein schnelles <b>Mehari</b>.</p>
+<h3>Handelsrouten</h3>
+<p>Wiederholst du eine Strecke oft, kannst du sie als feste Route anlegen. Die Karawane pendelt dann von selbst und handelt nach deinen Vorgaben. Das spart dir viel Tipperei, sobald du mehrere Karawanen hast.</p>
+
+<h2 id="geld">9. Geld &amp; Kredite</h2>
+<p>In Oasen ab 600 Einwohnern gibt es einen Geldverleiher. Du kannst bis zu 5000 Dinar leihen. Es fallen tägliche Zinsen an: 0,3 % auf Leicht, 0,5 % auf Normal, 0,8 % auf Schwer.</p>
+<div class="warn">Ab 6500 Dinar Schulden wirst du gewarnt. Ab 8000 Dinar beginnt die Pfändung: Der Verleiher nimmt sich Gold und Waren, bis du wieder unter 4000 Dinar liegst.</div>
+<div class="tipp">Ein Kredit lohnt sich, wenn du damit sofort etwas kaufst, das Geld bringt, zum Beispiel ein zweites Kamel oder einen Betrieb. Zahl ihn zurück, sobald du kannst.</div>
+
+<h2 id="haeuser">10. Handelshäuser &amp; Diplomatie</h2>
+<p>Du bist nicht allein: Andere Handelshäuser handeln ebenfalls in der Wüste. Am Anfang gibt es drei. Nach 50 bis 80 Tagen kommt das erste neue Haus dazu, danach alle 60 bis 100 Tage ein weiteres.</p>
+<p>Jedes Haus hat einen eigenen Charakter: <b>reich</b> (viel Gold), <b>schnell</b> (flinke Karawanen), <b>freundlich</b> (offen für Bündnisse) oder <b>skrupellos</b> (feindselig und schwer zu gewinnen). Mit Geschenken und Abkommen kannst du die Beziehung verbessern.</p>
+
+<h2 id="familie">11. Familie &amp; Dynastie</h2>
+<ul>
+  <li>Ab 27 Jahren kannst du heiraten. Später bekommst du Kinder.</li>
+  <li>Ab 55 kannst du dich zur Ruhe setzen, mit 68 musst du es. Ein Kind übernimmt dann das Geschäft.</li>
+  <li>Kinder bringen Begabungen mit, die dem ganzen Haus helfen: <b>Kaufmann</b> (2 % bessere Preise), <b>Diplomat</b> (25 % mehr Ansehen), <b>Wegfinder</b> (4 % schneller) und <b>Sparsam</b> (10 % weniger Unterhalt).</li>
+</ul>
+<div class="tipp">Denk früh an die Nachfolge. Gibt es kein erwachsenes Kind, übernimmt dein bester Karawanenführer – die Familienboni gehen dann verloren.</div>
+
+<h2 id="ziele">12. Spielziele &amp; Ränge</h2>
+<h3>Spielziele</h3>
+<ul>
+  <li><b>Frei:</b> Spiel ohne festes Ziel, so lange du magst.</li>
+  <li><b>Reichtum:</b> Erreiche 100.000 Dinar Vermögen.</li>
+  <li><b>Handelsimperium:</b> 5 Lagerhäuser, 3 Betriebe und 6 Karawanen.</li>
+  <li><b>Freund der Wüste:</b> Ansehen 50 in 6 Oasen.</li>
+  <li><b>Wettlauf:</b> Sei nach 3 Jahren das reichste Handelshaus.</li>
+</ul>
+<h3>Ränge</h3>
+<div class="tabelle"><table>
+  <tr><th>Rang</th><th>Vermögen ab</th></tr>
+  <tr><td>Wasserträger</td><td class="z">0</td></tr>
+  <tr><td>Kleinhändler</td><td class="z">5.000</td></tr>
+  <tr><td>Händler</td><td class="z">12.000</td></tr>
+  <tr><td>Karawanenmeister</td><td class="z">25.000</td></tr>
+  <tr><td>Handelsfürst</td><td class="z">50.000</td></tr>
+  <tr><td>Herr der Wüste</td><td class="z">100.000</td></tr>
+</table></div>
+<p>Unter <b>Erfolge</b> im Menü findest du außerdem viele Errungenschaften zum Sammeln.</p>
+
+<h2 id="bedienung">13. Bedienung</h2>
+<ul>
+  <li><b>Karte:</b> Mit einem Finger verschieben, mit zwei Fingern oder dem Mausrad zoomen. Das Symbol ▣ öffnet die Minikarte.</li>
+  <li><b>Speichern:</b> Das Spiel speichert automatisch. Im Menü hast du mehrere Spielstände.</li>
+  <li><b>Spielstand als Code:</b> Im Menü kannst du deinen Spielstand als Text-Code kopieren und auf einem anderen Gerät wieder einfügen. So nimmst du dein Spiel vom Handy zum PC mit.</li>
+  <li><b>Als App installieren:</b> Im Browser-Menü „Zum Startbildschirm hinzufügen“ wählen. Dann läuft das Spiel auch ohne Internet.</li>
+  <li><b>Lesbarkeit:</b> In den Einstellungen kannst du die Schrift in vier Stufen vergrößern und einen Farbenblind-Modus (Blau/Orange) einschalten.</li>
+  <li><b>Ton:</b> Musik, Effekte und Umgebungsgeräusche lassen sich getrennt einstellen.</li>
+</ul>
+<h3>Tastenkürzel (am PC)</h3>
+<div class="tabelle"><table>
+  <tr><td><kbd>Leertaste</kbd></td><td>Pause / weiter</td></tr>
+  <tr><td><kbd>1</kbd> – <kbd>5</kbd></td><td>Spieltempo 0,5× bis 5×</td></tr>
+  <tr><td><kbd>O</kbd> <kbd>K</kbd> <kbd>A</kbd> <kbd>Z</kbd> <kbd>H</kbd> <kbd>E</kbd></td><td>Reiter: Oase, Karawanen, Aufträge, Ziele, Häuser, Ereignisse</td></tr>
+  <tr><td><kbd>N</kbd></td><td>Nächste Karawane</td></tr>
+  <tr><td><kbd>G</kbd></td><td>Losziehen</td></tr>
+  <tr><td><kbd>S</kbd></td><td>Statistik</td></tr>
+  <tr><td><kbd>M</kbd> / <kbd>Esc</kbd></td><td>Menü / Fenster schließen</td></tr>
+  <tr><td><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></td><td>Vergrößern, verkleinern, ganze Karte</td></tr>
+  <tr><td><kbd>?</kbd></td><td>Hilfe im Spiel</td></tr>
+</table></div>
+
+<h2 id="tipps">14. Tipps &amp; Tricks</h2>
+<ul>
+  <li><b>Hin und zurück handeln:</b> Fahr nie leer zurück. Kauf am Ziel gleich die Ware, die an deinem Startort gebraucht wird.</li>
+  <li><b>Kamele zuerst:</b> Ersetz Esel so bald wie möglich durch Kamele. Sie tragen doppelt so viel und trinken kaum.</li>
+  <li><b>Tiere nicht mischen:</b> Ein einzelnes langsames Tier bremst die ganze Karawane.</li>
+  <li><b>Datteln schnell loswerden:</b> Sie verderben unterwegs. Auf langen Strecken lieber Salz oder Gewürze nehmen.</li>
+  <li><b>Nicht alles auf einmal verkaufen:</b> Große Mengen drücken den Preis. Verteil die Ware auf mehrere Oasen.</li>
+  <li><b>Wünsche lohnen sich doppelt:</b> Mehr Geld und mehr Ansehen. Wirf öfter einen Blick in den Reiter Aufträge.</li>
+  <li><b>Siedlern helfen:</b> Drei erfüllte Wünsche bringen 600 Dinar und eine neue Oase, die dir dankbar ist.</li>
+  <li><b>Flüsse nutzen:</b> Am Niger und am Nil musst du weniger Wasser mitnehmen. So bleibt mehr Platz für Waren.</li>
+  <li><b>Hochsommer planen:</b> Nimm im Hochsommer mehr Wasser mit und meide die ausgetrockneten Wadis.</li>
+  <li><b>Lagerhaus + Betrieb:</b> Ein Betrieb produziert, während du unterwegs bist. Mit einem Lagerhaus daneben sammelst du alles für die nächste Karawane.</li>
+  <li><b>Veredeln:</b> Juwelier und Färberei machen aus Rohstoffen deutlich wertvollere Waren. Ideal für später im Spiel.</li>
+  <li><b>Feste ausnutzen:</b> Hast du die Festware im Lager, bringen 80 % Aufschlag einen schönen Gewinn.</li>
+  <li><b>Kundschafter für teure Ladung:</b> Bei Gold, Edelsteinen oder Schmuck sind die 150 Dinar für einen Kundschafter gut angelegt.</li>
+  <li><b>Boten statt Raten:</b> Bevor du eine weite Reise machst, kostet ein Bote nur 40 Dinar und zeigt dir die echten Preise.</li>
+  <li><b>Pausieren:</b> Mit der <kbd>Leertaste</kbd> oder dem Pause-Knopf hältst du die Zeit an und kannst in Ruhe planen.</li>
+</ul>
+
+<hr>
+<p class="klein"><a class="oben" href="#inhalt">↑ Nach oben</a> · <a href="index.html">Zum Spiel</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+</main>
+</body>
